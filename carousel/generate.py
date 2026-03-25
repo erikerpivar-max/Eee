@@ -1,235 +1,237 @@
 from PIL import Image, ImageDraw, ImageFont
 import os
 
-# Colors
 NAVY = (28, 59, 106)
+NAVY_DARK = (18, 38, 72)
 WHITE = (255, 255, 255)
-WHITE_50 = (255, 255, 255, 128)
-WHITE_10 = (255, 255, 255, 26)
-WHITE_08 = (255, 255, 255, 20)
-
+DARK = (18, 38, 72)
+LIGHT_TEXT = (255, 255, 255, 180)
 SIZE = (1080, 1080)
 
 def get_font(size, bold=False):
-    """Try to load a font, fallback to default"""
-    font_paths = [
+    paths = [
         f"/usr/share/fonts/truetype/dejavu/DejaVuSans{'Bold' if bold else ''}.ttf",
         f"/usr/share/fonts/truetype/liberation/LiberationSans-{'Bold' if bold else 'Regular'}.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
     ]
-    for path in font_paths:
-        if os.path.exists(path):
-            return ImageFont.truetype(path, size)
+    for p in paths:
+        if os.path.exists(p):
+            return ImageFont.truetype(p, size)
     return ImageFont.load_default()
 
-def draw_chevron(draw, x_offset, y_center, size=400, color=(255,255,255,25), two=True):
-    """Draw one or two right-pointing chevrons"""
-    h = size
-    w = size * 0.55
-    tip = size * 0.45
+def text_width(draw, text, font):
+    bb = draw.textbbox((0,0), text, font=font)
+    return bb[2] - bb[0], bb[3] - bb[1]
 
-    def chevron(ox):
-        points = [
-            (ox, y_center - h//2),
-            (ox + w*0.6, y_center - h//2),
-            (ox + w*0.6 + tip, y_center),
-            (ox + w*0.6, y_center + h//2),
-            (ox, y_center + h//2),
-            (ox + tip, y_center),
-        ]
-        return [(int(p[0]), int(p[1])) for p in points]
+def white_pill(draw, text, cx, y, font, px=44, py=20, r=16, align='center'):
+    """Draw a white pill/banner with dark text, centered at cx"""
+    tw, th = text_width(draw, text, font)
+    w = tw + px*2
+    h = th + py*2
+    if align == 'center':
+        x1 = cx - w//2
+    else:
+        x1 = cx
+    y1 = y
+    draw.rounded_rectangle([x1, y1, x1+w, y1+h], radius=r, fill=WHITE)
+    draw.text((x1+px, y1+py), text, font=font, fill=DARK)
+    return h
 
+def white_card(draw, img, x, y, w, h, r=24):
+    """Draw a white rounded card"""
+    # Use overlay for slight transparency
     overlay = Image.new('RGBA', SIZE, (0,0,0,0))
     od = ImageDraw.Draw(overlay)
-    od.polygon(chevron(x_offset), fill=color)
-    if two:
-        od.polygon(chevron(x_offset + int(w * 0.75)), fill=color)
-    return overlay
+    od.rounded_rectangle([x, y, x+w, y+h], radius=r, fill=(255,255,255,240))
+    img.paste(Image.alpha_composite(img.convert('RGBA'), overlay).convert('RGB'), (0,0))
 
-def draw_text_centered(draw, text, y, font, color=WHITE, img_width=1080):
-    bbox = draw.textbbox((0, 0), text, font=font)
-    w = bbox[2] - bbox[0]
-    x = (img_width - w) // 2
-    draw.text((x, y), text, font=font, fill=color)
+def slide_counter(draw, current, total, font):
+    """Draw slide counter badge in top right"""
+    text = f"{current}/{total}"
+    tw, th = text_width(draw, text, font)
+    pad = 18
+    r = (th + pad*2) // 2
+    x1 = SIZE[0] - tw - pad*2 - 60
+    y1 = 55
+    draw.rounded_rectangle([x1, y1, x1+tw+pad*2, y1+th+pad*2], radius=r, fill=(28,70,120))
+    draw.text((x1+pad, y1+pad), text, font=font, fill=WHITE)
 
-def draw_text_right(draw, text, y, font, color=WHITE, margin=90, img_width=1080):
-    bbox = draw.textbbox((0, 0), text, font=font)
-    w = bbox[2] - bbox[0]
-    x = img_width - margin - w
-    draw.text((x, y), text, font=font, fill=color)
+def ixina_logo(draw, x, y, size=38):
+    f = get_font(size, bold=True)
+    draw.text((x, y), "ixina", font=f, fill=(255,255,255,160))
+
 
 # ─────────────────────────────────────────────
-# SLIDE 1 — Hook 80%
+# SLIDE 1 — Hook
 # ─────────────────────────────────────────────
 def slide1():
     img = Image.new('RGB', SIZE, NAVY)
-
-    chev = draw_chevron(None, 750, 540, size=900, color=(255,255,255,18))
-    img.paste(Image.alpha_composite(Image.new('RGBA', SIZE, (0,0,0,0)), chev), mask=chev.split()[3])
-
     draw = ImageDraw.Draw(img)
 
-    # Tag
-    f_tag = get_font(28)
-    draw.text((100, 200), "LE SAVIEZ-VOUS ?", font=f_tag, fill=(255,255,255,100))
+    # Slide counter
+    slide_counter(draw, 1, 5, get_font(30, bold=True))
 
-    # 80%
-    f_big = get_font(240, bold=True)
-    draw.text((85, 260), "80%", font=f_big, fill=WHITE)
+    # Big "80%"
+    f_huge = get_font(280, bold=True)
+    draw.text((72, 160), "80%", font=f_huge, fill=WHITE)
 
-    # subtitle
-    f_sub = get_font(48)
-    draw.text((100, 680), "des cuisines qu'on vend", font=f_sub, fill=(255,255,255,210))
-    draw.text((100, 740), "sont en", font=f_sub, fill=(255,255,255,210))
+    # Subtitle
+    f_sub = get_font(46)
+    draw.text((80, 580), "des cuisines qu'on vend", font=f_sub, fill=(255,255,255,200))
+    draw.text((80, 640), "sont en", font=f_sub, fill=(255,255,255,200))
 
-    # highlight
-    f_hl = get_font(80, bold=True)
-    draw.text((100, 810), "STRATIFIÉ", font=f_hl, fill=WHITE)
+    # White pill: STRATIFIÉ
+    f_hl = get_font(72, bold=True)
+    white_pill(draw, "STRATIFIÉ", 540, 720, f_hl, px=50, py=22, r=18, align='center')
+
+    # Swipe
+    f_swipe = get_font(30)
+    draw.text((390, 960), "swipe  →", font=f_swipe, fill=(255,255,255,110))
 
     # Logo
-    f_logo = get_font(38, bold=True)
-    draw_text_right(draw, "ixina", 990, f_logo, color=(255,255,255,170))
+    ixina_logo(draw, 60, 1000)
 
     img.save("slide1.png")
     print("✓ slide1.png")
 
 # ─────────────────────────────────────────────
-# SLIDE 2 — Raison 1 : Ça claque
+# SLIDE 2 — Raison 1
 # ─────────────────────────────────────────────
 def slide2():
     img = Image.new('RGB', SIZE, NAVY)
-
-    chev = draw_chevron(None, 800, 750, size=700, color=(255,255,255,15))
-    img.paste(Image.alpha_composite(Image.new('RGBA', SIZE, (0,0,0,0)), chev), mask=chev.split()[3])
-
     draw = ImageDraw.Draw(img)
 
-    # Big number background
-    f_num = get_font(220, bold=True)
-    draw.text((70, 50), "01", font=f_num, fill=(255,255,255,18))
+    slide_counter(draw, 2, 5, get_font(30, bold=True))
 
-    # Label
-    f_tag = get_font(26)
-    draw.text((100, 340), "RAISON N°1", font=f_tag, fill=(255,255,255,110))
+    # White pill title
+    f_title = get_font(58, bold=True)
+    pill_h = white_pill(draw, "#1  ÇA CLAQUE.", 540, 130, f_title, px=50, py=22, r=18, align='center')
 
-    # Title
-    f_title = get_font(120, bold=True)
-    draw.text((100, 390), "ÇA CLAQUE.", font=f_title, fill=WHITE)
+    # Subtitle
+    f_sub = get_font(38)
+    draw.text((80, 130+pill_h+40), "L'effet texturé fait toute la différence.", font=f_sub, fill=(255,255,255,200))
 
-    # Divider
-    draw.rectangle([100, 570, 180, 577], fill=(255,255,255,150))
+    # White card
+    card_y = 380
+    card_h = 420
+    card_x = 70
+    card_w = SIZE[0] - card_x*2
+    img_rgba = img.convert('RGBA')
+    overlay = Image.new('RGBA', SIZE, (0,0,0,0))
+    od = ImageDraw.Draw(overlay)
+    od.rounded_rectangle([card_x, card_y, card_x+card_w, card_y+card_h], radius=28, fill=(255,255,255,230))
+    img = Image.alpha_composite(img_rgba, overlay).convert('RGB')
+    draw = ImageDraw.Draw(img)
 
-    # Description
-    f_desc = get_font(46)
-    draw.text((100, 610), "L'effet est texturé,", font=f_desc, fill=(255,255,255,210))
-    f_desc_bold = get_font(46, bold=True)
-    draw.text((100, 670), "c'est nickel.", font=f_desc_bold, fill=WHITE)
-    draw.text((100, 745), "Un rendu qui en met plein les yeux.", font=f_desc, fill=(255,255,255,190))
+    # Card content
+    f_bold = get_font(40, bold=True)
+    f_reg = get_font(36)
+    items = [
+        ("✓  Effet texturé et chaleureux", True),
+        ("✓  Rendu haut de gamme", True),
+        ("✓  Joli dès le premier coup d'œil", True),
+        ("    Un matériau qui habille votre cuisine.", False),
+    ]
+    for i, (text, bold) in enumerate(items):
+        f = f_bold if bold else f_reg
+        color = DARK if bold else (40,60,100)
+        draw.text((card_x+44, card_y+40+i*92), text, font=f, fill=color)
 
-    # Logo
-    f_logo = get_font(38, bold=True)
-    draw_text_right(draw, "ixina", 990, f_logo, color=(255,255,255,170))
+    ixina_logo(draw, 60, 1000)
+    slide_counter(draw, 2, 5, get_font(30, bold=True))
 
     img.save("slide2.png")
     print("✓ slide2.png")
 
 # ─────────────────────────────────────────────
-# SLIDE 3 — Raison 2 : Facile à travailler
+# SLIDE 3 — Raison 2
 # ─────────────────────────────────────────────
 def slide3():
     img = Image.new('RGB', SIZE, NAVY)
-
-    # Left-pointing chevron (reversed)
-    overlay = Image.new('RGBA', SIZE, (0,0,0,0))
-    od = ImageDraw.Draw(overlay)
-    h, tip = 900, 200
-    def lchev(ox):
-        return [(ox+tip,540-h//2),(ox+tip*2,540-h//2),(ox,540),(ox+tip*2,540+h//2),(ox+tip,540+h//2),(ox+tip*2+tip,540)]
-    # simple left chevron
-    pts1 = [(-80,90),(130,90),(-80+230,540),(130,990),(-80,990),(130-230,540)]
-    pts2 = [(130,90),(340,90),(130+230,540),(340,990),(130,990),(340-230,540)]
-    od.polygon(pts1, fill=(255,255,255,15))
-    od.polygon(pts2, fill=(255,255,255,15))
-    img.paste(Image.alpha_composite(Image.new('RGBA', SIZE, (0,0,0,0)), overlay), mask=overlay.split()[3])
-
     draw = ImageDraw.Draw(img)
 
-    # Big number background
-    f_num = get_font(220, bold=True)
-    draw_text_right(draw, "02", 50, f_num, color=(255,255,255,18))
+    slide_counter(draw, 3, 5, get_font(30, bold=True))
 
-    # Label
-    f_tag = get_font(26)
-    draw_text_right(draw, "RAISON N°2", 340, f_tag, color=(255,255,255,110))
+    # White pill title
+    f_title = get_font(52, bold=True)
+    pill_h = white_pill(draw, "#2  FACILE À TRAVAILLER.", 540, 130, f_title, px=44, py=22, r=18, align='center')
 
-    # Title
-    f_title = get_font(100, bold=True)
-    draw_text_right(draw, "FACILE À", 395, f_title, color=WHITE)
-    draw_text_right(draw, "TRAVAILLER.", 505, f_title, color=WHITE)
+    # Subtitle
+    f_sub = get_font(38)
+    draw.text((80, 130+pill_h+40), "Le placeur adapte tout sur place.", font=f_sub, fill=(255,255,255,200))
 
-    # Divider
-    draw.rectangle([900, 640, 980, 647], fill=(255,255,255,150))
+    # White card
+    card_y = 370
+    card_h = 460
+    card_x = 70
+    card_w = SIZE[0] - card_x*2
+    img_rgba = img.convert('RGBA')
+    overlay = Image.new('RGBA', SIZE, (0,0,0,0))
+    od = ImageDraw.Draw(overlay)
+    od.rounded_rectangle([card_x, card_y, card_x+card_w, card_y+card_h], radius=28, fill=(255,255,255,230))
+    img = Image.alpha_composite(img_rgba, overlay).convert('RGB')
+    draw = ImageDraw.Draw(img)
 
-    # Description
-    f_desc = get_font(40)
     f_bold = get_font(40, bold=True)
-    draw_text_right(draw, "Le placeur fait ses découpes sur place", 680, f_desc, color=(255,255,255,200))
-    draw_text_right(draw, "et ajuste les plans de travail", 730, f_desc, color=(255,255,255,200))
-    draw_text_right(draw, "et crédences au mieux.", 780, f_bold, color=WHITE)
+    f_reg = get_font(36)
+    items = [
+        ("✓  Découpes réalisées directement sur place", True),
+        ("✓  Plans de travail ajustés au millimètre", True),
+        ("✓  Crédences posées sans complication", True),
+        ("    Moins de chantier, plus de précision.", False),
+    ]
+    for i, (text, bold) in enumerate(items):
+        f = f_bold if bold else f_reg
+        color = DARK if bold else (40,60,100)
+        draw.text((card_x+44, card_y+40+i*98), text, font=f, fill=color)
 
-    # Logo
-    f_logo = get_font(38, bold=True)
-    draw.text((90, 990), "ixina", font=f_logo, fill=(255,255,255,170))
+    ixina_logo(draw, 60, 1000)
+    slide_counter(draw, 3, 5, get_font(30, bold=True))
 
     img.save("slide3.png")
     print("✓ slide3.png")
 
 # ─────────────────────────────────────────────
-# SLIDE 4 — Raison 3 : Qualité-prix
+# SLIDE 4 — Raison 3
 # ─────────────────────────────────────────────
 def slide4():
     img = Image.new('RGB', SIZE, NAVY)
-
-    # Pattern background: small X shapes
-    overlay = Image.new('RGBA', SIZE, (0,0,0,0))
-    od = ImageDraw.Draw(overlay)
-    step = 90
-    for row in range(0, 1080 + step, step):
-        for col in range(0, 1080 + step, step):
-            s = 28
-            # small chevron outline
-            od.polygon([(col,row),(col+s*0.6,row),(col+s,row+s*0.5),(col+s*0.6,row+s),(col,row+s),(col+s*0.4,row+s*0.5)],
-                       outline=(255,255,255,30), fill=None)
-    img.paste(Image.alpha_composite(Image.new('RGBA', SIZE, (0,0,0,0)), overlay), mask=overlay.split()[3])
-
     draw = ImageDraw.Draw(img)
 
-    # Big number background
-    f_num = get_font(220, bold=True)
-    draw.text((70, 50), "03", font=f_num, fill=(255,255,255,18))
+    slide_counter(draw, 4, 5, get_font(30, bold=True))
 
-    # Label
-    f_tag = get_font(26)
-    draw.text((100, 340), "RAISON N°3", font=f_tag, fill=(255,255,255,110))
+    # White pill title
+    f_title = get_font(50, bold=True)
+    pill_h = white_pill(draw, "#3  BON RAPPORT QUALITÉ-PRIX.", 540, 130, f_title, px=38, py=22, r=18, align='center')
 
-    # Title
-    f_title = get_font(100, bold=True)
-    draw.text((100, 390), "BON RAPPORT", font=f_title, fill=WHITE)
-    draw.text((100, 500), "QUALITÉ-PRIX.", font=f_title, fill=WHITE)
+    # Subtitle
+    f_sub = get_font(38)
+    draw.text((80, 130+pill_h+40), "Plaisant et accessible. Le nerf de la guerre.", font=f_sub, fill=(255,255,255,200))
 
-    # Divider
-    draw.rectangle([100, 640, 180, 647], fill=(255,255,255,150))
+    # Two mini cards
+    card_y = 390
+    card_h = 230
+    card_x = 70
+    card_w = SIZE[0] - card_x*2
 
-    # Description
-    f_desc = get_font(42)
-    f_bold = get_font(42, bold=True)
-    draw.text((100, 680), "Un matériel plaisant pour votre cuisine", font=f_desc, fill=(255,255,255,200))
-    draw.text((100, 735), "qui ne coûte pas très cher.", font=f_bold, fill=WHITE)
-    draw.text((100, 810), "C'est le nerf de la guerre.", font=f_desc, fill=(255,255,255,180))
+    for ci, (title, body) in enumerate([
+        ("Matériau plaisant", "Un rendu soigné pour votre cuisine\nsans exploser le budget."),
+        ("Prix accessible", "Le stratifié reste le matériau\nle plus populaire en Belgique."),
+    ]):
+        cy = card_y + ci * (card_h + 30)
+        img_rgba = img.convert('RGBA')
+        overlay = Image.new('RGBA', SIZE, (0,0,0,0))
+        od = ImageDraw.Draw(overlay)
+        od.rounded_rectangle([card_x, cy, card_x+card_w, cy+card_h], radius=24, fill=(255,255,255,220))
+        img = Image.alpha_composite(img_rgba, overlay).convert('RGB')
+        draw = ImageDraw.Draw(img)
+        f_bold = get_font(40, bold=True)
+        f_reg = get_font(34)
+        draw.text((card_x+44, cy+30), title, font=f_bold, fill=DARK)
+        for li, line in enumerate(body.split('\n')):
+            draw.text((card_x+44, cy+90+li*44), line, font=f_reg, fill=(40,60,100))
 
-    # Logo
-    f_logo = get_font(38, bold=True)
-    draw_text_right(draw, "ixina", 990, f_logo, color=(255,255,255,170))
+    ixina_logo(draw, 60, 1000)
+    slide_counter(draw, 4, 5, get_font(30, bold=True))
 
     img.save("slide4.png")
     print("✓ slide4.png")
@@ -239,42 +241,44 @@ def slide4():
 # ─────────────────────────────────────────────
 def slide5():
     img = Image.new('RGB', SIZE, NAVY)
-
-    chev = draw_chevron(None, 700, 540, size=1000, color=(255,255,255,20))
-    img.paste(Image.alpha_composite(Image.new('RGBA', SIZE, (0,0,0,0)), chev), mask=chev.split()[3])
-
     draw = ImageDraw.Draw(img)
 
-    # ixina big
-    f_logo_big = get_font(110, bold=True)
-    draw.text((100, 200), "ixina", font=f_logo_big, fill=WHITE)
+    slide_counter(draw, 5, 5, get_font(30, bold=True))
 
-    # Divider
-    draw.rectangle([100, 350, 200, 358], fill=(255,255,255,130))
+    # ixina big logo
+    f_logo = get_font(120, bold=True)
+    draw.text((80, 140), "ixina", font=f_logo, fill=WHITE)
 
-    # Tagline
-    f_tag = get_font(50)
-    f_bold = get_font(50, bold=True)
-    draw.text((100, 390), "Votre cuisine en stratifié :", font=f_tag, fill=(255,255,255,200))
-    draw.text((100, 460), "belle, pratique", font=f_bold, fill=WHITE)
-    draw.text((100, 525), "& accessible.", font=f_bold, fill=WHITE)
+    # Divider line
+    draw.rectangle([80, 300, 220, 308], fill=(255,255,255,120))
+
+    # Summary white pill
+    f_pill = get_font(38, bold=True)
+    white_pill(draw, "Le stratifié en 3 mots :", 540, 370, f_pill, px=40, py=18, r=14, align='center')
+
+    # 3 words as big text
+    f_words = get_font(80, bold=True)
+    draw.text((80, 470), "Beau.", font=f_words, fill=WHITE)
+    draw.text((80, 570), "Pratique.", font=f_words, fill=WHITE)
+    draw.text((80, 670), "Accessible.", font=f_words, fill=WHITE)
 
     # CTA
-    f_cta = get_font(30)
-    draw.text((100, 650), "VENEZ DÉCOUVRIR NOS MODÈLES  →", font=f_cta, fill=(255,255,255,130))
+    f_cta = get_font(34)
+    draw.text((80, 820), "Venez découvrir nos modèles en showroom.", font=f_cta, fill=(255,255,255,160))
 
-    # Belgium
-    f_be = get_font(22)
-    draw.text((100, 1030), "BELGIQUE", font=f_be, fill=(255,255,255,80))
+    # Divider bottom
+    draw.rectangle([80, 900, SIZE[0]-80, 902], fill=(255,255,255,40))
+    f_be = get_font(26)
+    draw.text((80, 920), "BELGIQUE", font=f_be, fill=(255,255,255,80))
 
     img.save("slide5.png")
     print("✓ slide5.png")
 
-# Run all
+
 os.chdir("/home/user/Eee/carousel")
 slide1()
 slide2()
 slide3()
 slide4()
 slide5()
-print("\nDone! 5 slides generated.")
+print("\nDone!")
