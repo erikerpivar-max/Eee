@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The House — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ░░ OVERLAY MOBILE ░░ -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+       SIDEBAR
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </div>
+      <span class="brand-name">The House</span>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Fermer le menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <p class="nav-group-label">Principal</p>
+        <ul>
+          <li>
+            <a class="nav-link active" data-view="dashboard" href="#">
+              <svg class="nav-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" data-view="timetracker" href="#">
+              <svg class="nav-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span>Time Tracking</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-group-label">Clients</p>
+        <ul>
+          <li>
+            <a class="nav-link" data-view="client-ixina-ath" href="#">
+              <span class="nav-client-dot" style="background:#6366F1"></span>
+              <span>Ixina Ath</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" data-view="client-ixina-tours" href="#">
+              <span class="nav-client-dot" style="background:#F59E0B"></span>
+              <span>Ixina Tours et taxi</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" data-view="client-ixina-ixelles" href="#">
+              <span class="nav-client-dot" style="background:#10B981"></span>
+              <span>Ixina Ixelles</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="sidebar-date" id="sidebarDate"></span>
+    </div>
+  </aside>
+
+  <!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+       MAIN WRAPPER
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+  <div class="main-wrapper" id="mainWrapper">
+
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <h1 class="topbar-title" id="topbarTitle">Dashboard</h1>
+      <div class="topbar-right">
+        <span class="topbar-date" id="topbarDate"></span>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content-area">
+
+      <!-- ─────────────────────────────────────
+           VUE : DASHBOARD
+      ───────────────────────────────────────── -->
+      <section class="view active" id="view-dashboard">
+        <div class="view-intro">
+          <h2 class="view-title">Bonjour 👋</h2>
+          <p class="view-subtitle">Voici un aperçu de votre agence aujourd'hui.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#6366F1;--bg:#EEF2FF">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="stat-value" id="stat-today-time">0h 00min</div>
+              <div class="stat-label">Temps aujourd'hui</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#F59E0B;--bg:#FFF7ED">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <div>
+              <div class="stat-value" id="stat-tasks-count">0</div>
+              <div class="stat-label">Tâches du jour</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#10B981;--bg:#ECFDF5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="stat-value">3</div>
+              <div class="stat-label">Clients actifs</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#8B5CF6;--bg:#F5F3FF">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div>
+              <div class="stat-value" id="stat-active-projects">0</div>
+              <div class="stat-label">Projets actifs</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clients -->
+        <div class="section-header">
+          <h3 class="section-title">Clients</h3>
+        </div>
+        <div class="client-cards-grid">
+          <div class="client-summary-card" data-view="client-ixina-ath" role="button" tabindex="0">
+            <div class="csc-header">
+              <div class="csc-avatar" style="--c:#6366F1;--bg:#EEF2FF">IA</div>
+              <div class="csc-meta">
+                <span class="csc-name">Ixina Ath</span>
+                <span class="csc-count" id="csc-count-ixina-ath">— projets</span>
+              </div>
+              <svg class="csc-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="csc-pipeline" id="csc-pipeline-ixina-ath"></div>
+          </div>
+          <div class="client-summary-card" data-view="client-ixina-tours" role="button" tabindex="0">
+            <div class="csc-header">
+              <div class="csc-avatar" style="--c:#F59E0B;--bg:#FFF7ED">IT</div>
+              <div class="csc-meta">
+                <span class="csc-name">Ixina Tours et taxi</span>
+                <span class="csc-count" id="csc-count-ixina-tours">— projets</span>
+              </div>
+              <svg class="csc-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="csc-pipeline" id="csc-pipeline-ixina-tours"></div>
+          </div>
+          <div class="client-summary-card" data-view="client-ixina-ixelles" role="button" tabindex="0">
+            <div class="csc-header">
+              <div class="csc-avatar" style="--c:#10B981;--bg:#ECFDF5">II</div>
+              <div class="csc-meta">
+                <span class="csc-name">Ixina Ixelles</span>
+                <span class="csc-count" id="csc-count-ixina-ixelles">— projets</span>
+              </div>
+              <svg class="csc-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+            <div class="csc-pipeline" id="csc-pipeline-ixina-ixelles"></div>
+          </div>
+        </div>
+
+        <!-- Recent tasks -->
+        <div class="section-header">
+          <h3 class="section-title">Dernières tâches</h3>
+          <a class="section-link" data-view="timetracker" href="#">Voir tout →</a>
+        </div>
+        <div class="recent-tasks-container" id="dashboard-recent-tasks">
+          <p class="empty-hint">Aucune tâche enregistrée aujourd'hui.</p>
+        </div>
+      </section>
+
+      <!-- ─────────────────────────────────────
+           VUE : TIME TRACKER
+      ───────────────────────────────────────── -->
+      <section class="view" id="view-timetracker">
+        <div class="view-intro">
+          <h2 class="view-title">Time Tracking</h2>
+          <p class="view-subtitle">Suivez le temps passé sur chaque tâche.</p>
+        </div>
+
+        <!-- Timer card -->
+        <div class="timer-card">
+          <input
+            type="text"
+            id="taskNameInput"
+            class="task-name-input"
+            placeholder="Nom de la tâche…"
+            autocomplete="off"
+          />
+          <div class="timer-row">
+            <div class="timer-clock" id="timerDisplay">00:00:00</div>
+            <div class="timer-actions">
+              <button class="btn btn-primary" id="timerStartBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+                Démarrer
+              </button>
+              <button class="btn btn-warning" id="timerPauseBtn" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                Pause
+              </button>
+              <button class="btn btn-outline" id="timerResumeBtn" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+                Reprendre
+              </button>
+              <button class="btn btn-ghost" id="timerStopBtn" style="display:none">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                Terminer
+              </button>
+            </div>
+          </div>
+          <div class="timer-status-label" id="timerStatusLabel"></div>
+        </div>
+
+        <!-- Table des tâches -->
+        <div class="section-header" style="margin-top:36px">
+          <h3 class="section-title">Tâches du jour</h3>
+          <button class="btn btn-danger-outline" id="endOfDayBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Fin de journée
+          </button>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table" id="tasksTable">
+            <thead>
+              <tr>
+                <th>Tâche</th>
+                <th>Début</th>
+                <th>Durée totale</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tasksTableBody">
+              <tr><td colspan="4" class="empty-cell">Aucune tâche pour aujourd'hui.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="daily-total" id="dailyTotalBar" style="display:none">
+          <span class="daily-total-label">Total journée</span>
+          <span class="daily-total-value" id="dailyTotalValue">0h 00min</span>
+        </div>
+      </section>
+
+      <!-- ─────────────────────────────────────
+           VUES CLIENTS (contenu injecté par JS)
+      ───────────────────────────────────────── -->
+      <section class="view" id="view-client-ixina-ath">
+        <div id="client-content-ixina-ath"></div>
+      </section>
+      <section class="view" id="view-client-ixina-tours">
+        <div id="client-content-ixina-tours"></div>
+      </section>
+      <section class="view" id="view-client-ixina-ixelles">
+        <div id="client-content-ixina-ixelles"></div>
+      </section>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-wrapper -->
+
+
+  <!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+       MODALES
+  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+
+  <!-- Modifier tâche time tracker -->
+  <div class="modal-backdrop" id="modal-editTask" style="display:none">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Modifier la tâche</h3>
+        <button class="modal-close-btn" data-close="modal-editTask">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Nom de la tâche</label>
+        <input type="text" id="editTaskName" class="form-input" placeholder="Nom de la tâche…" />
+        <input type="hidden" id="editTaskId" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-editTask">Annuler</button>
+        <button class="btn btn-primary" id="confirmEditTaskBtn">Sauvegarder</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ajouter un projet -->
+  <div class="modal-backdrop" id="modal-addProject" style="display:none">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Ajouter un projet</h3>
+        <button class="modal-close-btn" data-close="modal-addProject">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Nom du projet</label>
+        <input type="text" id="newProjectName" class="form-input" placeholder="Ex : Vidéo Cuisine…" />
+        <input type="hidden" id="newProjectClient" />
+        <label class="form-label" style="margin-top:14px">Étape initiale</label>
+        <select id="newProjectStage" class="form-select">
+          <option value="scripting">Scripting</option>
+          <option value="tournage">Tournage</option>
+          <option value="montage">Montage</option>
+          <option value="verification">Vérification</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-addProject">Annuler</button>
+        <button class="btn btn-primary" id="confirmAddProjectBtn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ajouter un événement calendrier -->
+  <div class="modal-backdrop" id="modal-addEvent" style="display:none">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Ajouter un événement</h3>
+        <button class="modal-close-btn" data-close="modal-addEvent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Titre</label>
+        <input type="text" id="eventTitle" class="form-input" placeholder="Ex : Réunion tournage…" />
+        <input type="hidden" id="eventClient" />
+        <input type="hidden" id="eventDate" />
+        <label class="form-label" style="margin-top:14px">Date</label>
+        <input type="date" id="eventDatePicker" class="form-input" />
+        <label class="form-label" style="margin-top:14px">Type</label>
+        <select id="eventType" class="form-select">
+          <option value="scripting">Scripting</option>
+          <option value="tournage">Tournage</option>
+          <option value="montage">Montage</option>
+          <option value="verification">Vérification</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-addEvent">Annuler</button>
+        <button class="btn btn-primary" id="confirmAddEventBtn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ajouter une tâche Gantt -->
+  <div class="modal-backdrop" id="modal-addGantt" style="display:none">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Ajouter une tâche Timeline</h3>
+        <button class="modal-close-btn" data-close="modal-addGantt">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Nom</label>
+        <input type="text" id="ganttName" class="form-input" placeholder="Ex : Tournage Cuisine…" />
+        <input type="hidden" id="ganttClient" />
+        <div class="form-row" style="margin-top:14px">
+          <div class="form-col">
+            <label class="form-label">Début</label>
+            <input type="date" id="ganttStart" class="form-input" />
+          </div>
+          <div class="form-col">
+            <label class="form-label">Fin</label>
+            <input type="date" id="ganttEnd" class="form-input" />
+          </div>
+        </div>
+        <label class="form-label" style="margin-top:14px">Étape</label>
+        <select id="ganttStage" class="form-select">
+          <option value="scripting">Scripting</option>
+          <option value="tournage">Tournage</option>
+          <option value="montage">Montage</option>
+          <option value="verification">Vérification</option>
+        </select>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-addGantt">Annuler</button>
+        <button class="btn btn-primary" id="confirmAddGanttBtn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation fin de journée -->
+  <div class="modal-backdrop" id="modal-endOfDay" style="display:none">
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <h3>Fin de journée</h3>
+        <button class="modal-close-btn" data-close="modal-endOfDay">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Un fichier <code>.md</code> contenant le récapitulatif du jour va être téléchargé, puis les données seront réinitialisées.</p>
+        <div class="eod-summary" id="eodSummary"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-endOfDay">Annuler</button>
+        <button class="btn btn-primary" id="confirmEndOfDayBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Télécharger et réinitialiser
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Scripts (ordre important) -->
+  <script src="js/app.js"></script>
+  <script src="js/timetracker.js"></script>
+  <script src="js/clients.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/gantt.js"></script>
+
+</body>
+</html>
