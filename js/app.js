@@ -101,8 +101,8 @@ window.App = {
 
     if (viewId === 'dashboard')   Dashboard.refresh();
     if (viewId === 'timetracker') TimeTracker.renderTable();
-    if (viewId === 'kanban')      Kanban.renderView();
-    if (viewId === 'publication') PubCal.renderView();
+    if (viewId === 'kanban')      _safeRender('kanban-board',  () => Kanban.renderView());
+    if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
@@ -221,6 +221,20 @@ window.Dashboard = {
       </div>`).join('');
   },
 };
+
+/* ─── Helper rendu sécurisé ─────────────────────────────────────── */
+function _safeRender(fallbackId, fn) {
+  try {
+    fn();
+  } catch(e) {
+    console.error('[_safeRender]', e);
+    const el = document.getElementById(fallbackId);
+    if (el) el.innerHTML =
+      `<div style="padding:20px;color:#DC2626;background:#FEF2F2;border-radius:8px;font-family:monospace;font-size:.85rem">
+        <strong>Erreur JS :</strong> ${String(e.message).replace(/</g,'&lt;')}
+       </div>`;
+  }
+}
 
 /* ─── Helpers ────────────────────────────────────────────────────── */
 function escHtml(str) {
