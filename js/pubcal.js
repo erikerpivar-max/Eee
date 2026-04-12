@@ -1,7 +1,7 @@
 /* ================================================================
    THE HOUSE — pubcal.js
    Calendrier de publication Lun/Mer/Ven par client
-   Persistance localStorage — navigation ± 6 mois
+   Persistance localStorage — navigation -2 / +6 mois
    ================================================================ */
 
 'use strict';
@@ -11,7 +11,8 @@ window.PubCal = (() => {
   /* ── Constantes ─────────────────────────────────────────────── */
   const KEY      = 'th_pubcal';
   const PUB_DAYS = new Set([1, 3, 5]); /* getDay() : 1=Lun 3=Mer 5=Ven */
-  const MONTHS_RANGE = 6;
+  const MONTHS_BACK    = 2;
+  const MONTHS_FORWARD = 6;
 
   /* ── État ────────────────────────────────────────────────────── */
   const _origin = new Date();
@@ -33,8 +34,8 @@ window.PubCal = (() => {
     /* Limites de navigation */
     const originYM  = _origin.getFullYear() * 12 + _origin.getMonth();
     const currentYM = _year * 12 + _month;
-    const canPrev   = currentYM > originYM - MONTHS_RANGE;
-    const canNext   = currentYM < originYM + MONTHS_RANGE;
+    const canPrev   = currentYM > originYM - MONTHS_BACK;
+    const canNext   = currentYM < originYM + MONTHS_FORWARD;
 
     const monthLabel = new Date(_year, _month, 1)
       .toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -93,10 +94,6 @@ window.PubCal = (() => {
 
     return `
       <div class="pubcal-toolbar">
-        <button class="btn btn-danger-outline btn-sm" id="pcal-clear-week">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
-          Effacer semaine passée
-        </button>
         <div class="pcal-legend">${legendHTML}</div>
       </div>
 
@@ -166,7 +163,6 @@ window.PubCal = (() => {
       if (_month > 11) { _month = 0; _year++; }
       renderView();
     });
-    document.getElementById('pcal-clear-week')?.addEventListener('click', _clearPastWeek);
   }
 
   /* ── Toggle d'une case ───────────────────────────────────────── */
@@ -181,37 +177,7 @@ window.PubCal = (() => {
     Dashboard.refresh();
   }
 
-  /* ── Effacer la semaine passée ───────────────────────────────── */
-  function _clearPastWeek() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    /* Calcul du lundi de la semaine courante */
-    const dow         = today.getDay(); /* 0=Dim … 6=Sam */
-    const toMonday    = dow === 0 ? 6 : dow - 1;
-    const thisMonday  = new Date(today);
-    thisMonday.setDate(today.getDate() - toMonday);
-
-    /* Semaine passée = lundi-1 au dimanche-1 */
-    const lastMonday = new Date(thisMonday);
-    lastMonday.setDate(thisMonday.getDate() - 7);
-    const lastSunday = new Date(thisMonday);
-    lastSunday.setDate(thisMonday.getDate() - 1);
-
-    if (!confirm(`Effacer les données du ${lastMonday.toLocaleDateString('fr-FR')} au ${lastSunday.toLocaleDateString('fr-FR')} ?`)) return;
-
-    const data = App.load(KEY, {});
-    Object.keys(data).forEach(dateStr => {
-      const d = new Date(dateStr + 'T12:00:00');
-      d.setHours(0, 0, 0, 0);
-      if (d >= lastMonday && d <= lastSunday) delete data[dateStr];
-    });
-    App.save(KEY, data);
-    renderView();
-    Dashboard.refresh();
-  }
-
-  /* ── Calcul de l'avance de contenu (pour le dashboard) ──────── */
+/* ── Calcul de l'avance de contenu (pour le dashboard) ──────── */
   function getDaysAdvance(clientId) {
     const data = App.load(KEY, {});
 
