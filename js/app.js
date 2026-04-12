@@ -17,6 +17,7 @@ window.App = {
   STAGES: [
     { id: 'scripting',    label: 'Scripting',    color: '#6366F1', bg: '#EEF2FF' },
     { id: 'tournage',     label: 'Tournage',     color: '#D97706', bg: '#FFF7ED' },
+    { id: 'brouillon',    label: 'Brouillon',    color: '#8B5CF6', bg: '#F5F3FF' },
     { id: 'montage',      label: 'Montage',      color: '#2563EB', bg: '#EFF6FF' },
     { id: 'verification', label: 'Vérification', color: '#059669', bg: '#ECFDF5' },
   ],
