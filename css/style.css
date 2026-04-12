@@ -1253,6 +1253,33 @@ code {
   flex-shrink: 0;
 }
 
+/* Alerte cases manquantes */
+.pcal-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  font-size: .85rem;
+  color: #991B1B;
+}
+.pcal-alert-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #DC2626;
+  color: #fff;
+  font-weight: 700;
+  font-size: .8rem;
+  flex-shrink: 0;
+}
+
 /* Jours de publication */
 .pcal-day.pub-day {
   background: #FAFBFF;

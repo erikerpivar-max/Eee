@@ -40,6 +40,24 @@ window.PubCal = (() => {
     const monthLabel = new Date(_year, _month, 1)
       .toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
+    /* Alerte : jours de publication non entièrement cochés dans les 14 prochains jours */
+    const _todayD = new Date();
+    _todayD.setHours(0, 0, 0, 0);
+    const alertDates = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(_todayD);
+      d.setDate(_todayD.getDate() + i);
+      if (!PUB_DAYS.has(d.getDay())) continue;
+      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (App.CLIENTS.some(c => !data[ds]?.[c.id])) alertDates.push(d.getDate());
+    }
+    const alertHTML = alertDates.length
+      ? `<div class="pcal-alert">
+           <span class="pcal-alert-icon">!</span>
+           Cases manquantes dans les 14 prochains jours : <strong>${alertDates.join(', ')}</strong>
+         </div>`
+      : '';
+
     /* Grille de jours */
     const cells = _buildCells();
 
@@ -96,6 +114,8 @@ window.PubCal = (() => {
       <div class="pubcal-toolbar">
         <div class="pcal-legend">${legendHTML}</div>
       </div>
+
+      ${alertHTML}
 
       <div class="calendar-wrapper">
         <div class="calendar-nav">
