@@ -1078,3 +1078,232 @@ code {
   to   { opacity: 1; transform: translateY(0); }
 }
 .view.active { animation: fadeIn .2s var(--ease); }
+
+/* ─── LOGO ───────────────────────────────────────────────────────── */
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+/* ─── SECTION HINT ───────────────────────────────────────────────── */
+.section-hint {
+  font-size: .78rem;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ─── KANBAN UNIFIÉ ──────────────────────────────────────────────── */
+.col-empty-hint {
+  font-size: .78rem;
+  color: var(--text-3);
+  font-style: italic;
+  text-align: center;
+  padding: 14px 0;
+}
+
+.kanban-card {
+  position: relative;
+  padding-left: 0;
+  overflow: hidden;
+  display: flex;
+  cursor: grab;
+  transition: box-shadow var(--dur), transform var(--dur), opacity var(--dur);
+}
+.kanban-card:active { cursor: grabbing; }
+.kanban-card.dragging {
+  opacity: .45;
+  transform: rotate(1.5deg) scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+.pipeline-col.drag-target {
+  background: var(--primary-bg);
+  border-color: var(--primary);
+}
+.pipeline-col.drag-target .pipeline-col-head {
+  border-bottom-color: var(--primary);
+}
+
+.kanban-client-bar {
+  width: 4px;
+  flex-shrink: 0;
+  align-self: stretch;
+  border-radius: 0;
+}
+.kanban-card-body {
+  flex: 1;
+  padding: 10px 12px;
+}
+.kanban-client-label {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: 3px;
+  opacity: .9;
+}
+
+/* ─── CONTENU ADVANCE (dashboard) ───────────────────────────────── */
+.content-advance-grid {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 8px;
+}
+.advance-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+.advance-row:last-child { border-bottom: none; }
+
+.advance-client {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 170px;
+  flex-shrink: 0;
+}
+.advance-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.advance-name {
+  font-size: .875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.advance-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.advance-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .4s var(--ease);
+}
+
+.advance-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  justify-content: flex-end;
+}
+.advance-value {
+  font-size: .855rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.advance-status-badge {
+  font-size: .7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.advance-good    { background: var(--success-bg); color: var(--success); }
+.advance-warning { background: var(--warning-bg); color: var(--warning); }
+.advance-danger,
+.advance-critical { background: var(--danger-bg);  color: var(--danger); }
+
+/* ─── PUBLICATION CALENDAR ───────────────────────────────────────── */
+.pubcal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.pcal-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pcal-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.pcal-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Jours de publication */
+.pcal-day.pub-day {
+  background: #FAFBFF;
+  min-height: 90px;
+}
+.pub-day-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin: 2px 0 4px;
+}
+
+.pcal-checks {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.pcal-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 2px solid;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity var(--dur), transform var(--dur);
+  flex-shrink: 0;
+}
+.pcal-check:hover { opacity: .75; transform: scale(1.1); }
+.pcal-check.checked { /* background et border inlinés */ }
+
+.cal-nav-btn:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+/* Grille pubcal (min-height sur jours normaux) */
+.pcal-grid .cal-day:not(.pub-day) {
+  min-height: 52px;
+}
+
+@media (max-width: 640px) {
+  .advance-client  { min-width: 120px; }
+  .advance-right   { min-width: 100px; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .advance-status-badge { display: none; }
+  .pcal-check      { width: 16px; height: 16px; border-radius: 4px; }
+  .pcal-day.pub-day { min-height: 80px; }
+  .pubcal-toolbar   { flex-direction: column; align-items: flex-start; }
+}
