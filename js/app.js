@@ -82,6 +82,7 @@ window.App = {
     'timetracker': 'Time Tracking',
     'kanban':      'Kanban',
     'publication': 'Publication',
+    'portal':      'Portail Client',
   },
 
   navigateTo(viewId) {
@@ -103,6 +104,7 @@ window.App = {
     if (viewId === 'timetracker') TimeTracker.renderTable();
     if (viewId === 'kanban')      _safeRender('kanban-board',  () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
+    if (viewId === 'portal')      _safeRender('view-portal',   () => Portal.init());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
@@ -123,6 +125,46 @@ window.App = {
     if (!el) return;
     el.classList.remove('visible');
     setTimeout(() => { el.style.display = 'none'; }, 200);
+  },
+
+  /* ── Toast ────────────────────────────────────────────────────── */
+  toast(msg, type = 'info') {
+    const t = document.createElement('div');
+    t.className = `app-toast app-toast-${type}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('visible'));
+    setTimeout(() => {
+      t.classList.remove('visible');
+      setTimeout(() => t.remove(), 300);
+    }, 3000);
+  },
+
+  /* ── Confirm inline (remplace window.confirm) ─────────────────── */
+  confirm(msg, onConfirm) {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.style.display = 'flex';
+    backdrop.innerHTML = `
+      <div class="modal modal-sm">
+        <div class="modal-body" style="padding-top:24px">
+          <p style="font-size:.95rem;font-weight:500">${escHtml(msg)}</p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" id="_conf-cancel">Annuler</button>
+          <button class="btn btn-danger-outline" id="_conf-ok">Supprimer</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    requestAnimationFrame(() => requestAnimationFrame(() => backdrop.classList.add('visible')));
+
+    const close = () => {
+      backdrop.classList.remove('visible');
+      setTimeout(() => backdrop.remove(), 200);
+    };
+    backdrop.querySelector('#_conf-cancel').addEventListener('click', close);
+    backdrop.querySelector('#_conf-ok').addEventListener('click', () => { close(); onConfirm(); });
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
   },
 };
 

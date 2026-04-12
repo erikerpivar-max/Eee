@@ -85,7 +85,9 @@ window.PubCal = (() => {
                         ? `background:${client.color};border-color:${client.color}`
                         : `border-color:${client.color}`}"
                       title="${escHtml(client.name)}"
-                      onclick="PubCal.toggle('${cell.dateStr}','${client.id}')">
+                      data-date="${cell.dateStr}"
+                      data-client="${client.id}"
+                      data-color="${client.color}">
                       ${checked
                         ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
                         : ''}
@@ -183,17 +185,35 @@ window.PubCal = (() => {
       if (_month > 11) { _month = 0; _year++; }
       renderView();
     });
+
+    /* Délégation : tous les boutons cases du calendrier */
+    document.querySelector('.pcal-grid')?.addEventListener('click', e => {
+      const btn = e.target.closest('.pcal-check');
+      if (!btn) return;
+      toggle(btn.dataset.date, btn.dataset.client, btn);
+    });
   }
 
-  /* ── Toggle d'une case ───────────────────────────────────────── */
-  function toggle(dateStr, clientId) {
+  /* ── Toggle d'une case — mise à jour in-place ───────────────── */
+  function toggle(dateStr, clientId, btnEl) {
     const data = App.load(KEY, {});
     if (!data[dateStr]) data[dateStr] = {};
     data[dateStr][clientId] = !data[dateStr][clientId];
-    /* Nettoyage si tout est false */
     if (!Object.values(data[dateStr]).some(Boolean)) delete data[dateStr];
     App.save(KEY, data);
-    renderView();
+
+    /* Mise à jour du bouton sans reconstruire le calendrier */
+    if (btnEl) {
+      const checked = !!(data[dateStr]?.[clientId]);
+      const color   = btnEl.dataset.color;
+      btnEl.classList.toggle('checked', checked);
+      btnEl.style.background  = checked ? color : '';
+      btnEl.style.borderColor = color;
+      btnEl.innerHTML = checked
+        ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '';
+    }
+
     Dashboard.refresh();
   }
 

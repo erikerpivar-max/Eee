@@ -127,12 +127,13 @@ window.Kanban = (() => {
 
   /* ── Supprimer un projet ─────────────────────────────────────── */
   function deleteProject(clientId, projectId) {
-    if (!confirm('Supprimer ce projet ?')) return;
-    let projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
-    projects = projects.filter(p => p.id !== projectId);
-    App.save(`${App.KEYS.PROJECTS}_${clientId}`, projects);
-    renderView();
-    Dashboard.refresh();
+    App.confirm('Supprimer ce projet ?', () => {
+      let projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
+      projects = projects.filter(p => p.id !== projectId);
+      App.save(`${App.KEYS.PROJECTS}_${clientId}`, projects);
+      renderView();
+      Dashboard.refresh();
+    });
   }
 
   /* ── Drag & Drop ─────────────────────────────────────────────── */

@@ -246,15 +246,16 @@ window.TimeTracker = (() => {
   /* ── Suppression ────────────────────────────────────────────── */
   function deleteTask(id) {
     if (id === _currentId) {
-      alert('Impossible de supprimer une tâche en cours. Terminez-la d\'abord.');
+      App.toast('Terminez la tâche en cours avant de la supprimer.', 'warning');
       return;
     }
-    if (!confirm('Supprimer cette tâche ?')) return;
-    let tasks = App.load(App.KEYS.TASKS, []);
-    tasks = tasks.filter(t => t.id !== id);
-    App.save(App.KEYS.TASKS, tasks);
-    renderTable();
-    Dashboard.refresh();
+    App.confirm('Supprimer cette tâche ?', () => {
+      let tasks = App.load(App.KEYS.TASKS, []);
+      tasks = tasks.filter(t => t.id !== id);
+      App.save(App.KEYS.TASKS, tasks);
+      renderTable();
+      Dashboard.refresh();
+    });
   }
 
   /* ── Fin de journée ─────────────────────────────────────────── */
@@ -266,9 +267,8 @@ window.TimeTracker = (() => {
       alert('Aucune tâche enregistrée aujourd\'hui.');
       return;
     }
-    /* Si timer actif : avertir */
+    /* Si timer actif : stopper d'abord */
     if (_running && !_paused) {
-      if (!confirm('Un timer est en cours. Le stopper avant de télécharger ?')) return;
       stop();
     }
 
