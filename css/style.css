@@ -1564,3 +1564,55 @@ code {
 .app-toast-warning { background: var(--warning); }
 .app-toast-success { background: var(--success); }
 .app-toast-danger  { background: var(--danger); }
+
+/* ================================================================
+   CLIENTS DYNAMIQUES
+   ================================================================ */
+.clients-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.client-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 10px 5px 8px;
+  font-size: .83rem;
+  font-weight: 500;
+}
+.client-chip-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.client-chip-del {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+  transition: background var(--dur), color var(--dur);
+  margin-left: 2px;
+}
+.client-chip-del:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* Palette couleurs */
+.color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.color-swatch {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: transform .1s, border-color .1s;
+  flex-shrink: 0;
+}
+.color-swatch:hover    { transform: scale(1.15); }
+.color-swatch.selected { border-color: var(--text); transform: scale(1.1); }

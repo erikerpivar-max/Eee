@@ -8,11 +8,13 @@
 /* ─── Namespace global App ──────────────────────────────────────── */
 window.App = {
 
-  CLIENTS: [
+  _DEFAULT_CLIENTS: [
     { id: 'ixina-ath',     name: 'Ixina Ath',          initials: 'IA', color: '#6366F1', bg: '#EEF2FF' },
     { id: 'ixina-tours',   name: 'Ixina Tours et taxi', initials: 'IT', color: '#F59E0B', bg: '#FFF7ED' },
     { id: 'ixina-ixelles', name: 'Ixina Ixelles',       initials: 'II', color: '#10B981', bg: '#ECFDF5' },
   ],
+
+  CLIENTS: [], /* chargé dynamiquement depuis localStorage au DOMContentLoaded */
 
   STAGES: [
     { id: 'scripting',    label: 'Scripting',    color: '#6366F1', bg: '#EEF2FF' },
@@ -26,6 +28,33 @@ window.App = {
     TASKS:    'th_tasks',
     PROJECTS: 'th_projects',
     PUBCAL:   'th_pubcal',
+    CLIENTS:  'th_clients',
+  },
+
+  /* ── Gestion clients dynamiques ──────────────────────────────── */
+  loadClients() {
+    const saved = this.load(this.KEYS.CLIENTS, null);
+    this.CLIENTS = saved || [...this._DEFAULT_CLIENTS];
+  },
+
+  saveClients() {
+    this.save(this.KEYS.CLIENTS, this.CLIENTS);
+  },
+
+  addClient(name, color) {
+    const initials = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const id       = 'client-' + this.uid();
+    const bg       = color + '22'; /* couleur transparente pour le fond */
+    this.CLIENTS.push({ id, name: name.trim(), initials, color, bg });
+    this.saveClients();
+    return id;
+  },
+
+  deleteClient(id) {
+    this.CLIENTS = this.CLIENTS.filter(c => c.id !== id);
+    this.saveClients();
+    /* Nettoyage des projets associés */
+    localStorage.removeItem(`${this.KEYS.PROJECTS}_${id}`);
   },
 
   currentView: 'dashboard',
@@ -168,9 +197,79 @@ window.App = {
   },
 };
 
+/* ─── Palette de couleurs prédéfinie ────────────────────────────── */
+const CLIENT_COLORS = [
+  '#6366F1','#F59E0B','#10B981','#EF4444','#3B82F6',
+  '#8B5CF6','#EC4899','#14B8A6','#F97316','#06B6D4',
+  '#84CC16','#A855F7',
+];
+
+/* ─── Gestion UI clients (Dashboard) ───────────────────────────── */
+window.ClientManager = {
+  render() {
+    const el = document.getElementById('dashboardClients');
+    if (!el) return;
+    el.innerHTML = App.CLIENTS.map(c => `
+      <div class="client-chip" style="--cc:${c.color}">
+        <span class="client-chip-dot" style="background:${c.color}"></span>
+        <span class="client-chip-name">${escHtml(c.name)}</span>
+        <button class="client-chip-del" data-id="${c.id}" title="Supprimer">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`).join('');
+
+    el.querySelectorAll('.client-chip-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        App.confirm(`Supprimer le client "${App.getClient(btn.dataset.id)?.name}" ? Toutes ses données seront perdues.`, () => {
+          App.deleteClient(btn.dataset.id);
+          this.render();
+          Dashboard.refresh();
+          /* Rafraîchir kanban/pubcal si actifs */
+          if (App.currentView === 'kanban')      Kanban.renderView();
+          if (App.currentView === 'publication') PubCal.renderView();
+        });
+      });
+    });
+  },
+
+  openAddModal() {
+    document.getElementById('newClientName').value = '';
+    /* Construire la palette */
+    const palette = document.getElementById('colorPalette');
+    palette.innerHTML = CLIENT_COLORS.map(c => `
+      <button class="color-swatch${c === '#6366F1' ? ' selected' : ''}"
+              style="background:${c}" data-color="${c}" title="${c}"></button>
+    `).join('');
+    document.getElementById('newClientColor').value = '#6366F1';
+
+    palette.querySelectorAll('.color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        palette.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        document.getElementById('newClientColor').value = sw.dataset.color;
+      });
+    });
+
+    App.openModal('modal-addClient');
+    setTimeout(() => document.getElementById('newClientName').focus(), 120);
+  },
+
+  confirmAdd() {
+    const name  = document.getElementById('newClientName').value.trim();
+    const color = document.getElementById('newClientColor').value;
+    if (!name) { document.getElementById('newClientName').focus(); return; }
+    App.addClient(name, color);
+    App.closeModal('modal-addClient');
+    this.render();
+    Dashboard.refresh();
+    App.toast(`Client "${name}" ajouté !`, 'success');
+  },
+};
+
 /* ─── Module Dashboard ──────────────────────────────────────────── */
 window.Dashboard = {
   refresh() {
+    ClientManager.render();
     this._stats();
     this._contentAdvance();
     this._recentTasks();
@@ -339,6 +438,17 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => { e.target.style.display = 'none'; }, 200);
     }
   });
+
+  /* Chargement clients dynamiques */
+  App.loadClients();
+
+  /* Bouton nouveau client */
+  document.getElementById('manageClientsBtn')
+    ?.addEventListener('click', () => ClientManager.openAddModal());
+  document.getElementById('confirmAddClientBtn')
+    ?.addEventListener('click', () => ClientManager.confirmAdd());
+  document.getElementById('newClientName')
+    ?.addEventListener('keydown', e => { if (e.key === 'Enter') ClientManager.confirmAdd(); });
 
   /* Données démo (première visite) */
   _initDemoData();

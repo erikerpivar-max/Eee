@@ -122,8 +122,18 @@
           </div>
         </div>
 
-        <!-- Avance de contenu -->
+        <!-- Clients -->
         <div class="section-header">
+          <h3 class="section-title">Clients</h3>
+          <button class="btn btn-outline btn-sm" id="manageClientsBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nouveau client
+          </button>
+        </div>
+        <div class="clients-chips" id="dashboardClients"></div>
+
+        <!-- Avance de contenu -->
+        <div class="section-header" style="margin-top:28px">
           <h3 class="section-title">Avance de contenu</h3>
           <span class="section-hint">Objectif : 30 jours minimum</span>
         </div>
@@ -281,6 +291,29 @@
       <div class="modal-foot">
         <button class="btn btn-ghost" data-close="modal-addProject">Annuler</button>
         <button class="btn btn-primary" id="confirmAddProjectBtn">Ajouter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Nouveau client -->
+  <div class="modal-backdrop" id="modal-addClient" style="display:none">
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <h3>Nouveau client</h3>
+        <button class="modal-close-btn" data-close="modal-addClient">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Nom du client</label>
+        <input type="text" id="newClientName" class="form-input" placeholder="Ex : Boulangerie Dupont" autocomplete="off" />
+        <label class="form-label" style="margin-top:14px">Couleur</label>
+        <div class="color-palette" id="colorPalette"></div>
+        <input type="hidden" id="newClientColor" value="#6366F1" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-addClient">Annuler</button>
+        <button class="btn btn-primary" id="confirmAddClientBtn">Ajouter</button>
       </div>
     </div>
   </div>
