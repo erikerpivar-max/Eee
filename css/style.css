@@ -5,18 +5,18 @@
 
 /* ─── Variables ─────────────────────────────────────────────────── */
 :root {
-  --bg:           #F5F6FA;
+  --bg:           #F5F3EF;
   --surface:      #FFFFFF;
-  --border:       #E8EBF2;
-  --border-light: #F0F2F8;
+  --border:       #E6E0D6;
+  --border-light: #EDE8E0;
 
-  --primary:      #5B5BD6;
-  --primary-h:    #4B4BC4;
-  --primary-bg:   #EDEDFC;
+  --primary:      #C8882A;
+  --primary-h:    #B07820;
+  --primary-bg:   #FDF5E8;
 
-  --text:         #111827;
-  --text-2:       #4B5563;
-  --text-3:       #9CA3AF;
+  --text:         #1C1815;
+  --text-2:       #5A4F42;
+  --text-3:       #A09080;
 
   --success:      #059669;
   --success-bg:   #ECFDF5;
@@ -101,9 +101,11 @@ input, select, textarea { font-family: var(--font); outline: none; }
   flex-shrink: 0;
 }
 .brand-name {
-  font-weight: 700;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 600;
   font-size: .95rem;
-  letter-spacing: -.01em;
+  letter-spacing: .14em;
+  text-transform: uppercase;
   color: var(--text);
   flex: 1;
 }
