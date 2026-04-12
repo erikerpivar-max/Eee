@@ -176,13 +176,15 @@ const MiniChart = {
     ctx.clearRect(0, 0, W, H);
 
     const values = data[metric] || [];
-    if (values.length < 2) {
+    if (values.length === 0) {
       ctx.fillStyle = '#A09080';
       ctx.font = '13px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Pas assez de données', W / 2, H / 2);
+      ctx.fillText('Aucune donnée', W / 2, H / 2);
       return;
     }
+    /* 1 seul point : dupliquer pour dessiner une ligne plate */
+    if (values.length === 1) values.push(values[0]);
 
     const PAD   = { top: 16, right: 16, bottom: 32, left: 44 };
     const cW    = W - PAD.left - PAD.right;
@@ -570,11 +572,11 @@ window.Portal = {
       this._openDataModal(client.id, data);
     });
 
-    requestAnimationFrame(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
       section.querySelectorAll('.portal-canvas').forEach(canvas => {
         MiniChart.draw(canvas, data, canvas.dataset.metric);
       });
-    });
+    }));
   },
 
   /* ── Modal gestion PINs (admin) ──────────────────────────────── */
