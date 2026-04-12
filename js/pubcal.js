@@ -11,8 +11,8 @@ window.PubCal = (() => {
   /* ── Constantes ─────────────────────────────────────────────── */
   const KEY      = 'th_pubcal';
   const PUB_DAYS = new Set([1, 3, 5]); /* getDay() : 1=Lun 3=Mer 5=Ven */
-  const MONTHS_BACK    = 2;
-  const MONTHS_FORWARD = 6;
+  const MONTHS_BACK    = 2;  /* passé : 2 mois max */
+  const MONTHS_FORWARD = 6;  /* futur : 6 mois max */
 
   /* ── État ────────────────────────────────────────────────────── */
   const _origin = new Date();
