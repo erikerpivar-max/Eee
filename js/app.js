@@ -477,31 +477,28 @@ document.addEventListener('DOMContentLoaded', () => {
 App.Auth = {
   _entered: '',
 
-  /* Appelé au chargement : vérifie si session active */
   check() {
     const session = PortalAuth.getSession();
     if (session) {
-      this._apply(session, true);
-    } else {
-      this._show();
+      this._unlock(session);
     }
+    /* Sinon : lock screen reste affiché, rien à faire */
   },
 
-  /* Verrouille le site et affiche l'overlay */
   lock() {
     PortalAuth.endSession();
     document.body.classList.remove('is-client');
-    this._show();
+    this._entered = '';
+    this._updateDots();
+    const err = document.getElementById('auth-error');
+    if (err) err.style.display = 'none';
+    document.getElementById('lock-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
   },
 
-  _apply(session, instant = false) {
-    const ov = document.getElementById('auth-overlay');
-    if (instant) {
-      ov.style.display = 'none';
-    } else {
-      ov.classList.add('auth-overlay--hidden');
-      setTimeout(() => { ov.style.display = 'none'; }, 280);
-    }
+  _unlock(session) {
+    document.getElementById('lock-screen').style.display = 'none';
+    document.getElementById('app').style.display = '';
 
     if (session.role === 'client') {
       document.body.classList.add('is-client');
@@ -510,17 +507,6 @@ App.Auth = {
       document.body.classList.remove('is-client');
       App.navigateTo('dashboard');
     }
-  },
-
-  _show() {
-    this._entered = '';
-    this._updateDots();
-    const err = document.getElementById('auth-error');
-    if (err) err.style.display = 'none';
-
-    const ov = document.getElementById('auth-overlay');
-    ov.style.display = 'flex';
-    requestAnimationFrame(() => ov.classList.remove('auth-overlay--hidden'));
   },
 
   _updateDots() {
@@ -542,7 +528,7 @@ App.Auth = {
       const session = PortalAuth.verify(this._entered);
       if (session) {
         PortalAuth.startSession(session);
-        this._apply(session);
+        this._unlock(session);
       } else {
         const disp = document.getElementById('auth-display');
         const err  = document.getElementById('auth-error');

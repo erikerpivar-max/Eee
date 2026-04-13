@@ -1618,60 +1618,15 @@ code {
 .color-swatch.selected { border-color: var(--text); transform: scale(1.1); }
 
 /* ================================================================
-   AUTH OVERLAY — PIN global
+   LOCK SCREEN — PIN global
    ================================================================ */
 
-#auth-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
+#lock-screen {
+  min-height: 100vh;
   background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity .25s var(--ease);
-}
-
-#auth-overlay.auth-overlay--hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.auth-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  width: 100%;
-  max-width: 340px;
-  padding: 0 20px;
-}
-
-.auth-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 28px;
-}
-
-.auth-logo {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-}
-
-.auth-brand-name {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.auth-sub {
-  font-size: .85rem;
-  color: var(--text-3);
-  margin-bottom: 20px;
-  text-align: center;
 }
 
 /* ─── Mode client : sidebar cachée ──────────────────────────── */
