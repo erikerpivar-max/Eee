@@ -512,7 +512,7 @@ App.Auth = {
   _updateDots() {
     for (let i = 0; i < 4; i++) {
       document.getElementById(`auth-pd${i}`)
-        ?.classList.toggle('filled', i < this._entered.length);
+        ?.classList.toggle('ls-dot--filled', i < this._entered.length);
     }
   },
 
@@ -532,12 +532,12 @@ App.Auth = {
       } else {
         const disp = document.getElementById('auth-display');
         const err  = document.getElementById('auth-error');
-        disp?.classList.add('pin-shake');
+        disp?.classList.add('ls-shake');
         if (err) err.style.display = 'block';
         setTimeout(() => {
           this._entered = '';
           this._updateDots();
-          disp?.classList.remove('pin-shake');
+          disp?.classList.remove('ls-shake');
           if (err) err.style.display = 'none';
         }, 900);
       }

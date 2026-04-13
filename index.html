@@ -13,36 +13,34 @@
 
   <!-- ░░ LOCK SCREEN ░░ -->
   <div id="lock-screen">
-    <div class="portal-login-card">
-      <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:8px">
-        <img src="assets/logo.png" style="width:32px;height:32px;object-fit:contain" alt="" />
-        <span style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600">The House</span>
-      </div>
-      <p class="portal-login-sub" style="margin-bottom:24px">Entrez votre code PIN</p>
+    <div class="ls-card">
+      <img src="assets/logo.png" class="ls-logo" alt="" />
+      <h1 class="ls-title">The House</h1>
+      <p class="ls-sub">Entrez votre code PIN</p>
 
-      <div class="pin-display" id="auth-display">
-        <span class="pin-dot" id="auth-pd0"></span>
-        <span class="pin-dot" id="auth-pd1"></span>
-        <span class="pin-dot" id="auth-pd2"></span>
-        <span class="pin-dot" id="auth-pd3"></span>
+      <div class="ls-dots" id="auth-display">
+        <span class="ls-dot" id="auth-pd0"></span>
+        <span class="ls-dot" id="auth-pd1"></span>
+        <span class="ls-dot" id="auth-pd2"></span>
+        <span class="ls-dot" id="auth-pd3"></span>
       </div>
 
-      <div class="pin-pad" id="auth-pad">
-        <button class="pin-key" data-key="1">1</button>
-        <button class="pin-key" data-key="2">2</button>
-        <button class="pin-key" data-key="3">3</button>
-        <button class="pin-key" data-key="4">4</button>
-        <button class="pin-key" data-key="5">5</button>
-        <button class="pin-key" data-key="6">6</button>
-        <button class="pin-key" data-key="7">7</button>
-        <button class="pin-key" data-key="8">8</button>
-        <button class="pin-key" data-key="9">9</button>
-        <button class="pin-key pin-key-empty" data-key=""></button>
-        <button class="pin-key" data-key="0">0</button>
-        <button class="pin-key" data-key="⌫">⌫</button>
+      <div class="ls-pad" id="auth-pad">
+        <button class="ls-key" data-key="1">1</button>
+        <button class="ls-key" data-key="2">2</button>
+        <button class="ls-key" data-key="3">3</button>
+        <button class="ls-key" data-key="4">4</button>
+        <button class="ls-key" data-key="5">5</button>
+        <button class="ls-key" data-key="6">6</button>
+        <button class="ls-key" data-key="7">7</button>
+        <button class="ls-key" data-key="8">8</button>
+        <button class="ls-key" data-key="9">9</button>
+        <span class="ls-key-empty"></span>
+        <button class="ls-key" data-key="0">0</button>
+        <button class="ls-key" data-key="⌫">⌫</button>
       </div>
 
-      <p class="pin-error" id="auth-error" style="display:none">PIN incorrect. Réessayez.</p>
+      <p class="ls-error" id="auth-error" style="display:none">PIN incorrect. Réessayez.</p>
     </div>
   </div>
 
