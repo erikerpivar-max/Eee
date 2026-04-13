@@ -199,6 +199,71 @@ window.App = {
   },
 };
 
+/* ─── Auth globale ───────────────────────────────────────────────── */
+App.Auth = {
+  _entered: '',
+
+  check() {
+    const session = PortalAuth.getSession();
+    if (session) this._unlock(session);
+  },
+
+  lock() {
+    PortalAuth.endSession();
+    document.body.classList.remove('is-client');
+    this._entered = '';
+    this._updateDots();
+    document.getElementById('auth-error').style.display = 'none';
+    document.getElementById('lock-screen').style.display = 'flex';
+  },
+
+  _unlock(session) {
+    document.getElementById('lock-screen').style.display = 'none';
+    if (session.role === 'client') {
+      document.body.classList.add('is-client');
+      App.navigateTo('portal');
+    } else {
+      document.body.classList.remove('is-client');
+      App.navigateTo('dashboard');
+    }
+  },
+
+  _updateDots() {
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('auth-pd' + i)
+        .classList.toggle('ls-dot--filled', i < this._entered.length);
+    }
+  },
+
+  key(k) {
+    if (k === '⌫') {
+      this._entered = this._entered.slice(0, -1);
+    } else if (this._entered.length < 4) {
+      this._entered += k;
+    }
+    this._updateDots();
+
+    if (this._entered.length === 4) {
+      const session = PortalAuth.verify(this._entered);
+      if (session) {
+        PortalAuth.startSession(session);
+        this._unlock(session);
+      } else {
+        const disp = document.getElementById('auth-display');
+        const err  = document.getElementById('auth-error');
+        disp.classList.add('ls-shake');
+        err.style.display = 'block';
+        setTimeout(() => {
+          this._entered = '';
+          this._updateDots();
+          disp.classList.remove('ls-shake');
+          err.style.display = 'none';
+        }, 900);
+      }
+    }
+  },
+};
+
 /* ─── Palette de couleurs prédéfinie ────────────────────────────── */
 const CLIENT_COLORS = [
   '#6366F1','#F59E0B','#10B981','#EF4444','#3B82F6',
@@ -455,13 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Données démo (première visite) */
   _initDemoData();
 
-  /* PIN pad auth overlay — bind une seule fois */
-  document.getElementById('auth-pad')?.addEventListener('click', e => {
-    const key = e.target.closest('.ls-key');
-    if (!key || !key.dataset.key) return;
-    App.Auth._onKey(key.dataset.key);
-  });
-
   /* Bloquer la navigation pour les sessions client */
   const _origNavigateTo = App.navigateTo.bind(App);
   App.navigateTo = function(viewId) {
@@ -472,76 +530,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Auth — vérifie session ou affiche l'overlay */
   App.Auth.check();
 });
-
-/* ─── Auth globale ───────────────────────────────────────────────── */
-App.Auth = {
-  _entered: '',
-
-  check() {
-    const session = PortalAuth.getSession();
-    if (session) {
-      this._unlock(session);
-    }
-    /* Sinon : lock screen visible par défaut, rien à faire */
-  },
-
-  lock() {
-    PortalAuth.endSession();
-    document.body.classList.remove('is-client');
-    this._entered = '';
-    this._updateDots();
-    const err = document.getElementById('auth-error');
-    if (err) err.style.display = 'none';
-    document.getElementById('lock-screen').style.display = 'flex';
-  },
-
-  _unlock(session) {
-    document.getElementById('lock-screen').style.display = 'none';
-
-    if (session.role === 'client') {
-      document.body.classList.add('is-client');
-      App.navigateTo('portal');
-    } else {
-      document.body.classList.remove('is-client');
-      App.navigateTo('dashboard');
-    }
-  },
-
-  _updateDots() {
-    for (let i = 0; i < 4; i++) {
-      document.getElementById(`auth-pd${i}`)
-        ?.classList.toggle('ls-dot--filled', i < this._entered.length);
-    }
-  },
-
-  _onKey(k) {
-    if (k === '⌫') {
-      this._entered = this._entered.slice(0, -1);
-    } else if (this._entered.length < 4) {
-      this._entered += k;
-    }
-    this._updateDots();
-
-    if (this._entered.length === 4) {
-      const session = PortalAuth.verify(this._entered);
-      if (session) {
-        PortalAuth.startSession(session);
-        this._unlock(session);
-      } else {
-        const disp = document.getElementById('auth-display');
-        const err  = document.getElementById('auth-error');
-        disp?.classList.add('ls-shake');
-        if (err) err.style.display = 'block';
-        setTimeout(() => {
-          this._entered = '';
-          this._updateDots();
-          disp?.classList.remove('ls-shake');
-          if (err) err.style.display = 'none';
-        }, 900);
-      }
-    }
-  },
-};
 
 /* ─── Données démo ───────────────────────────────────────────────── */
 function _initDemoData() {

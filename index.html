@@ -25,19 +25,19 @@
         <span class="ls-dot" id="auth-pd3"></span>
       </div>
 
-      <div class="ls-pad" id="auth-pad">
-        <button class="ls-key" data-key="1">1</button>
-        <button class="ls-key" data-key="2">2</button>
-        <button class="ls-key" data-key="3">3</button>
-        <button class="ls-key" data-key="4">4</button>
-        <button class="ls-key" data-key="5">5</button>
-        <button class="ls-key" data-key="6">6</button>
-        <button class="ls-key" data-key="7">7</button>
-        <button class="ls-key" data-key="8">8</button>
-        <button class="ls-key" data-key="9">9</button>
+      <div class="ls-pad">
+        <button class="ls-key" onclick="App.Auth.key('1')">1</button>
+        <button class="ls-key" onclick="App.Auth.key('2')">2</button>
+        <button class="ls-key" onclick="App.Auth.key('3')">3</button>
+        <button class="ls-key" onclick="App.Auth.key('4')">4</button>
+        <button class="ls-key" onclick="App.Auth.key('5')">5</button>
+        <button class="ls-key" onclick="App.Auth.key('6')">6</button>
+        <button class="ls-key" onclick="App.Auth.key('7')">7</button>
+        <button class="ls-key" onclick="App.Auth.key('8')">8</button>
+        <button class="ls-key" onclick="App.Auth.key('9')">9</button>
         <span class="ls-key-empty"></span>
-        <button class="ls-key" data-key="0">0</button>
-        <button class="ls-key" data-key="⌫">⌫</button>
+        <button class="ls-key" onclick="App.Auth.key('0')">0</button>
+        <button class="ls-key" onclick="App.Auth.key('⌫')">⌫</button>
       </div>
 
       <p class="ls-error" id="auth-error" style="display:none">PIN incorrect. Réessayez.</p>
