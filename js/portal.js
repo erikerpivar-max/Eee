@@ -16,7 +16,7 @@ const PORTAL_KEYS = {
 
 /* ─── PINs par défaut ───────────────────────────────────────────── */
 const DEFAULT_PINS = {
-  admin:          '0000',
+  admin:          '9186',
   'ixina-ath':    '1111',
   'ixina-tours':  '2222',
   'ixina-ixelles':'3333',
@@ -400,9 +400,8 @@ window.Portal = {
     `;
 
     document.getElementById('portalLogoutBtn')?.addEventListener('click', () => {
-      PortalAuth.endSession();
       this._session = null;
-      this.renderLogin();
+      App.Auth.lock();
     });
 
     if (session.role === 'admin') {

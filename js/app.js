@@ -107,11 +107,12 @@ window.App = {
 
   /* ── Navigation ──────────────────────────────────────────────── */
   PAGE_TITLES: {
-    'dashboard':   'Dashboard',
-    'timetracker': 'Time Tracking',
-    'kanban':      'Kanban',
-    'publication': 'Publication',
-    'portal':      'Portail Client',
+    'dashboard':     'Dashboard',
+    'timetracker':   'Time Tracking',
+    'kanban':        'Kanban',
+    'publication':   'Publication',
+    'portal':        'Portail Client',
+    'comptabilite':  'Comptabilité',
   },
 
   navigateTo(viewId) {
@@ -133,7 +134,8 @@ window.App = {
     if (viewId === 'timetracker') TimeTracker.renderTable();
     if (viewId === 'kanban')      _safeRender('kanban-board',  () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
-    if (viewId === 'portal')      _safeRender('view-portal',   () => Portal.init());
+    if (viewId === 'portal')        _safeRender('view-portal',       () => Portal.init());
+    if (viewId === 'comptabilite')  Comptabilite.init();
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
@@ -453,9 +455,109 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Données démo (première visite) */
   _initDemoData();
 
-  /* Vue initiale */
-  App.navigateTo('dashboard');
+  /* PIN pad auth overlay — bind une seule fois */
+  document.getElementById('auth-pad')?.addEventListener('click', e => {
+    const key = e.target.closest('.pin-key');
+    if (!key || key.classList.contains('pin-key-empty')) return;
+    App.Auth._onKey(key.dataset.key);
+  });
+
+  /* Bloquer la navigation pour les sessions client */
+  const _origNavigateTo = App.navigateTo.bind(App);
+  App.navigateTo = function(viewId) {
+    if (document.body.classList.contains('is-client') && viewId !== 'portal') return;
+    _origNavigateTo(viewId);
+  };
+
+  /* Auth — vérifie session ou affiche l'overlay */
+  App.Auth.check();
 });
+
+/* ─── Auth globale ───────────────────────────────────────────────── */
+App.Auth = {
+  _entered: '',
+
+  /* Appelé au chargement : vérifie si session active */
+  check() {
+    const session = PortalAuth.getSession();
+    if (session) {
+      this._apply(session, true);
+    } else {
+      this._show();
+    }
+  },
+
+  /* Verrouille le site et affiche l'overlay */
+  lock() {
+    PortalAuth.endSession();
+    document.body.classList.remove('is-client');
+    this._show();
+  },
+
+  _apply(session, instant = false) {
+    const ov = document.getElementById('auth-overlay');
+    if (instant) {
+      ov.style.display = 'none';
+    } else {
+      ov.classList.add('auth-overlay--hidden');
+      setTimeout(() => { ov.style.display = 'none'; }, 280);
+    }
+
+    if (session.role === 'client') {
+      document.body.classList.add('is-client');
+      App.navigateTo('portal');
+    } else {
+      document.body.classList.remove('is-client');
+      App.navigateTo('dashboard');
+    }
+  },
+
+  _show() {
+    this._entered = '';
+    this._updateDots();
+    const err = document.getElementById('auth-error');
+    if (err) err.style.display = 'none';
+
+    const ov = document.getElementById('auth-overlay');
+    ov.style.display = 'flex';
+    requestAnimationFrame(() => ov.classList.remove('auth-overlay--hidden'));
+  },
+
+  _updateDots() {
+    for (let i = 0; i < 4; i++) {
+      document.getElementById(`auth-pd${i}`)
+        ?.classList.toggle('filled', i < this._entered.length);
+    }
+  },
+
+  _onKey(k) {
+    if (k === '⌫') {
+      this._entered = this._entered.slice(0, -1);
+    } else if (this._entered.length < 4) {
+      this._entered += k;
+    }
+    this._updateDots();
+
+    if (this._entered.length === 4) {
+      const session = PortalAuth.verify(this._entered);
+      if (session) {
+        PortalAuth.startSession(session);
+        this._apply(session);
+      } else {
+        const disp = document.getElementById('auth-display');
+        const err  = document.getElementById('auth-error');
+        disp?.classList.add('pin-shake');
+        if (err) err.style.display = 'block';
+        setTimeout(() => {
+          this._entered = '';
+          this._updateDots();
+          disp?.classList.remove('pin-shake');
+          if (err) err.style.display = 'none';
+        }, 900);
+      }
+    }
+  },
+};
 
 /* ─── Données démo ───────────────────────────────────────────────── */
 function _initDemoData() {
