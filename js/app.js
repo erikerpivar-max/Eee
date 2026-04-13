@@ -482,7 +482,7 @@ App.Auth = {
     if (session) {
       this._unlock(session);
     }
-    /* Sinon : lock screen reste affiché, rien à faire */
+    /* Sinon : lock screen visible par défaut, rien à faire */
   },
 
   lock() {
@@ -493,12 +493,10 @@ App.Auth = {
     const err = document.getElementById('auth-error');
     if (err) err.style.display = 'none';
     document.getElementById('lock-screen').style.display = 'flex';
-    document.getElementById('app').style.display = 'none';
   },
 
   _unlock(session) {
     document.getElementById('lock-screen').style.display = 'none';
-    document.getElementById('app').style.display = '';
 
     if (session.role === 'client') {
       document.body.classList.add('is-client');
