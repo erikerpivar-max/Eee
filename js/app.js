@@ -457,8 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* PIN pad auth overlay — bind une seule fois */
   document.getElementById('auth-pad')?.addEventListener('click', e => {
-    const key = e.target.closest('.pin-key');
-    if (!key || key.classList.contains('pin-key-empty')) return;
+    const key = e.target.closest('.ls-key');
+    if (!key || !key.dataset.key) return;
     App.Auth._onKey(key.dataset.key);
   });
 
