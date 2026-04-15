@@ -158,13 +158,13 @@ const Comptabilite = (() => {
     if (done) {
       btn.classList.add('cpt-provision-btn--done');
       btn.innerHTML = key === 'tva'
-        ? '<span class="cpt-btn-icon">✓</span> TVA provisionnée'
-        : '<span class="cpt-btn-icon">✓</span> Cotisation provisionnée';
+        ? '<span class="cpt-btn-icon">✓</span> TVA provisonnée'
+        : '<span class="cpt-btn-icon">✓</span> Cotisation provisonnée';
     } else {
       btn.classList.remove('cpt-provision-btn--done');
       btn.innerHTML = key === 'tva'
-        ? '<span class="cpt-btn-icon">⚠</span> TVA non provisionnée'
-        : '<span class="cpt-btn-icon">⚠</span> Cotisation non provisionnée';
+        ? '<span class="cpt-btn-icon">⚠</span> TVA non provisonnée'
+        : '<span class="cpt-btn-icon">⚠</span> Cotisation non provisonnée';
     }
   }
 
