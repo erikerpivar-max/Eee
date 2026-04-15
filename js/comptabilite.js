@@ -8,12 +8,20 @@
 const Comptabilite = (() => {
 
   const COTISATION = 876;
-  const PROXY = 'http://localhost:3001';
+
+  // Proxy disponible uniquement en local (localhost/127.0.0.1)
+  // Sur GitHub Pages (hébergement statique), le proxy n'est pas accessible
+  function getProxyURL() {
+    const h = window.location.hostname;
+    if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:3001';
+    return null; // hébergement statique : pas de proxy
+  }
+  const PROXY = getProxyURL();
 
   let tvaNette = null;
   let quarterKey = '';
 
-  /* ─── Trimestre courant ──────────────────────────────────────── */
+  /* ─── Trimestre courant ──────────────────────────────────────────────── */
   function getQuarter() {
     const now   = new Date();
     const m     = now.getMonth();
@@ -42,7 +50,7 @@ const Comptabilite = (() => {
     return { q, label, deadlineLabel, daysLeft, year: y };
   }
 
-  /* ─── Format monnaie ─────────────────────────────────────────── */
+  /* ─── Format monnaie ───────────────────────────────────────────────────── */
   function fmt(n) {
     return n.toLocaleString('fr-BE', {
       minimumFractionDigits: 2,
@@ -50,7 +58,7 @@ const Comptabilite = (() => {
     }) + ' €';
   }
 
-  /* ─── Init ───────────────────────────────────────────────────── */
+  /* ─── Init ───────────────────────────────────────────────────────────────── */
   function init() {
     const qi = getQuarter();
     quarterKey = `${qi.q}_${qi.year}`;
@@ -75,12 +83,20 @@ const Comptabilite = (() => {
     }
   }
 
-  /* ─── Fetch Billit via proxy local ───────────────────────────── */
+  /* ─── Fetch Billit via proxy local ─────────────────────────────────────────────── */
   async function fetch_() {
     const btn = el('cpt-sync-btn');
     btn.disabled = true;
     btn.textContent = '↻ Chargement…';
     hideError();
+
+    // Pas de proxy disponible (hébergement statique) → mode manuel direct
+    if (!PROXY) {
+      showError('static');
+      btn.disabled = false;
+      btn.textContent = '↻ Actualiser Billit';
+      return;
+    }
 
     try {
       const [sRes, pRes] = await Promise.all([
@@ -122,15 +138,25 @@ const Comptabilite = (() => {
     btn.textContent = '↻ Actualiser Billit';
   }
 
-  /* ─── Erreur + mode manuel ───────────────────────────────────── */
+  /* ─── Erreur + mode manuel ──────────────────────────────────────────────────────── */
   function showError(msg) {
     const box = el('cpt-error');
-    box.innerHTML = `<strong>Proxy Billit inaccessible</strong><br>
-      Lancez <code>node server.js</code> dans le dossier widget-comptable, puis réessayez.<br>
-      <small style="opacity:.7">${msg}</small>`;
+
+    if (msg === 'static') {
+      // Mode déploiement statique (GitHub Pages) : message clair sans erreur
+      box.innerHTML = `<strong>Synchronisation Billit désactivée</strong><br>
+        Ce site est hébergé en statique (GitHub Pages) — le proxy local n’est pas disponible.<br>
+        <small style="opacity:.7">Utilisez la saisie manuelle ci-dessous pour entrer votre TVA nette.</small>`;
+      el('cpt-last-sync').textContent = 'Mode saisie manuelle';
+    } else {
+      box.innerHTML = `<strong>Proxy Billit inaccessible</strong><br>
+        Lancez <code>node server.js</code> dans le dossier widget-comptable, puis réessayez.<br>
+        <small style="opacity:.7">${msg}</small>`;
+      el('cpt-last-sync').textContent = 'Échec de synchronisation';
+    }
+
     box.style.display = 'block';
     el('cpt-manual').style.display = 'block';
-    el('cpt-last-sync').textContent = 'Échec de synchronisation';
     ['cpt-ca-ht','cpt-tva-col','cpt-tva-ded','cpt-inv-count','cpt-tva-nette']
       .forEach(id => el(id).textContent = '—');
   }
@@ -147,7 +173,7 @@ const Comptabilite = (() => {
     updateTotal();
   }
 
-  /* ─── Total ──────────────────────────────────────────────────── */
+  /* ─── Total ────────────────────────────────────────────────────────────────── */
   function updateTotal() {
     if (tvaNette === null) return;
     const total = tvaNette + COTISATION;
@@ -155,7 +181,7 @@ const Comptabilite = (() => {
     el('cpt-breakdown').textContent = `${fmt(tvaNette)} TVA nette + ${fmt(COTISATION)} cotisation`;
   }
 
-  /* ─── Toggles provision ──────────────────────────────────────── */
+  /* ─── Toggles provision ────────────────────────────────────────────────────── */
   function toggle(key) {
     const storageKey = `cpt_${quarterKey}_${key}`;
     const next = localStorage.getItem(storageKey) !== '1';
@@ -175,13 +201,13 @@ const Comptabilite = (() => {
     if (done) {
       btn.classList.add('cpt-provision-btn--done');
       btn.innerHTML = key === 'tva'
-        ? '<span class="cpt-btn-icon">✓</span> TVA provisionnée'
-        : '<span class="cpt-btn-icon">✓</span> Cotisation provisionnée';
+        ? '<span class="cpt-btn-icon">✓</span> TVA provisonnée'
+        : '<span class="cpt-btn-icon">✓</span> Cotisation provisonnée';
     } else {
       btn.classList.remove('cpt-provision-btn--done');
       btn.innerHTML = key === 'tva'
-        ? '<span class="cpt-btn-icon">⚠</span> TVA non provisionnée'
-        : '<span class="cpt-btn-icon">⚠</span> Cotisation non provisionnée';
+        ? '<span class="cpt-btn-icon">⚠</span> TVA non provisonnée'
+        : '<span class="cpt-btn-icon">⚠</span> Cotisation non provisonnée';
     }
   }
 
@@ -191,7 +217,7 @@ const Comptabilite = (() => {
     el('cpt-all-done').style.display = (tvaDone && cotDone) ? 'flex' : 'none';
   }
 
-  /* ─── Utilitaire ─────────────────────────────────────────────── */
+  /* ─── Utilitaire ───────────────────────────────────────────────────────────────── */
   function el(id) { return document.getElementById(id); }
 
   return { init, fetch: fetch_, applyManual, toggle };
