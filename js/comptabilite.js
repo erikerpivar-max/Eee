@@ -1,23 +1,24 @@
 /* ================================================================
    THE HOUSE — comptabilite.js
-   Provisions fiscales : TVA nette Billit + cotisation Partena
+   Provisions fiscales — saisie manuelle par trimestre
+   Stockage : localStorage, clé par trimestre
    ================================================================ */
 
 'use strict';
 
 const Comptabilite = (() => {
 
-  const COTISATION = 876;
-  const PROXY = 'http://localhost:3001';
+  const COTISATION_DEFAULT = 876;
 
-  let tvaNette = null;
+  let tvaNette   = null;
+  let cotisation = COTISATION_DEFAULT;
   let quarterKey = '';
 
-  /* ─── Trimestre courant ──────────────────────────────────────── */
+  /* ─── Trimestre courant ────────────────────────────────────────── */
   function getQuarter() {
-    const now   = new Date();
-    const m     = now.getMonth();
-    const y     = now.getFullYear();
+    const now = new Date();
+    const m   = now.getMonth();
+    const y   = now.getFullYear();
     let q, label, deadlineLabel, deadline;
 
     if (m >= 3 && m <= 5) {
@@ -42,7 +43,7 @@ const Comptabilite = (() => {
     return { q, label, deadlineLabel, daysLeft, year: y };
   }
 
-  /* ─── Format monnaie ─────────────────────────────────────────── */
+  /* ─── Format monnaie ───────────────────────────────────────────── */
   function fmt(n) {
     return n.toLocaleString('fr-BE', {
       minimumFractionDigits: 2,
@@ -50,13 +51,13 @@ const Comptabilite = (() => {
     }) + ' €';
   }
 
-  /* ─── Init ───────────────────────────────────────────────────── */
+  /* ─── Init ─────────────────────────────────────────────────────── */
   function init() {
     const qi = getQuarter();
     quarterKey = `${qi.q}_${qi.year}`;
 
     el('cpt-quarter-label').textContent = qi.label;
-    el('cpt-deadline').textContent = qi.deadlineLabel;
+    el('cpt-deadline').textContent      = qi.deadlineLabel;
 
     const cd = el('cpt-countdown');
     if (qi.daysLeft <= 0) {
@@ -67,95 +68,77 @@ const Comptabilite = (() => {
       cd.classList.toggle('cpt-countdown-ok', qi.daysLeft > 30);
     }
 
+    restoreData();
     restoreToggles();
+  }
 
-    // Seulement si pas encore sync depuis cet init
-    if (el('cpt-last-sync').textContent === 'Pas encore synchronisé') {
-      fetch_();
+  /* ─── Restaurer les données saisies du trimestre ───────────────── */
+  function restoreData() {
+    // Cotisation : montant spécifique à ce trimestre (ou défaut)
+    const savedCot = parseFloat(localStorage.getItem(`cpt_amount_${quarterKey}`));
+    cotisation = isNaN(savedCot) ? COTISATION_DEFAULT : savedCot;
+    el('cpt-cotisation-display').textContent = fmt(cotisation);
+    el('cpt-cotisation-input').value         = cotisation;
+
+    // TVA : données saisies
+    const raw  = localStorage.getItem(`cpt_data_${quarterKey}`);
+    const saved = raw ? JSON.parse(raw) : null;
+
+    if (saved) {
+      el('cpt-input-ca').value  = saved.ca  ?? '';
+      el('cpt-input-col').value = saved.col ?? '';
+      el('cpt-input-ded').value = saved.ded ?? '';
+
+      el('cpt-ca-ht').textContent   = saved.ca  > 0 ? fmt(saved.ca)            : '—';
+      el('cpt-tva-col').textContent = saved.col > 0 ? fmt(saved.col)           : '—';
+      el('cpt-tva-ded').textContent = saved.ded > 0 ? `− ${fmt(saved.ded)}`    : '—';
+
+      if (saved.col !== undefined) {
+        tvaNette = (saved.col || 0) - (saved.ded || 0);
+        el('cpt-tva-nette').textContent = fmt(tvaNette);
+        updateTotal();
+      }
     }
   }
 
-  /* ─── Fetch Billit via proxy local ───────────────────────────── */
-  async function fetch_() {
-    const btn = el('cpt-sync-btn');
-    btn.disabled = true;
-    btn.textContent = '↻ Chargement…';
-    hideError();
+  /* ─── Appliquer TVA depuis les champs de saisie ────────────────── */
+  function applyTVA() {
+    const ca  = parseFloat(el('cpt-input-ca').value)  || 0;
+    const col = parseFloat(el('cpt-input-col').value) || 0;
+    const ded = parseFloat(el('cpt-input-ded').value) || 0;
 
-    try {
-      const [sRes, pRes] = await Promise.all([
-        window.fetch(`${PROXY}/billit/sales`),
-        window.fetch(`${PROXY}/billit/purchases`),
-      ]);
+    if (col === 0) return; // TVA collectée obligatoire
 
-      if (!sRes.ok || !pRes.ok) throw new Error(`HTTP ${sRes.status}/${pRes.status}`);
+    tvaNette = col - ded;
 
-      const sales     = await sRes.json();
-      const purchases = await pRes.json();
+    el('cpt-ca-ht').textContent     = ca  > 0 ? fmt(ca)         : '—';
+    el('cpt-tva-col').textContent   = fmt(col);
+    el('cpt-tva-ded').textContent   = ded > 0 ? `− ${fmt(ded)}` : '—';
+    el('cpt-tva-nette').textContent = fmt(tvaNette);
 
-      const sList = Array.isArray(sales)     ? sales     : (sales.value     || []);
-      const pList = Array.isArray(purchases) ? purchases : (purchases.value || []);
-
-      const caHT    = sList.reduce((s, o) => s + (parseFloat(o.TotalExcl) || 0), 0);
-      const tvaCol  = sList.reduce((s, o) => s + (parseFloat(o.TotalVAT)  || 0), 0);
-      const tvaDed  = pList.reduce((s, o) => s + (parseFloat(o.TotalVAT)  || 0), 0);
-      const tvaNet  = tvaCol - tvaDed;
-
-      el('cpt-ca-ht').textContent    = fmt(caHT);
-      el('cpt-tva-col').textContent  = fmt(tvaCol);
-      el('cpt-tva-ded').textContent  = `− ${fmt(tvaDed)}`;
-      el('cpt-inv-count').textContent = `${sList.length} / ${pList.length}`;
-      el('cpt-tva-nette').textContent = fmt(tvaNet);
-      el('cpt-manual').style.display = 'none';
-
-      tvaNette = tvaNet;
-      updateTotal();
-
-      el('cpt-last-sync').textContent =
-        `Sync : ${new Date().toLocaleTimeString('fr-BE')}`;
-
-    } catch (err) {
-      showError(err.message);
-    }
-
-    btn.disabled = false;
-    btn.textContent = '↻ Actualiser Billit';
-  }
-
-  /* ─── Erreur + mode manuel ───────────────────────────────────── */
-  function showError(msg) {
-    const box = el('cpt-error');
-    box.innerHTML = `<strong>Proxy Billit inaccessible</strong><br>
-      Lancez <code>node server.js</code> dans le dossier widget-comptable, puis réessayez.<br>
-      <small style="opacity:.7">${msg}</small>`;
-    box.style.display = 'block';
-    el('cpt-manual').style.display = 'block';
-    el('cpt-last-sync').textContent = 'Échec de synchronisation';
-    ['cpt-ca-ht','cpt-tva-col','cpt-tva-ded','cpt-inv-count','cpt-tva-nette']
-      .forEach(id => el(id).textContent = '—');
-  }
-
-  function hideError() {
-    el('cpt-error').style.display = 'none';
-  }
-
-  function applyManual() {
-    const val = parseFloat(document.getElementById('cpt-manual-input').value);
-    if (isNaN(val) || val < 0) return;
-    tvaNette = val;
-    el('cpt-tva-nette').textContent = fmt(val);
+    localStorage.setItem(`cpt_data_${quarterKey}`, JSON.stringify({ ca, col, ded }));
     updateTotal();
   }
 
-  /* ─── Total ──────────────────────────────────────────────────── */
-  function updateTotal() {
-    if (tvaNette === null) return;
-    const total = tvaNette + COTISATION;
-    el('cpt-total').textContent    = fmt(total);
-    el('cpt-breakdown').textContent = `${fmt(tvaNette)} TVA nette + ${fmt(COTISATION)} cotisation`;
+  /* ─── Appliquer montant cotisation ─────────────────────────────── */
+  function applyCotisation() {
+    const val = parseFloat(el('cpt-cotisation-input').value);
+    if (isNaN(val) || val < 0) return;
+    cotisation = val;
+    el('cpt-cotisation-display').textContent = fmt(cotisation);
+    localStorage.setItem(`cpt_amount_${quarterKey}`, cotisation);
+    updateTotal();
   }
 
-  /* ─── Toggles provision ──────────────────────────────────────── */
+  /* ─── Total à provisionner ──────────────────────────────────────── */
+  function updateTotal() {
+    if (tvaNette === null) return;
+    const total = tvaNette + cotisation;
+    el('cpt-total').textContent     = fmt(total);
+    el('cpt-breakdown').textContent = `${fmt(tvaNette)} TVA + ${fmt(cotisation)} cotisations`;
+  }
+
+  /* ─── Toggles provision ─────────────────────────────────────────── */
   function toggle(key) {
     const storageKey = `cpt_${quarterKey}_${key}`;
     const next = localStorage.getItem(storageKey) !== '1';
@@ -191,9 +174,9 @@ const Comptabilite = (() => {
     el('cpt-all-done').style.display = (tvaDone && cotDone) ? 'flex' : 'none';
   }
 
-  /* ─── Utilitaire ─────────────────────────────────────────────── */
+  /* ─── Utilitaire ────────────────────────────────────────────────── */
   function el(id) { return document.getElementById(id); }
 
-  return { init, fetch: fetch_, applyManual, toggle };
+  return { init, applyTVA, applyCotisation, toggle };
 
 })();

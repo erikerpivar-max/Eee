@@ -284,7 +284,7 @@
           <div class="cpt-card">
             <div class="cpt-card-header">
               <span class="cpt-card-title">TVA</span>
-              <button class="btn btn-outline btn-sm" id="cpt-sync-btn" onclick="Comptabilite.fetch()">↻ Actualiser Billit</button>
+              <span style="font-size:.72rem;opacity:.55;font-weight:500">Saisie trimestrielle</span>
             </div>
 
             <div class="cpt-rows">
@@ -300,10 +300,6 @@
                 <span class="cpt-label">TVA déductible (achats)</span>
                 <span class="cpt-value cpt-danger" id="cpt-tva-ded">—</span>
               </div>
-              <div class="cpt-row cpt-row-muted">
-                <span class="cpt-label">Factures vente / achat</span>
-                <span class="cpt-value" id="cpt-inv-count">—</span>
-              </div>
             </div>
 
             <div class="cpt-highlight">
@@ -311,18 +307,24 @@
               <span class="cpt-highlight-value" id="cpt-tva-nette">—</span>
             </div>
 
-            <div id="cpt-error" class="cpt-error-box" style="display:none"></div>
-
-            <div id="cpt-manual" class="cpt-manual-block" style="display:none">
-              <label class="form-label">Saisie manuelle — TVA nette (€)</label>
-              <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
-                <input type="number" id="cpt-manual-input" class="form-input" style="width:160px" placeholder="ex: 450.00" min="0" step="0.01">
-                <button class="btn btn-primary btn-sm" onclick="Comptabilite.applyManual()">Appliquer</button>
+            <div class="cpt-manual-block" style="margin-top:16px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label class="form-label">CA HT (€)</label>
+                  <input type="number" id="cpt-input-ca" class="form-input" placeholder="2000.00" min="0" step="0.01">
+                </div>
+                <div>
+                  <label class="form-label">TVA collectée (€)</label>
+                  <input type="number" id="cpt-input-col" class="form-input" placeholder="420.00" min="0" step="0.01">
+                </div>
+                <div style="grid-column:1/-1">
+                  <label class="form-label">TVA déductible — achats pro (€)</label>
+                  <input type="number" id="cpt-input-ded" class="form-input" placeholder="85.00" min="0" step="0.01">
+                </div>
               </div>
-            </div>
-
-            <div class="cpt-meta">
-              <span id="cpt-last-sync">Pas encore synchronisé</span>
+              <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="Comptabilite.applyTVA()">
+                Calculer &amp; enregistrer
+              </button>
             </div>
 
             <button class="cpt-provision-btn" id="cpt-btn-tva" onclick="Comptabilite.toggle('tva')">
@@ -330,16 +332,16 @@
             </button>
           </div>
 
-          <!-- Bloc Cotisation -->
+          <!-- Bloc Cotisations sociales -->
           <div class="cpt-card">
             <div class="cpt-card-header">
-              <span class="cpt-card-title">Cotisation Partena</span>
+              <span class="cpt-card-title">Cotisations sociales</span>
             </div>
 
             <div class="cpt-rows">
               <div class="cpt-row">
                 <span class="cpt-label">Montant trimestriel</span>
-                <span class="cpt-value cpt-accent">876,00 €</span>
+                <span class="cpt-value cpt-accent" id="cpt-cotisation-display">876,00 €</span>
               </div>
               <div class="cpt-row">
                 <span class="cpt-label">Échéance</span>
@@ -351,6 +353,15 @@
               </div>
             </div>
 
+            <div class="cpt-manual-block" style="margin-top:16px">
+              <label class="form-label">Montant ce trimestre (€)</label>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+                <input type="number" id="cpt-cotisation-input" class="form-input" style="flex:1" placeholder="876.00" min="0" step="0.01">
+                <button class="btn btn-primary btn-sm" onclick="Comptabilite.applyCotisation()">Appliquer</button>
+              </div>
+              <p style="margin-top:6px;font-size:.72rem;opacity:.6;line-height:1.4">Montant provisoire ou de régularisation Partena</p>
+            </div>
+
             <button class="cpt-provision-btn" id="cpt-btn-cotisation" onclick="Comptabilite.toggle('cotisation')">
               <span class="cpt-btn-icon">⚠</span> Cotisation non provisionnée
             </button>
@@ -360,7 +371,7 @@
           <div class="cpt-card cpt-card-total">
             <div class="cpt-card-title" style="margin-bottom:16px">Total à mettre de côté</div>
             <div class="cpt-total-amount" id="cpt-total">—</div>
-            <div class="cpt-total-breakdown" id="cpt-breakdown">TVA nette + 876 € cotisation</div>
+            <div class="cpt-total-breakdown" id="cpt-breakdown">TVA nette + cotisations sociales</div>
             <div class="cpt-all-done" id="cpt-all-done" style="display:none">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
               Tout est provisionné pour ce trimestre.
@@ -550,7 +561,7 @@
     </div>
   </div>
 
-  <script src="js/comptabilite.js?v=2"></script>
+  <script src="js/comptabilite.js?v=3"></script>
   <script src="js/app.js?v=2"></script>
   <script src="js/timetracker.js?v=2"></script>
   <script src="js/kanban.js?v=2"></script>
