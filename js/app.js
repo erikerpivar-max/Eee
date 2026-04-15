@@ -107,12 +107,11 @@ window.App = {
 
   /* ── Navigation ──────────────────────────────────────────────── */
   PAGE_TITLES: {
-    'dashboard':     'Dashboard',
-    'timetracker':   'Time Tracking',
-    'kanban':        'Kanban',
-    'publication':   'Publication',
-    'portal':        'Portail Client',
-    'comptabilite':  'Comptabilité',
+    'dashboard':   'Dashboard',
+    'timetracker': 'Time Tracking',
+    'kanban':      'Kanban',
+    'publication': 'Publication',
+    'portal':      'Portail Client',
   },
 
   navigateTo(viewId) {
@@ -131,11 +130,10 @@ window.App = {
     this.currentView = viewId;
 
     if (viewId === 'dashboard')   Dashboard.refresh();
-    if (viewId === 'timetracker') TimeTracker.renderTable();
-    if (viewId === 'kanban')      _safeRender('kanban-board',  () => Kanban.renderView());
+    if (viewId === 'timetracker') { TimeTracker.renderTable(); TimeTracker.populateClientSelect(); }
+    if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
-    if (viewId === 'portal')        _safeRender('view-portal',       () => Portal.init());
-    if (viewId === 'comptabilite')  Comptabilite.init();
+    if (viewId === 'portal')      _safeRender('view-portal',      () => Portal.init());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
@@ -291,7 +289,7 @@ window.ClientManager = {
           App.deleteClient(btn.dataset.id);
           this.render();
           Dashboard.refresh();
-          /* Rafraîchir kanban/pubcal si actifs */
+          if (window.TimeTracker) TimeTracker.populateClientSelect();
           if (App.currentView === 'kanban')      Kanban.renderView();
           if (App.currentView === 'publication') PubCal.renderView();
         });
@@ -329,6 +327,7 @@ window.ClientManager = {
     App.closeModal('modal-addClient');
     this.render();
     Dashboard.refresh();
+    if (window.TimeTracker) TimeTracker.populateClientSelect();
     App.toast(`Client "${name}" ajouté !`, 'success');
   },
 };
@@ -338,6 +337,7 @@ window.Dashboard = {
   refresh() {
     ClientManager.render();
     this._stats();
+    this._clientHours();
     this._contentAdvance();
     this._recentTasks();
   },
@@ -352,6 +352,76 @@ window.Dashboard = {
     const el2 = document.getElementById('stat-tasks-count');
     if (el1) el1.textContent = total > 0 ? App.fmtDur(total) : '0h 00min';
     if (el2) el2.textContent = todayTs.length;
+  },
+
+  _clientHours() {
+    const el = document.getElementById('dashboard-client-hours');
+    if (!el) return;
+
+    /* Début de la semaine en cours (lundi) */
+    const now    = new Date();
+    const day    = now.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + offset);
+    monday.setHours(0, 0, 0, 0);
+
+    const tasks = App.load(App.KEYS.TASKS, []);
+    const weekTasks = tasks.filter(t => new Date(t.date + 'T00:00:00') >= monday);
+
+    if (weekTasks.length === 0) {
+      el.innerHTML = '<p class="empty-hint">Aucune heure enregistrée cette semaine.</p>';
+      return;
+    }
+
+    /* Regrouper par client */
+    const byClient = {};
+    weekTasks.forEach(t => {
+      const key = t.clientId || '__none__';
+      byClient[key] = (byClient[key] || 0) + (t.totalDuration || 0);
+    });
+    const totalSecs = Object.values(byClient).reduce((s, v) => s + v, 0);
+
+    const rows = App.CLIENTS
+      .filter(c => byClient[c.id])
+      .map(c => {
+        const secs = byClient[c.id];
+        const pct  = ((secs / totalSecs) * 100).toFixed(1);
+        return `
+          <div class="advance-row">
+            <div class="advance-client">
+              <span class="advance-dot" style="background:${c.color}"></span>
+              <span class="advance-name">${escHtml(c.name)}</span>
+            </div>
+            <div class="advance-bar-wrap">
+              <div class="advance-bar-fill" style="width:${pct}%;background:${c.color}"></div>
+            </div>
+            <div class="advance-right">
+              <span class="advance-value" style="color:${c.color}">${App.fmtDur(secs)}</span>
+            </div>
+          </div>`;
+      });
+
+    /* Tâches sans client */
+    if (byClient['__none__']) {
+      const secs = byClient['__none__'];
+      const pct  = ((secs / totalSecs) * 100).toFixed(1);
+      rows.push(`
+        <div class="advance-row">
+          <div class="advance-client">
+            <span class="advance-dot" style="background:var(--text-3)"></span>
+            <span class="advance-name" style="color:var(--text-3)">Sans client</span>
+          </div>
+          <div class="advance-bar-wrap">
+            <div class="advance-bar-fill" style="width:${pct}%;background:var(--text-3)"></div>
+          </div>
+          <div class="advance-right">
+            <span class="advance-value" style="color:var(--text-3)">${App.fmtDur(secs)}</span>
+          </div>
+        </div>`);
+    }
+
+    el.innerHTML = rows.join('');
   },
 
   _contentAdvance() {
@@ -421,12 +491,16 @@ window.Dashboard = {
       el.innerHTML = '<p class="empty-hint">Aucune tâche enregistrée aujourd\'hui.</p>';
       return;
     }
-    el.innerHTML = recent.map(t => `
-      <div class="recent-task-item">
-        <span class="recent-task-dot"></span>
-        <span class="recent-task-name">${escHtml(t.name)}</span>
-        <span class="recent-task-dur">${App.fmtDur(t.totalDuration || 0)}</span>
-      </div>`).join('');
+    el.innerHTML = recent.map(t => {
+      const c     = t.clientId ? App.getClient(t.clientId) : null;
+      const badge = c ? `<span style="font-size:.68rem;font-weight:500;color:${c.color};background:${c.color}22;border-radius:4px;padding:1px 5px;margin-left:5px">${escHtml(c.name)}</span>` : '';
+      return `
+        <div class="recent-task-item">
+          <span class="recent-task-dot"></span>
+          <span class="recent-task-name">${escHtml(t.name)}${badge}</span>
+          <span class="recent-task-dur">${App.fmtDur(t.totalDuration || 0)}</span>
+        </div>`;
+    }).join('');
   },
 };
 

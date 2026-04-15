@@ -166,6 +166,15 @@
         </div>
         <div class="clients-chips" id="dashboardClients"></div>
 
+        <!-- Temps par client -->
+        <div class="section-header" style="margin-top:28px">
+          <h3 class="section-title">Temps par client</h3>
+          <span class="section-hint">Cette semaine</span>
+        </div>
+        <div id="dashboard-client-hours">
+          <p class="empty-hint">Aucune heure enregistrée cette semaine.</p>
+        </div>
+
         <!-- Avance de contenu -->
         <div class="section-header" style="margin-top:28px">
           <h3 class="section-title">Avance de contenu</h3>
@@ -192,6 +201,9 @@
 
         <div class="timer-card">
           <input type="text" id="taskNameInput" class="task-name-input" placeholder="Nom de la tâche…" autocomplete="off" />
+          <select id="taskClientSelect" class="form-select" style="margin-top:8px">
+            <option value="">— Aucun client —</option>
+          </select>
           <div class="timer-row">
             <div class="timer-clock" id="timerDisplay">00:00:00</div>
             <div class="timer-actions">
@@ -288,6 +300,10 @@
         <label class="form-label">Nom de la tâche</label>
         <input type="text" id="editTaskName" class="form-input" placeholder="Nom de la tâche…" />
         <input type="hidden" id="editTaskId" />
+        <label class="form-label" style="margin-top:14px">Client</label>
+        <select id="editTaskClient" class="form-select">
+          <option value="">— Aucun client —</option>
+        </select>
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" data-close="modal-editTask">Annuler</button>
@@ -441,8 +457,8 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=2"></script>
-  <script src="js/timetracker.js?v=2"></script>
+  <script src="js/app.js?v=3"></script>
+  <script src="js/timetracker.js?v=3"></script>
   <script src="js/kanban.js?v=2"></script>
   <script src="js/pubcal.js?v=2"></script>
   <script src="js/portal.js?v=2"></script>
