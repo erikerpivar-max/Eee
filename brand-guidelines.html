@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The House — Brand Guidelines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --charcoal:   #282826;
+      --near-black: #1a1a18;
+      --gold:       #c9a96e;
+      --gold-deep:  #a07840;
+      --gold-light: #e8d9b8;
+      --ivory:      #f5f2ea;
+      --warm-gray:  #9a9690;
+      --white:      #ffffff;
+
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans:  'Inter', Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--charcoal);
+      color: var(--ivory);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(26, 26, 24, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(201, 169, 110, 0.15);
+    }
+
+    .nav-brand {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      letter-spacing: 0.18em;
+      color: var(--gold);
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--gold); }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 100px 48px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    section + section {
+      border-top: 1px solid rgba(201, 169, 110, 0.12);
+    }
+
+    .section-label {
+      font-family: var(--font-sans);
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 6vw, 5.5rem);
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+    }
+
+    h2 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      font-weight: 400;
+      line-height: 1.2;
+      margin-bottom: 40px;
+      color: var(--ivory);
+    }
+
+    h3 {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      font-weight: 500;
+      color: var(--gold-light);
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: rgba(245, 242, 234, 0.72);
+      max-width: 620px;
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding-top: 120px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201,169,110,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-logo {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      margin-bottom: 40px;
+      filter: drop-shadow(0 8px 32px rgba(201,169,110,0.25));
+    }
+
+    .hero-tagline {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: clamp(1rem, 2vw, 1.35rem);
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      margin-top: 20px;
+      opacity: 0.85;
+    }
+
+    .hero-desc {
+      margin: 28px auto 0;
+      font-size: 0.9rem;
+      max-width: 480px;
+      color: var(--warm-gray);
+      text-align: center;
+    }
+
+    .slash-divider {
+      display: inline-block;
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 36px auto;
+    }
+
+    /* ── PALETTE ── */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 20px;
+      margin-top: 48px;
+    }
+
+    .swatch {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .swatch-color {
+      height: 100px;
+    }
+
+    .swatch-info {
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .swatch-name {
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ivory);
+      display: block;
+    }
+
+    .swatch-hex {
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: var(--warm-gray);
+      margin-top: 4px;
+      display: block;
+    }
+
+    .swatch-role {
+      font-size: 0.7rem;
+      color: rgba(154, 150, 144, 0.7);
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* ── TYPO ── */
+    .type-sample {
+      margin-bottom: 48px;
+      padding: 36px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,169,110,0.1);
+      border-radius: 8px;
+    }
+
+    .type-meta {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    .type-display {
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      color: var(--ivory);
+    }
+
+    .type-heading {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 500;
+      color: var(--ivory);
+    }
+
+    .type-subheading {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: var(--gold-light);
+    }
+
+    .type-body {
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 400;
+      color: rgba(245,242,234,0.72);
+      max-width: 580px;
+    }
+
+    .type-caption {
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+    }
+
+    /* ── LOGO ── */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .logo-variant {
+      border-radius: 8px;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .logo-variant.dark { background: var(--charcoal); }
+    .logo-variant.light { background: var(--ivory); }
+    .logo-variant.black { background: var(--near-black); }
+    .logo-variant.forbidden {
+      background: rgba(255,255,255,0.03);
+      position: relative;
+    }
+
+    .logo-variant img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+    }
+
+    .logo-variant.light img { filter: invert(1) sepia(1) saturate(1.5) hue-rotate(5deg); }
+
+    .logo-variant-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+    }
+
+    .logo-variant.light .logo-variant-label { color: #6b6860; }
+
+    .logo-clearspace {
+      margin-top: 48px;
+      padding: 36px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,169,110,0.1);
+      border-radius: 8px;
+    }
+
+    /* ── VOICE ── */
+    .voice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .voice-card {
+      padding: 32px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,169,110,0.1);
+      border-radius: 8px;
+      border-top: 2px solid var(--gold);
+    }
+
+    .voice-icon {
+      font-size: 1.6rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .voice-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .voice-card p {
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .voice-example {
+      margin-top: 12px;
+      padding: 10px 14px;
+      background: rgba(201,169,110,0.07);
+      border-left: 2px solid var(--gold);
+      font-style: italic;
+      font-size: 0.82rem;
+      color: var(--gold-light);
+    }
+
+    /* ── ÉLÉMENTS GRAPHIQUES ── */
+    .elements-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .element-card {
+      padding: 32px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,169,110,0.1);
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .slash-demo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 16px;
+    }
+
+    .slash-line {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold));
+      transform: skewY(-8deg);
+    }
+
+    .shadow-demo {
+      width: 80px;
+      height: 80px;
+      background: var(--charcoal);
+      border: 1px solid rgba(201,169,110,0.3);
+      border-radius: 8px;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(201,169,110,0.1);
+    }
+
+    .radius-demo {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .radius-box {
+      width: 32px;
+      height: 32px;
+      background: var(--gold);
+      opacity: 0.6;
+    }
+
+    /* ── APPLICATIONS (MOCKUPS) ── */
+    .mockup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 48px;
+    }
+
+    /* Carte de visite */
+    .business-card {
+      aspect-ratio: 1.75;
+      background: var(--charcoal);
+      border-radius: 10px;
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1px solid rgba(201,169,110,0.2);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .business-card::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 5%, var(--gold) 30%, var(--gold) 70%, transparent 95%);
+      opacity: 0.25;
+      transform: translateY(-50%) skewY(-3deg);
+    }
+
+    .bc-logo { width: 32px; object-fit: contain; }
+    .bc-name {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: var(--ivory);
+    }
+    .bc-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-top: 3px;
+    }
+    .bc-contact {
+      font-size: 0.68rem;
+      color: var(--warm-gray);
+      text-align: right;
+    }
+
+    /* Post Instagram */
+    .insta-post {
+      aspect-ratio: 1;
+      background: var(--near-black);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      border: 1px solid rgba(201,169,110,0.15);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .insta-post::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(201,169,110,0.06) 0%, transparent 70%);
+    }
+
+    .insta-logo { width: 48px; object-fit: contain; margin-bottom: 20px; position: relative; }
+
+    .insta-headline {
+      font-family: var(--font-serif);
+      font-size: 1.45rem;
+      font-weight: 300;
+      line-height: 1.2;
+      color: var(--ivory);
+      position: relative;
+    }
+
+    .insta-sub {
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .insta-slash {
+      width: 40px;
+      height: 1px;
+      background: var(--gold);
+      opacity: 0.5;
+      margin: 14px auto;
+      transform: skewY(-5deg);
+      position: relative;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 48px;
+      border-top: 1px solid rgba(201,169,110,0.12);
+    }
+
+    footer .footer-logo { width: 48px; opacity: 0.6; margin-bottom: 16px; }
+
+    footer p {
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      text-align: center;
+      max-width: none;
+    }
+
+    @media (max-width: 680px) {
+      nav { padding: 16px 24px; }
+      .nav-links { display: none; }
+      section { padding: 72px 24px; }
+      .logo-grid { grid-template-columns: 1fr; }
+      .mockup-grid { grid-template-columns: 1fr; }
+      .elements-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-brand" href="#hero">The House</a>
+    <ul class="nav-links">
+      <li><a href="#couleurs">Couleurs</a></li>
+      <li><a href="#typographie">Typographie</a></li>
+      <li><a href="#logo">Logo</a></li>
+      <li><a href="#voix">Voix</a></li>
+      <li><a href="#applications">Applications</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero" style="max-width:100%; padding-top:120px;">
+    <img src="assets/logo.png" alt="The House Logo" class="hero-logo" />
+    <div class="section-label">Brand Guidelines</div>
+    <h1>The House</h1>
+    <p class="hero-tagline">Social Media Management</p>
+    <div class="slash-divider"></div>
+    <p class="hero-desc">
+      Ce document définit l'identité visuelle de The House — les couleurs, la typographie, l'usage du logo et la voix de marque qui constituent notre signature.
+    </p>
+  </section>
+
+  <!-- COULEURS -->
+  <section id="couleurs" style="max-width:1100px;">
+    <div class="section-label">01 — Palette</div>
+    <h2>Nos couleurs</h2>
+    <p>L'identité chromatique de The House repose sur deux piliers : le Charcoal profond, symbole de prestige et de discrétion, et l'Or chaud qui apporte chaleur et distinction.</p>
+
+    <div class="palette-grid">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#282826;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Charcoal</span>
+          <span class="swatch-hex">#282826</span>
+          <span class="swatch-role">Fond principal</span>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#1a1a18;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Near Black</span>
+          <span class="swatch-hex">#1a1a18</span>
+          <span class="swatch-role">Fond profond / nav</span>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#c9a96e;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Gold</span>
+          <span class="swatch-hex">#c9a96e</span>
+          <span class="swatch-role">Accent principal</span>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#a07840;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Gold Deep</span>
+          <span class="swatch-hex">#a07840</span>
+          <span class="swatch-role">Hover / emphase</span>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#e8d9b8;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Gold Light</span>
+          <span class="swatch-hex">#e8d9b8</span>
+          <span class="swatch-role">Sous-titres / accents doux</span>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#f5f2ea;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Ivory</span>
+          <span class="swatch-hex">#f5f2ea</span>
+          <span class="swatch-role">Texte / fond clair</span>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#9a9690;"></div>
+        <div class="swatch-info">
+          <span class="swatch-name">Warm Gray</span>
+          <span class="swatch-hex">#9a9690</span>
+          <span class="swatch-role">Texte secondaire</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPOGRAPHIE -->
+  <section id="typographie">
+    <div class="section-label">02 — Typographie</div>
+    <h2>Nos polices</h2>
+    <p>Deux polices complémentaires : Cormorant Garamond pour le prestige et l'émotion, Inter pour la clarté et la lisibilité.</p>
+
+    <div class="type-sample">
+      <div class="type-meta">Display / Cormorant Garamond Light — 300</div>
+      <div class="type-display">Votre présence,<br/>notre expertise.</div>
+    </div>
+
+    <div class="type-sample">
+      <div class="type-meta">Heading / Cormorant Garamond Medium — 500</div>
+      <div class="type-heading">Stratégie de contenu sur mesure</div>
+    </div>
+
+    <div class="type-sample">
+      <div class="type-meta">Subheading / Cormorant Garamond Italic Light — 300i</div>
+      <div class="type-subheading">Chaque marque mérite une voix unique</div>
+    </div>
+
+    <div class="type-sample">
+      <div class="type-meta">Body / Inter Regular — 400 · 16px · line-height 1.7</div>
+      <div class="type-body">The House accompagne les marques ambitieuses dans la construction d'une présence digitale cohérente et impactante. Nous créons des contenus qui résonnent avec votre audience et reflètent vos valeurs.</div>
+    </div>
+
+    <div class="type-sample">
+      <div class="type-meta">Caption / Inter SemiBold — 600 · Uppercase · LS 0.15em</div>
+      <div class="type-caption">Social Media · Content Strategy · Brand Identity</div>
+    </div>
+  </section>
+
+  <!-- LOGO -->
+  <section id="logo">
+    <div class="section-label">03 — Logo</div>
+    <h2>Usage du logo</h2>
+    <p>Le "H" serif avec slash diagonal est la marque distinctive de The House. Il représente l'ambition, la précision et le mouvement. Respecter ces règles garantit son impact.</p>
+
+    <div class="logo-grid">
+      <div class="logo-variant dark">
+        <img src="assets/logo.png" alt="Logo fond sombre" />
+        <span class="logo-variant-label">Version principale — fond sombre</span>
+      </div>
+      <div class="logo-variant light">
+        <img src="assets/logo.png" alt="Logo fond clair" />
+        <span class="logo-variant-label">Version fond clair</span>
+      </div>
+    </div>
+
+    <div class="logo-clearspace" style="margin-top:32px;">
+      <h3 style="margin-bottom:12px;">Zone d'exclusion</h3>
+      <p style="font-size:0.88rem;">Maintenir un espace vide autour du logo équivalent à la hauteur de la lettre H. Ne jamais superposer du texte ou des éléments graphiques dans cette zone.</p>
+      <div style="margin-top:24px; display:flex; gap:32px; flex-wrap:wrap;">
+        <div>
+          <div style="font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:10px;">À faire</div>
+          <ul style="font-size:0.85rem; color:rgba(245,242,234,0.65); list-style:none; display:flex; flex-direction:column; gap:6px;">
+            <li>✓ Sur fond Charcoal ou Near Black</li>
+            <li>✓ Sur fond Ivory (version inversée)</li>
+            <li>✓ Taille minimale : 32px de hauteur</li>
+            <li>✓ Toujours en proportion d'origine</li>
+          </ul>
+        </div>
+        <div>
+          <div style="font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:#c0392b; margin-bottom:10px;">À ne pas faire</div>
+          <ul style="font-size:0.85rem; color:rgba(245,242,234,0.65); list-style:none; display:flex; flex-direction:column; gap:6px;">
+            <li>✗ Déformer ou étirer le logo</li>
+            <li>✗ Changer les couleurs du logo</li>
+            <li>✗ Ajouter des ombres ou effets</li>
+            <li>✗ Utiliser sur un fond coloré non approuvé</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VOIX -->
+  <section id="voix">
+    <div class="section-label">04 — Voix de marque</div>
+    <h2>Notre ton</h2>
+    <p>The House parle avec l'assurance d'un expert et la chaleur d'un partenaire. Notre communication est précise, élégante et toujours orientée vers la valeur.</p>
+
+    <div class="voice-grid">
+      <div class="voice-card">
+        <span class="voice-icon">◈</span>
+        <h3>Expert & Confiant</h3>
+        <p>On ne questionne pas, on guide. Notre expertise se manifeste dans la précision de nos recommandations.</p>
+        <div class="voice-example">"Votre audience Instagram attend du contenu le mardi entre 18h et 20h — voici pourquoi."</div>
+      </div>
+      <div class="voice-card">
+        <span class="voice-icon">◈</span>
+        <h3>Élégant & Direct</h3>
+        <p>Pas de jargon inutile. Des mots choisis, une communication limpide qui respecte l'intelligence du client.</p>
+        <div class="voice-example">"3 posts. 1 stratégie. Des résultats mesurables."</div>
+      </div>
+      <div class="voice-card">
+        <span class="voice-icon">◈</span>
+        <h3>Ambitieux & Inspirant</h3>
+        <p>Nous aidons nos clients à viser plus haut. Notre ton reflète cette ambition commune.</p>
+        <div class="voice-example">"Votre marque mérite d'être vue. Nous sommes là pour ça."</div>
+      </div>
+      <div class="voice-card">
+        <span class="voice-icon">◈</span>
+        <h3>Chaleureux & Partenaire</h3>
+        <p>Nous ne sommes pas un prestataire, nous sommes un partenaire de croissance à long terme.</p>
+        <div class="voice-example">"On a analysé vos stats de la semaine — voici ce qu'on a prévu pour optimiser."</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÉLÉMENTS GRAPHIQUES -->
+  <section id="elements">
+    <div class="section-label">05 — Éléments graphiques</div>
+    <h2>Notre vocabulaire visuel</h2>
+    <p>Le slash diagonal du logo génère un langage graphique cohérent : énergie, mouvement, précision.</p>
+
+    <div class="elements-grid">
+      <div class="element-card">
+        <div class="slash-demo">
+          <div class="slash-line"></div>
+        </div>
+        <h3 style="font-size:0.95rem; text-align:center;">Le Slash</h3>
+        <p style="font-size:0.8rem; text-align:center; max-width:none;">Élément signature issu du logo. Utilisé en séparateur et en accent décoratif.</p>
+      </div>
+      <div class="element-card">
+        <div class="shadow-demo"></div>
+        <h3 style="font-size:0.95rem; text-align:center;">Ombres</h3>
+        <p style="font-size:0.8rem; text-align:center; max-width:none;">Ombres profondes avec teinte or subtile pour les éléments en relief.</p>
+      </div>
+      <div class="element-card">
+        <div class="radius-demo">
+          <div class="radius-box" style="border-radius:4px;"></div>
+          <div class="radius-box" style="border-radius:8px;"></div>
+          <div class="radius-box" style="border-radius:50%;"></div>
+        </div>
+        <h3 style="font-size:0.95rem; text-align:center;">Arrondis</h3>
+        <p style="font-size:0.8rem; text-align:center; max-width:none;">4px (discret), 8px (standard), cercle (avatar/badge).</p>
+      </div>
+    </div>
+
+    <!-- Dégradés -->
+    <div style="margin-top:32px; display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;">
+      <div>
+        <div style="height:60px; border-radius:8px; background:linear-gradient(135deg, #282826 0%, #1a1a18 100%); margin-bottom:10px;"></div>
+        <span style="font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-gray);">Dégradé Fond</span>
+      </div>
+      <div>
+        <div style="height:60px; border-radius:8px; background:linear-gradient(135deg, #c9a96e 0%, #a07840 100%); margin-bottom:10px;"></div>
+        <span style="font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-gray);">Dégradé Or</span>
+      </div>
+      <div>
+        <div style="height:60px; border-radius:8px; background:linear-gradient(135deg, rgba(201,169,110,0.15) 0%, transparent 100%); border:1px solid rgba(201,169,110,0.2); margin-bottom:10px;"></div>
+        <span style="font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-gray);">Or Glass</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICATIONS -->
+  <section id="applications">
+    <div class="section-label">06 — Applications</div>
+    <h2>Nos supports</h2>
+    <p>Exemples d'application de l'identité sur les supports de communication clés.</p>
+
+    <div class="mockup-grid">
+      <!-- Carte de visite -->
+      <div>
+        <div style="font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:16px;">Carte de visite</div>
+        <div class="business-card">
+          <img src="assets/logo.png" alt="Logo" class="bc-logo" />
+          <div>
+            <div class="bc-name">Prénom Nom</div>
+            <div class="bc-title">Social Media Manager</div>
+          </div>
+          <div class="bc-contact">
+            thehouse.fr<br/>
+            contact@thehouse.fr<br/>
+            +33 6 00 00 00 00
+          </div>
+        </div>
+      </div>
+
+      <!-- Post Instagram -->
+      <div>
+        <div style="font-size:0.72rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold); margin-bottom:16px;">Post Instagram (1:1)</div>
+        <div class="insta-post">
+          <img src="assets/logo.png" alt="Logo" class="insta-logo" />
+          <div class="insta-slash"></div>
+          <div class="insta-headline">Votre présence<br/>digitale, réinventée.</div>
+          <div class="insta-slash"></div>
+          <div class="insta-sub">The House · Social Media</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Couleurs signature réseaux -->
+    <div style="margin-top:48px; padding:36px; background:rgba(255,255,255,0.03); border:1px solid rgba(201,169,110,0.1); border-radius:8px;">
+      <h3 style="margin-bottom:20px;">Règles pour les réseaux sociaux</h3>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:20px;">
+        <div>
+          <div style="font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:10px;">Instagram</div>
+          <p style="font-size:0.82rem;">Fond Charcoal ou Ivory. Toujours le logo visible. Photos avec teinte chaude cohérente.</p>
+        </div>
+        <div>
+          <div style="font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:10px;">LinkedIn</div>
+          <p style="font-size:0.82rem;">Ton professionnel. Infographies sur fond sombre. Titres en Cormorant Garamond.</p>
+        </div>
+        <div>
+          <div style="font-size:0.72rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:10px;">Email / Newsletter</div>
+          <p style="font-size:0.82rem;">Fond Ivory avec accents Or. Corps en Inter. Header avec le logo centré.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <img src="assets/logo.png" alt="The House" class="footer-logo" />
+    <p>The House — Brand Guidelines · Usage interne & partenaires</p>
+    <p style="margin-top:8px; opacity:0.5;">Document confidentiel · 2024</p>
+  </footer>
+
+</body>
+</html>
