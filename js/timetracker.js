@@ -55,18 +55,19 @@ window.TimeTracker = (() => {
       `<option value="${App.AUTRE_CLIENT_ID}"${App.AUTRE_CLIENT_ID === current ? ' selected' : ''}>Autre</option>`;
   }
 
-  /* ── Peupler le select Kanban (projets existants) ───────────── */
+  /* ── Peupler le select Kanban (étapes de production) ────────── */
   function populateKanbanSelect() {
     const sel = document.getElementById('taskKanbanSelect');
     if (!sel) return;
-    const options = ['<option value="">— Choisir un projet —</option>'];
-    App.CLIENTS.forEach(client => {
-      const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
-      if (!projects.length) return;
-      const items = projects.map(p =>
-        `<option value="${escHtml(p.name)}" data-client-id="${escHtml(client.id)}" data-project-id="${escHtml(p.id)}">${escHtml(p.name)}</option>`
+    const options = ['<option value="">— Choisir une étape —</option>'];
+    const groups = App.STAGE_GROUPS || [];
+    groups.forEach(group => {
+      const stages = App.STAGES.filter(s => s.group === group.id);
+      if (!stages.length) return;
+      const items = stages.map(s =>
+        `<option value="${escHtml(s.label)}">${escHtml(s.label)}</option>`
       ).join('');
-      options.push(`<optgroup label="${escHtml(client.name)}">${items}</optgroup>`);
+      options.push(`<optgroup label="${escHtml(group.label)}">${items}</optgroup>`);
     });
     sel.innerHTML = options.join('');
   }
