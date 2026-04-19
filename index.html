@@ -8,6 +8,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .task-input-row { display:flex; align-items:flex-start; gap:12px; margin-bottom:8px; }
+    .task-input-col { flex:1; display:flex; flex-direction:column; gap:4px; }
+    .task-input-label { font-size:.72rem; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.04em; }
+    .task-input-sep { padding-top:28px; font-size:.8rem; color:var(--text-3); font-weight:500; flex-shrink:0; }
+    .daily-total-autre { opacity:.7; border-top:1px dashed var(--border,#e5e7eb); }
+    @media (max-width:600px) {
+      .task-input-row { flex-direction:column; }
+      .task-input-sep { padding-top:0; text-align:center; }
+    }
+  </style>
 </head>
 <body>
 
@@ -200,7 +211,19 @@
         </div>
 
         <div class="timer-card">
-          <input type="text" id="taskNameInput" class="task-name-input" placeholder="Nom de la tâche…" autocomplete="off" />
+          <div class="task-input-row">
+            <div class="task-input-col">
+              <label class="task-input-label">Tâche libre</label>
+              <input type="text" id="taskNameInput" class="task-name-input" placeholder="Décrivez librement…" autocomplete="off" />
+            </div>
+            <div class="task-input-sep">ou</div>
+            <div class="task-input-col">
+              <label class="task-input-label">Depuis le Kanban</label>
+              <select id="taskKanbanSelect" class="form-select">
+                <option value="">— Choisir un projet —</option>
+              </select>
+            </div>
+          </div>
           <select id="taskClientSelect" class="form-select" style="margin-top:8px">
             <option value="">— Aucun client —</option>
           </select>
@@ -255,6 +278,10 @@
         <div class="daily-total" id="dailyTotalBar" style="display:none">
           <span class="daily-total-label">Total journée</span>
           <span class="daily-total-value" id="dailyTotalValue">0h 00min</span>
+        </div>
+        <div class="daily-total daily-total-autre" id="autreTotalBar" style="display:none">
+          <span class="daily-total-label">↳ Autre</span>
+          <span class="daily-total-value" id="autreTotalValue">0h 00min</span>
         </div>
       </section>
 

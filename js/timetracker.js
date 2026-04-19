@@ -51,7 +51,24 @@ window.TimeTracker = (() => {
     sel.innerHTML = '<option value="">— Aucun client —</option>' +
       App.CLIENTS.map(c =>
         `<option value="${c.id}"${c.id === current ? ' selected' : ''}>${escHtml(c.name)}</option>`
+      ).join('') +
+      `<option value="${App.AUTRE_CLIENT_ID}"${App.AUTRE_CLIENT_ID === current ? ' selected' : ''}>Autre</option>`;
+  }
+
+  /* ── Peupler le select Kanban (projets existants) ───────────── */
+  function populateKanbanSelect() {
+    const sel = document.getElementById('taskKanbanSelect');
+    if (!sel) return;
+    const options = ['<option value="">— Choisir un projet —</option>'];
+    App.CLIENTS.forEach(client => {
+      const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
+      if (!projects.length) return;
+      const items = projects.map(p =>
+        `<option value="${escHtml(p.name)}" data-client-id="${escHtml(client.id)}" data-project-id="${escHtml(p.id)}">${escHtml(p.name)}</option>`
       ).join('');
+      options.push(`<optgroup label="${escHtml(client.name)}">${items}</optgroup>`);
+    });
+    sel.innerHTML = options.join('');
   }
 
   /* ── Démarrer ───────────────────────────────────────────────── */
@@ -70,8 +87,11 @@ window.TimeTracker = (() => {
       _currentId   = App.uid();
       _accumulated = 0;
 
-      const clientId = dom.clientSelect?.value || null;
-      const tasks    = App.load(App.KEYS.TASKS, []);
+      const clientId   = dom.clientSelect?.value || null;
+      const kanbanSel  = document.getElementById('taskKanbanSelect');
+      const projectId  = kanbanSel?.dataset.selectedProjectId || null;
+      const sourceType = projectId ? 'kanban' : 'free';
+      const tasks      = App.load(App.KEYS.TASKS, []);
       tasks.push({
         id:            _currentId,
         name:          name,
@@ -80,6 +100,8 @@ window.TimeTracker = (() => {
         date:          App.today(),
         totalDuration: 0,
         sessions:      [],
+        sourceType:    sourceType,
+        projectId:     projectId,
       });
       App.save(App.KEYS.TASKS, tasks);
     }
@@ -142,6 +164,8 @@ window.TimeTracker = (() => {
     dom.display.textContent     = '00:00:00';
     dom.nameInput.value         = '';
     dom.nameInput.disabled      = false;
+    const _ks = document.getElementById('taskKanbanSelect');
+    if (_ks) { _ks.value = ''; delete _ks.dataset.selectedProjectId; }
     dom.startBtn.style.display  = 'inline-flex';
     dom.pauseBtn.style.display  = 'none';
     dom.resumeBtn.style.display = 'none';
@@ -183,6 +207,7 @@ window.TimeTracker = (() => {
   /* ── Rendu du tableau des tâches ────────────────────────────── */
   function renderTable() {
     populateClientSelect();
+    populateKanbanSelect();
 
     const tbody  = dom.tableBody;
     const totBar = dom.totalBar;
@@ -195,6 +220,8 @@ window.TimeTracker = (() => {
     if (tasks.length === 0) {
       tbody.innerHTML = '<tr><td colspan="4" class="empty-cell">Aucune tâche pour aujourd\'hui.</td></tr>';
       if (totBar) totBar.style.display = 'none';
+      const _ab = document.getElementById('autreTotalBar');
+      if (_ab) _ab.style.display = 'none';
       return;
     }
 
@@ -223,9 +250,22 @@ window.TimeTracker = (() => {
         </tr>`;
     }).join('');
 
-    const total = tasks.reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const totalPrincipal = tasks
+      .filter(t => t.clientId !== App.AUTRE_CLIENT_ID)
+      .reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const totalAutre = tasks
+      .filter(t => t.clientId === App.AUTRE_CLIENT_ID)
+      .reduce((s, t) => s + (t.totalDuration || 0), 0);
+
     if (totBar) totBar.style.display = 'flex';
-    if (totVal) totVal.textContent   = App.fmtDur(total);
+    if (totVal) totVal.textContent   = App.fmtDur(totalPrincipal);
+
+    const autreBar = document.getElementById('autreTotalBar');
+    const autreVal = document.getElementById('autreTotalValue');
+    if (autreBar) {
+      autreBar.style.display = totalAutre > 0 ? 'flex' : 'none';
+      if (autreVal) autreVal.textContent = App.fmtDur(totalAutre);
+    }
   }
 
   /* ── Édition d'une tâche ────────────────────────────────────── */
@@ -243,7 +283,8 @@ window.TimeTracker = (() => {
       sel.innerHTML = '<option value="">— Aucun client —</option>' +
         App.CLIENTS.map(c =>
           `<option value="${c.id}"${c.id === task.clientId ? ' selected' : ''}>${escHtml(c.name)}</option>`
-        ).join('');
+        ).join('') +
+        `<option value="${App.AUTRE_CLIENT_ID}"${App.AUTRE_CLIENT_ID === task.clientId ? ' selected' : ''}>Autre</option>`;
     }
 
     App.openModal('modal-editTask');
@@ -293,7 +334,8 @@ window.TimeTracker = (() => {
     if (tasks.length === 0) { alert('Aucune tâche enregistrée aujourd\'hui.'); return; }
     if (_running && !_paused) stop();
 
-    const total    = tasks.reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const totalPrincipal = tasks.filter(t => t.clientId !== App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const totalAutre     = tasks.filter(t => t.clientId === App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
     const summaryEl = document.getElementById('eodSummary');
     if (summaryEl) {
       const rows = tasks.map(t => {
@@ -301,16 +343,19 @@ window.TimeTracker = (() => {
         const badge = c ? `<span style="font-size:.68rem;color:${c.color};font-weight:500;margin-left:4px">${escHtml(c.name)}</span>` : '';
         return `<div class="eod-row"><span>${escHtml(t.name)}${badge}</span><strong>${App.fmtDur(t.totalDuration || 0)}</strong></div>`;
       }).join('');
-      summaryEl.innerHTML = rows + `<div class="eod-total"><span>Total</span><span>${App.fmtDur(total)}</span></div>`;
+      summaryEl.innerHTML = rows +
+        (totalAutre > 0 ? `<div class="eod-total" style="opacity:.7"><span>↳ Autre</span><span>${App.fmtDur(totalAutre)}</span></div>` : '') +
+        `<div class="eod-total"><span>Total réel</span><span>${App.fmtDur(totalPrincipal)}</span></div>`;
     }
     App.openModal('modal-endOfDay');
   }
 
   function _confirmEndOfDay() {
-    const today   = App.today();
-    const tasks   = App.load(App.KEYS.TASKS, []).filter(t => t.date === today);
-    const total   = tasks.reduce((s, t) => s + (t.totalDuration || 0), 0);
-    const dateFmt = App.fmtDateLong(new Date());
+    const today          = App.today();
+    const tasks          = App.load(App.KEYS.TASKS, []).filter(t => t.date === today);
+    const totalPrincipal = tasks.filter(t => t.clientId !== App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const totalAutre     = tasks.filter(t => t.clientId === App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const dateFmt        = App.fmtDateLong(new Date());
 
     /* Lignes tâches */
     const taskRows = tasks.map(t => {
@@ -318,9 +363,10 @@ window.TimeTracker = (() => {
       return `| ${t.name} | ${c ? c.name : '—'} | ${App.fmtDur(t.totalDuration || 0)} |`;
     }).join('\n');
 
-    /* Répartition par client */
+    /* Répartition par client (hors Autre) */
     const byClient = {};
     tasks.forEach(t => {
+      if (t.clientId === App.AUTRE_CLIENT_ID) return;
       const key = t.clientId || '__none__';
       byClient[key] = (byClient[key] || 0) + (t.totalDuration || 0);
     });
@@ -343,7 +389,7 @@ ${taskRows}
 
 ---
 
-**Total :** ${App.fmtDur(total)}
+**Total réel :** ${App.fmtDur(totalPrincipal)}${totalAutre > 0 ? `\n**Autre :** ${App.fmtDur(totalAutre)}` : ''}
 
 ## Répartition par client
 
@@ -384,9 +430,30 @@ ${clientRows}
     document.getElementById('taskNameInput')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') start();
     });
+
+    /* Sync : sélection Kanban → remplit le champ texte + pré-sélectionne le client */
+    const kanbanSel = document.getElementById('taskKanbanSelect');
+    kanbanSel?.addEventListener('change', () => {
+      const opt = kanbanSel.selectedOptions[0];
+      if (!opt?.value) return;
+      dom.nameInput.value = opt.value;
+      if (opt.dataset.clientId && dom.clientSelect)
+        dom.clientSelect.value = opt.dataset.clientId;
+      kanbanSel.dataset.selectedProjectId = opt.dataset.projectId || '';
+    });
+
+    /* Sync inverse : saisie manuelle réinitialise le select Kanban */
+    dom.nameInput?.addEventListener('input', () => {
+      if (kanbanSel?.value) {
+        kanbanSel.value = '';
+        delete kanbanSel.dataset.selectedProjectId;
+      }
+    });
+
+    populateKanbanSelect();
   });
 
   /* ── API publique ───────────────────────────────────────────── */
-  return { renderTable, openEdit, deleteTask, populateClientSelect };
+  return { renderTable, openEdit, deleteTask, populateClientSelect, populateKanbanSelect };
 
 })();

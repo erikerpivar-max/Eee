@@ -8,6 +8,9 @@
 /* ─── Namespace global App ──────────────────────────────────────── */
 window.App = {
 
+  AUTRE_CLIENT_ID: '__autre__',
+  AUTRE_CLIENT:    { id: '__autre__', name: 'Autre', initials: 'AU', color: '#9CA3AF', bg: '#F3F4F6' },
+
   _DEFAULT_CLIENTS: [
     { id: 'ixina-ath',     name: 'Ixina Ath',          initials: 'IA', color: '#6366F1', bg: '#EEF2FF' },
     { id: 'ixina-tours',   name: 'Ixina Tours et taxi', initials: 'IT', color: '#F59E0B', bg: '#FFF7ED' },
@@ -137,7 +140,10 @@ window.App = {
   },
 
   getStage(id)  { return this.STAGES.find(s => s.id === id) || this.STAGES[0]; },
-  getClient(id) { return this.CLIENTS.find(c => c.id === id); },
+  getClient(id) {
+    if (id === this.AUTRE_CLIENT_ID) return this.AUTRE_CLIENT;
+    return this.CLIENTS.find(c => c.id === id);
+  },
 
   /* ── Navigation ──────────────────────────────────────────────── */
   PAGE_TITLES: {
@@ -380,7 +386,7 @@ window.Dashboard = {
     const tasks   = App.load(App.KEYS.TASKS, []);
     const today   = App.today();
     const todayTs = tasks.filter(t => t.date === today);
-    const total   = todayTs.reduce((s, t) => s + (t.totalDuration || 0), 0);
+    const total   = todayTs.filter(t => t.clientId !== App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
 
     const el1 = document.getElementById('stat-today-time');
     const el2 = document.getElementById('stat-tasks-count');
@@ -408,9 +414,10 @@ window.Dashboard = {
       return;
     }
 
-    /* Regrouper par client */
+    /* Regrouper par client (exclure "Autre") */
     const byClient = {};
     weekTasks.forEach(t => {
+      if (t.clientId === App.AUTRE_CLIENT_ID) return;
       const key = t.clientId || '__none__';
       byClient[key] = (byClient[key] || 0) + (t.totalDuration || 0);
     });
