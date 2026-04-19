@@ -16,12 +16,30 @@ window.App = {
 
   CLIENTS: [], /* chargé dynamiquement depuis localStorage au DOMContentLoaded */
 
+  /* ── Groupes de phases ─────────────────────────────────────────── */
+  STAGE_GROUPS: [
+    { id: 'pre-prod',   label: 'Pré-Production',          color: '#3B82F6' },
+    { id: 'tournage',   label: 'Tournage',                 color: '#8B5CF6' },
+    { id: 'post-prod',  label: 'Post-Production',          color: '#EF4444' },
+    { id: 'validation', label: 'Validation & Publication', color: '#22C55E' },
+    { id: 'archivage',  label: 'Archivage',                color: '#F59E0B' },
+  ],
+
+  /* ── Étapes de production (13) ──────────────────────────────────── */
   STAGES: [
-    { id: 'scripting',    label: 'Scripting',    color: '#6366F1', bg: '#EEF2FF' },
-    { id: 'tournage',     label: 'Tournage',     color: '#D97706', bg: '#FFF7ED' },
-    { id: 'brouillon',    label: 'Brouillon',    color: '#8B5CF6', bg: '#F5F3FF' },
-    { id: 'montage',      label: 'Montage',      color: '#2563EB', bg: '#EFF6FF' },
-    { id: 'verification', label: 'Vérification', color: '#059669', bg: '#ECFDF5' },
+    { id: 'format',      label: 'Choose Format',       color: '#3B82F6', group: 'pre-prod'   },
+    { id: 'hook',        label: 'Choose Hook',          color: '#3B82F6', group: 'pre-prod'   },
+    { id: 'ecrire',      label: 'Écrire',               color: '#3B82F6', group: 'pre-prod'   },
+    { id: 'tournage',    label: 'Tournage',             color: '#8B5CF6', group: 'tournage'   },
+    { id: 'draft',       label: 'Faire le DRAFT',       color: '#8B5CF6', group: 'tournage'   },
+    { id: 'verif-draft', label: 'Vérification DRAFT',   color: '#8B5CF6', group: 'tournage'   },
+    { id: 'sous-titre',  label: 'Sous-titre',           color: '#EF4444', group: 'post-prod'  },
+    { id: 'montage',     label: 'Montage',              color: '#EF4444', group: 'post-prod'  },
+    { id: 'sheets',      label: 'Compléter le Sheets',  color: '#EF4444', group: 'post-prod'  },
+    { id: 'verif-v1',    label: 'Vérification V1',      color: '#22C55E', group: 'validation' },
+    { id: 'verif-final', label: 'Vérification Final',   color: '#22C55E', group: 'validation' },
+    { id: 'prog',        label: 'Programmation',        color: '#22C55E', group: 'validation' },
+    { id: 'archivage',   label: 'Archivage',            color: '#F59E0B', group: 'archivage'  },
   ],
 
   KEYS: {
@@ -55,6 +73,22 @@ window.App = {
     this.saveClients();
     /* Nettoyage des projets associés */
     localStorage.removeItem(`${this.KEYS.PROJECTS}_${id}`);
+  },
+
+  /* ── Migration anciens IDs de stages → nouveaux ─────────────── */
+  migrateStages() {
+    const MAP = { scripting: 'format', brouillon: 'draft', verification: 'verif-final' };
+    const validIds = new Set(this.STAGES.map(s => s.id));
+    this.CLIENTS.forEach(client => {
+      const key      = `${this.KEYS.PROJECTS}_${client.id}`;
+      const projects = this.load(key, []);
+      let changed    = false;
+      projects.forEach(p => {
+        if (MAP[p.stage])                { p.stage = MAP[p.stage]; changed = true; }
+        else if (!validIds.has(p.stage)) { p.stage = 'format';     changed = true; }
+      });
+      if (changed) this.save(key, projects);
+    });
   },
 
   currentView: 'dashboard',
@@ -583,6 +617,9 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Chargement clients dynamiques */
   App.loadClients();
 
+  /* Migration des anciens stages vers les nouveaux IDs */
+  App.migrateStages();
+
   /* Bouton nouveau client */
   document.getElementById('manageClientsBtn')
     ?.addEventListener('click', () => ClientManager.openAddModal());
@@ -610,16 +647,16 @@ function _initDemoData() {
   const DEMO_PROJECTS = {
     'ixina-ath': [
       { id: 'p1', name: 'Vidéo Cuisine 2025',  stage: 'montage',      createdAt: '2025-04-01' },
-      { id: 'p2', name: 'Réels Instagram',      stage: 'scripting',    createdAt: '2025-04-05' },
-      { id: 'p3', name: 'Vidéo Showroom',       stage: 'verification', createdAt: '2025-03-28' },
+      { id: 'p2', name: 'Réels Instagram',      stage: 'format',       createdAt: '2025-04-05' },
+      { id: 'p3', name: 'Vidéo Showroom',       stage: 'verif-final',  createdAt: '2025-03-28' },
     ],
     'ixina-tours': [
       { id: 'p4', name: 'Présentation Taxi',    stage: 'tournage',     createdAt: '2025-04-02' },
-      { id: 'p5', name: 'Brand Film',           stage: 'scripting',    createdAt: '2025-04-08' },
+      { id: 'p5', name: 'Brand Film',           stage: 'ecrire',       createdAt: '2025-04-08' },
     ],
     'ixina-ixelles': [
-      { id: 'p6', name: 'Vidéo Inauguration',   stage: 'verification', createdAt: '2025-03-25' },
-      { id: 'p7', name: 'Cuisine Luxe Reel',    stage: 'montage',      createdAt: '2025-04-01' },
+      { id: 'p6', name: 'Vidéo Inauguration',   stage: 'verif-final',  createdAt: '2025-03-25' },
+      { id: 'p7', name: 'Cuisine Luxe Reel',    stage: 'sous-titre',   createdAt: '2025-04-01' },
     ],
   };
 

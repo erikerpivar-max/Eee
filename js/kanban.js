@@ -12,12 +12,36 @@ window.Kanban = (() => {
   let _dragClientId  = null;
   let _currentAddStage = null;
 
-  /* ── Rendu principal ────────────────────────────────────────── */
+  /* ── Rendu principal — groupes par couleur ─────────────────── */
   function renderView() {
     const board = document.getElementById('kanban-board');
     if (!board) return;
-    board.innerHTML = App.STAGES.map(stage => _buildColumn(stage)).join('');
+    board.innerHTML = App.STAGE_GROUPS.map(group => {
+      const stages = App.STAGES.filter(s => s.group === group.id);
+      return `
+        <div class="stage-group">
+          <div class="stage-group-header" style="--group-color:${group.color}">
+            <span class="stage-group-dot"></span>
+            <span class="stage-group-label">${group.label}</span>
+            <span class="stage-group-count">${_countGroupProjects(stages)} projet(s)</span>
+          </div>
+          <div class="stage-group-cols" style="grid-template-columns:repeat(${stages.length},1fr)">
+            ${stages.map(stage => _buildColumn(stage)).join('')}
+          </div>
+        </div>`;
+    }).join('');
     _wireBoard();
+  }
+
+  function _countGroupProjects(stages) {
+    let total = 0;
+    stages.forEach(stage => {
+      App.CLIENTS.forEach(client => {
+        const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
+        total += projects.filter(p => p.stage === stage.id).length;
+      });
+    });
+    return total;
   }
 
   /* ── Construction d'une colonne ──────────────────────────────── */
