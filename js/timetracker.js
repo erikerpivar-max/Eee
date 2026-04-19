@@ -59,17 +59,10 @@ window.TimeTracker = (() => {
   function populateKanbanSelect() {
     const sel = document.getElementById('taskKanbanSelect');
     if (!sel) return;
-    const options = ['<option value="">— Choisir une étape —</option>'];
-    const groups = App.STAGE_GROUPS || [];
-    groups.forEach(group => {
-      const stages = App.STAGES.filter(s => s.group === group.id);
-      if (!stages.length) return;
-      const items = stages.map(s =>
+    sel.innerHTML = '<option value="">— Choisir une étape —</option>' +
+      App.STAGES.map(s =>
         `<option value="${escHtml(s.label)}">${escHtml(s.label)}</option>`
       ).join('');
-      options.push(`<optgroup label="${escHtml(group.label)}">${items}</optgroup>`);
-    });
-    sel.innerHTML = options.join('');
   }
 
   /* ── Démarrer ───────────────────────────────────────────────── */
