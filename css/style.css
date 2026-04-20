@@ -2255,13 +2255,15 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   outline: none;
 }
 
-/* ─── CHEVALIER décoratif (lock screen) ──────────────────────────── */
-.ls-knight {
+
+/* ─── CHEVALIER décoratif (dashboard) ───────────────────────────── */
+.dashboard-knight {
+  display: block;
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size:   5.5rem;
+  font-size:   3.8rem;
   line-height: 1;
   color: var(--primary);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   user-select: none;
-  opacity: .85;
+  opacity: .8;
 }
