@@ -244,8 +244,9 @@ App.Auth = {
   _entered: '',
 
   check() {
-    const session = PortalAuth.getSession();
-    if (session) this._unlock(session);
+    // PIN désactivé
+    document.getElementById('lock-screen').style.display = 'none';
+    App.navigateTo('dashboard');
   },
 
   lock() {
