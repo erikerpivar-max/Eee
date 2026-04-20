@@ -115,6 +115,12 @@
               <span>Publication</span>
             </a>
           </li>
+          <li>
+            <a class="nav-link" data-view="scriptorga" href="#">
+              <svg class="nav-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+              <span>Script Orga</span>
+            </a>
+          </li>
         </ul>
       </div>
     </nav>
@@ -300,6 +306,15 @@
       </section>
 
 
+      <!-- ── VUE : SCRIPT ORGA ─────────────────────────────────── -->
+      <section class="view" id="view-scriptorga">
+        <div class="view-intro">
+          <h2 class="view-title">Script Orga</h2>
+          <p class="view-subtitle">Gérez vos formats, angles et hooks. Organisez vos scripts.</p>
+        </div>
+        <div id="scriptorga-container"></div>
+      </section>
+
       <!-- ── VUE : PUBLICATION ─────────────────────────────────── -->
       <section class="view" id="view-publication">
         <div class="view-intro">
@@ -484,11 +499,45 @@
     </div>
   </div>
 
+
+  <!-- Modal : Script Orga - Éditeur -->
+  <div class="modal-backdrop" id="so-script-modal" style="display:none">
+    <div class="modal so-script-modal">
+      <div class="modal-head">
+        <h3>Écrire le script</h3>
+        <button class="modal-close-btn" data-close="so-script-modal">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="so-modal-meta">
+        <div class="so-modal-meta-item">
+          <span class="so-modal-meta-label">Format</span>
+          <span class="so-modal-meta-value" id="so-modal-format">—</span>
+        </div>
+        <div class="so-modal-meta-sep"></div>
+        <div class="so-modal-meta-item">
+          <span class="so-modal-meta-label">Angle</span>
+          <span class="so-modal-meta-value" id="so-modal-angle">—</span>
+        </div>
+      </div>
+      <div class="modal-body so-script-body">
+        <textarea id="so-script-ta" class="so-script-ta" placeholder="Écrivez votre script ici…"></textarea>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="so-script-modal">Annuler</button>
+        <button class="btn btn-primary" id="so-save-script-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Sauvegarder
+        </button>
+      </div>
+    </div>
+  </div>
   <script src="js/app.js?v=4"></script>
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=2"></script>
   <script src="js/pubcal.js?v=2"></script>
   <script src="js/portal.js?v=2"></script>
+  <script src="js/scriptorga.js?v=1"></script>
 
 </body>
 </html>

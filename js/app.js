@@ -152,6 +152,7 @@ window.App = {
     'kanban':      'Kanban',
     'publication': 'Publication',
     'portal':      'Portail Client',
+    'scriptorga':  'Script Orga',
   },
 
   navigateTo(viewId) {
@@ -174,6 +175,7 @@ window.App = {
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
     if (viewId === 'portal')      _safeRender('view-portal',      () => Portal.init());
+    if (viewId === 'scriptorga') _safeRender('scriptorga-container', () => ScriptOrga.renderView());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');

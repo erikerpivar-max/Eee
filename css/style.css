@@ -1971,3 +1971,286 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   align-items: center;
   gap: 6px;
 }
+
+
+/* ================================================================
+   SCRIPT ORGA
+   ================================================================ */
+
+/* ─── Layout général ─────────────────────────────────────────────── */
+.so-wrap { display: flex; flex-direction: column; gap: 0; }
+.so-block { }
+.so-block--orga { margin-top: 40px; }
+
+/* ─── DB Grid ────────────────────────────────────────────────────── */
+.so-db-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.so-db-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.so-db-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.so-db-card-title {
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.so-db-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 26px;
+}
+.so-db-empty {
+  font-size: .8rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.so-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 10px;
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 500;
+}
+.so-tag-del {
+  display: flex;
+  align-items: center;
+  color: var(--primary);
+  opacity: .55;
+  padding: 0;
+  transition: opacity var(--dur);
+}
+.so-tag-del:hover { opacity: 1; }
+
+.so-db-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.so-db-inline .form-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: .82rem;
+}
+
+/* ─── Organisateur ───────────────────────────────────────────────── */
+.so-orga-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* ─── Plan bar ───────────────────────────────────────────────────── */
+.so-plan-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.so-plan-client {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: .95rem;
+}
+.so-plan-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.so-plan-actions { display: flex; gap: 8px; }
+
+/* ─── Table ──────────────────────────────────────────────────────── */
+.so-table .so-sel-cell { padding: 7px 10px; }
+.so-table .so-sel-cell .form-select {
+  font-size: .82rem;
+  padding: 6px 8px;
+}
+
+.so-fmt-cell {
+  white-space: nowrap;
+  padding: 10px 14px !important;
+}
+.so-fmt-badge {
+  display: inline-block;
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-size: .78rem;
+  font-weight: 600;
+}
+.so-fmt-bar {
+  display: inline-block;
+  width: 2px;
+  height: 18px;
+  background: var(--border);
+  border-radius: 2px;
+  margin-left: 10px;
+  vertical-align: middle;
+  opacity: .45;
+}
+
+.so-group-foot td {
+  padding: 5px 12px !important;
+  background: var(--bg);
+  border-top: 1px dashed var(--border) !important;
+}
+
+.so-row-del {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--text-3);
+  margin: auto;
+  transition: background var(--dur), color var(--dur);
+}
+.so-row-del:hover { background: var(--danger-bg); color: var(--danger); }
+
+/* ─── Format picker ──────────────────────────────────────────────── */
+.so-picker-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 4px;
+}
+.so-picker-lbl {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 12px;
+}
+.so-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.so-pill {
+  padding: 7px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: .855rem;
+  font-weight: 500;
+  color: var(--text-2);
+  transition: background var(--dur), color var(--dur), border-color var(--dur);
+  cursor: pointer;
+}
+.so-pill:hover {
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* ─── Extra picker (sous le tableau) ────────────────────────────── */
+.so-extra-picker {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+
+/* ─── Modal Script ───────────────────────────────────────────────── */
+.so-script-modal {
+  max-width: min(880px, 94vw);
+  width: min(880px, 94vw);
+  height: min(90vh, 820px);
+  max-height: min(90vh, 820px);
+  display: flex;
+  flex-direction: column;
+}
+
+.so-modal-meta {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 10px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+.so-modal-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 16px;
+}
+.so-modal-meta-item:first-child { padding-left: 0; }
+.so-modal-meta-label {
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-3);
+}
+.so-modal-meta-value {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.so-modal-meta-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.so-script-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px 24px !important;
+}
+.so-script-ta {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: .92rem;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--surface);
+  font-family: var(--font);
+  transition: border-color var(--dur), box-shadow var(--dur);
+}
+.so-script-ta:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.1);
+  outline: none;
+}
