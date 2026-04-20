@@ -112,7 +112,7 @@ window.TimeTracker = (() => {
     dom.resumeBtn.style.display = 'none';
     dom.stopBtn.style.display   = 'inline-flex';
     dom.nameInput.disabled      = false;
-    dom.statusLabel.textContent = '⏱ Timer en cours…';
+    dom.statusLabel.textContent = 'Timer en cours…';
   }
 
   /* ── Pause ──────────────────────────────────────────────────── */
@@ -375,7 +375,7 @@ window.TimeTracker = (() => {
 
 ---
 
-## ⏱ Tâches du jour
+## Tâches du jour
 
 | Tâche | Client | Durée |
 |-------|--------|-------|

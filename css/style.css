@@ -2254,3 +2254,14 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   box-shadow: 0 0 0 3px rgba(200,136,42,.1);
   outline: none;
 }
+
+/* ─── CHEVALIER décoratif (lock screen) ──────────────────────────── */
+.ls-knight {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size:   5.5rem;
+  line-height: 1;
+  color: var(--primary);
+  margin-bottom: 10px;
+  user-select: none;
+  opacity: .85;
+}
