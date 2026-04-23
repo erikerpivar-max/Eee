@@ -3,6 +3,15 @@
    Style : Minimaliste, lumineux, professionnel (inspiration Figma / Loom)
    ================================================================ */
 
+/* ─── Varela Round (self-hosted) ────────────────────────────────── */
+@font-face {
+  font-family: 'Varela Round';
+  src: url('../assets/fonts/VarelaRound-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ─── Variables ─────────────────────────────────────────────────── */
 :root {
   --bg:           #F8F7F5;
@@ -39,7 +48,7 @@
   --shadow-lg:    0 4px 8px rgba(0,0,0,.04), 0 16px 48px rgba(0,0,0,.08);
 
   --font:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-display: 'Varela Round', 'Inter', sans-serif;
   --ease:         cubic-bezier(.4,0,.2,1);
   --dur:          .18s;
 }
@@ -1149,7 +1158,94 @@ code {
   font-family: 'Fira Mono', 'Consolas', monospace;
 }
 
+/* ─── EMPTY STATES ─────────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  animation: fadeInUp .4s var(--ease) both;
+}
+.empty-state-icon {
+  color: var(--text-3);
+  opacity: .35;
+  margin-bottom: 14px;
+}
+.empty-state-text {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+.empty-state-sub {
+  font-size: .82rem;
+  color: var(--text-3);
+  font-weight: 400;
+}
+.empty-cell {
+  text-align: center;
+  color: var(--text-3);
+  padding: 40px 16px !important;
+  font-size: .875rem;
+}
+
+/* ─── SKELETON LOADING ─────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg) 25%, var(--border-light) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s var(--ease) infinite;
+  border-radius: var(--radius-sm);
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+.skeleton * { visibility: hidden; }
+.skeleton-line {
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(90deg, var(--bg) 25%, var(--border-light) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s var(--ease) infinite;
+  margin-bottom: 10px;
+}
+.skeleton-line:last-child { width: 60%; }
+.skeleton-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--bg) 25%, var(--border-light) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s var(--ease) infinite;
+  flex-shrink: 0;
+}
+.skeleton-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.skeleton-card .skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 /* ─── RESPONSIVE ────────────────────────────────────────────────── */
+
+/* Large tablets / small desktops */
 @media (max-width: 1023px) {
   .sidebar {
     transform: translateX(calc(-1 * var(--sidebar-w)));
@@ -1161,18 +1257,76 @@ code {
   }
   .sidebar-close { display: flex; }
   .main-wrapper { margin-left: 0 !important; }
-  .content-area { padding: 20px 16px 48px; }
-  .topbar { padding: 0 16px; }
+  .content-area { padding: 28px 24px 56px; }
+  .topbar { padding: 0 20px; }
   .stage-group-cols { grid-template-columns: repeat(2, 1fr) !important; }
+  .cpt-grid { grid-template-columns: 1fr; }
+  .portal-charts { grid-template-columns: 1fr 1fr; }
 }
 
-@media (max-width: 640px) {
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+/* Tablets */
+@media (max-width: 768px) {
+  html { font-size: 15px; }
+  .content-area { padding: 24px 20px 48px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .client-cards-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stage-group-cols { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  .view-title { font-size: 1.5rem; }
+  .timer-card { padding: 24px 20px 20px; }
+  .prev-summary-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .portal-charts { grid-template-columns: 1fr; }
+  .portal-kpis { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .so-db-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .modal { max-width: 94vw; }
+  .modal-body { padding: 20px 22px; }
+  .section-header { flex-wrap: wrap; gap: 8px; }
+  .advance-right { min-width: 160px; }
+  .form-row { grid-template-columns: 1fr; }
+  .empty-state { padding: 36px 20px; }
+  .todo-add-row { flex-wrap: wrap; }
+}
+
+/* Phones */
+@media (max-width: 480px) {
+  html { font-size: 14.5px; }
+  .content-area { padding: 20px 16px 40px; }
+  .topbar { padding: 0 14px; height: 56px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 16px 14px; gap: 12px; }
+  .stat-icon { width: 36px; height: 36px; }
+  .stat-value { font-size: 1.1rem; }
   .client-cards-grid { grid-template-columns: 1fr; }
   .stage-group-cols { grid-template-columns: 1fr !important; gap: 8px; }
-  .form-row { grid-template-columns: 1fr; }
   .timer-row { flex-direction: column; align-items: flex-start; gap: 16px; }
   .timer-clock { font-size: 2rem; }
+  .timer-card { padding: 20px 16px 16px; }
+  .view-title { font-size: 1.35rem; }
+  .view-intro { margin-bottom: 28px; }
+  .dashboard-knight { font-size: 2.8rem; }
+  .prev-summary-grid { grid-template-columns: 1fr; }
+  .portal-kpis { grid-template-columns: 1fr; }
+  .so-db-grid { grid-template-columns: 1fr; }
+  .advance-client { min-width: 110px; }
+  .advance-right { min-width: 80px; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .advance-status-badge { display: none; }
+  .pcal-check { width: 16px; height: 16px; border-radius: 4px; }
+  .pcal-day.pub-day { min-height: 80px; }
+  .pubcal-toolbar { flex-direction: column; align-items: flex-start; }
+  .todo-add-row { flex-direction: column; gap: 8px; }
+  .todo-add-row .form-select { width: 100% !important; }
+  .todo-add-row .btn { width: 100%; justify-content: center; }
+  .portal-login-card { width: 100%; padding: 36px 24px 32px; }
+  .ls-card { width: 300px; padding: 40px 28px 32px; }
+  .ls-title { font-size: 1.6rem; }
+  .modal { border-radius: var(--radius-lg); }
+  .modal-body { padding: 18px 20px; }
+  .modal-head { padding: 18px 20px 14px; }
+  .empty-state { padding: 32px 16px; }
+  .empty-state-icon { width: 32px; height: 32px; }
+  .section-header .btn { font-size: .78rem; padding: 6px 10px; }
+  .cpt-grid { grid-template-columns: 1fr; }
+  .prev-item { flex-wrap: wrap; }
+  .prev-item-amount { min-width: unset; }
 }
 
 @media (min-width: 1024px) {
@@ -1553,14 +1707,7 @@ code {
   min-height: 52px;
 }
 
-@media (max-width: 640px) {
-  .advance-client  { min-width: 120px; }
-  .advance-right   { min-width: 100px; flex-direction: column; align-items: flex-end; gap: 4px; }
-  .advance-status-badge { display: none; }
-  .pcal-check      { width: 16px; height: 16px; border-radius: 4px; }
-  .pcal-day.pub-day { min-height: 80px; }
-  .pubcal-toolbar   { flex-direction: column; align-items: flex-start; }
-}
+/* moved to main responsive section */
 
 /* ================================================================
    PORTAIL CLIENT
@@ -1768,15 +1915,7 @@ code {
 .btn-icon-del:hover { background: var(--danger-bg); color: var(--danger); }
 
 /* ── Responsive portail ─────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .portal-charts { grid-template-columns: 1fr; }
-  .portal-kpis   { grid-template-columns: repeat(3, 1fr); }
-}
-@media (max-width: 600px) {
-  .portal-kpis           { grid-template-columns: 1fr; }
-  .portal-login-card     { width: 100%; padding: 32px 20px; }
-  .portal-header-actions { gap: 6px; }
-}
+/* portal responsive moved to main responsive section */
 
 /* ================================================================
    TOAST + CONFIRM
@@ -2723,18 +2862,7 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   color: var(--success);
 }
 
-/* ── Responsive ─────────────────────────────────────────────────── */
-@media (max-width: 600px) {
-  .prev-summary-grid {
-    grid-template-columns: 1fr;
-  }
-  .prev-item {
-    flex-wrap: wrap;
-  }
-  .prev-item-amount {
-    min-width: unset;
-  }
-}
+/* prev responsive moved to main responsive section */
 
 /* ================================================================
    TO DO LIST WIDGET
