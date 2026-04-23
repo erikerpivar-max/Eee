@@ -188,7 +188,8 @@ input, select, textarea { font-family: var(--font); outline: none; transition: b
   background: var(--primary);
   border-radius: 0 3px 3px 0;
 }
-.nav-icon { flex-shrink: 0; opacity: .75; }
+.nav-icon { flex-shrink: 0; opacity: .6; }
+.nav-link:hover .nav-icon { opacity: .85; }
 .nav-link.active .nav-icon { opacity: 1; }
 .nav-client-dot {
   width: 8px; height: 8px;
