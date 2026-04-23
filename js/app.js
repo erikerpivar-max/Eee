@@ -488,13 +488,13 @@ window.Dashboard = {
         label  = `${days}j d'avance`;
         status = 'good';
       } else if (days >= 15) {
+        color  = 'var(--success)';
+        label  = `${days}j d'avance`;
+        status = 'ok';
+      } else if (days >= 0) {
         color  = 'var(--warning)';
         label  = `${days}j d'avance`;
         status = 'warning';
-      } else if (days >= 0) {
-        color  = 'var(--danger)';
-        label  = `${days}j d'avance`;
-        status = 'danger';
       } else {
         color  = 'var(--danger)';
         label  = `En retard (${Math.abs(days)}j)`;
@@ -507,7 +507,7 @@ window.Dashboard = {
       /* Badge statut */
       const badge = status === 'none' ? '' :
         `<span class="advance-status-badge advance-${status}">
-           ${status === 'good' ? '✓ OK' : status === 'warning' ? '⚠ Attention' : status === 'danger' ? '⚠ Urgent' : '● Retard'}
+           ${status === 'good' ? '✓ On est large' : status === 'ok' ? '✓ OK' : status === 'warning' ? '⚠ Attention' : '● Retard'}
          </span>`;
 
       return `
@@ -578,14 +578,7 @@ window.escHtml = escHtml;
 /* ─── Init ───────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
 
-  /* Dates */
-  const now     = new Date();
-  const dateStr = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
-  const cap     = s => s.charAt(0).toUpperCase() + s.slice(1);
-  const topbarDate  = document.getElementById('topbarDate');
-  const sidebarDate = document.getElementById('sidebarDate');
-  if (topbarDate)  topbarDate.textContent  = cap(dateStr);
-  if (sidebarDate) sidebarDate.textContent = cap(dateStr);
+  /* Dates supprimées de l'UI */
 
   /* Sidebar hamburger */
   const hamburger = document.getElementById('hamburger');

@@ -121,6 +121,7 @@ window.Prevision = (() => {
             incomeRecur.map(i => `
               <div class="prev-item prev-item-income">
                 <span class="prev-item-name">${escHtml(i.name)}</span>
+                ${i.startMonth ? `<span class="prev-item-date">à partir de ${i.startMonth}</span>` : ''}
                 <span class="prev-item-amount">+${fmt(i.amount)}</span>
                 <button class="prev-item-del" data-type="income_recur" data-id="${i.id}" title="Supprimer">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -167,6 +168,7 @@ window.Prevision = (() => {
             expenseRecur.map(i => `
               <div class="prev-item prev-item-expense">
                 <span class="prev-item-name">${escHtml(i.name)}</span>
+                ${i.startMonth ? `<span class="prev-item-date">à partir de ${i.startMonth}</span>` : ''}
                 <span class="prev-item-amount">-${fmt(i.amount)}</span>
                 <button class="prev-item-del" data-type="expense_recur" data-id="${i.id}" title="Supprimer">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -246,15 +248,19 @@ window.Prevision = (() => {
       const mk    = monthKey(year, month);
       const label = getMonthLabel(year, month);
 
-      /* Revenus du mois */
-      const recurIn  = incomeRecur.reduce((s, x) => s + x.amount, 0);
+      /* Revenus du mois (récurrents actifs à ce mois) */
+      const recurIn  = incomeRecur
+        .filter(x => !x.startMonth || x.startMonth <= mk)
+        .reduce((s, x) => s + x.amount, 0);
       const expectIn = incomeExpected
         .filter(x => x.month === mk)
         .reduce((s, x) => s + x.amount, 0);
       const totalIn  = recurIn + expectIn;
 
-      /* Dépenses du mois */
-      const recurOut = expenseRecur.reduce((s, x) => s + x.amount, 0);
+      /* Dépenses du mois (récurrentes actives à ce mois) */
+      const recurOut = expenseRecur
+        .filter(x => !x.startMonth || x.startMonth <= mk)
+        .reduce((s, x) => s + x.amount, 0);
       const onceOut  = expenseOnce
         .filter(x => x.month === mk)
         .reduce((s, x) => s + x.amount, 0);
@@ -318,9 +324,9 @@ window.Prevision = (() => {
 
     /* Ajouter revenu récurrent */
     document.getElementById('prev-add-income-recur')?.addEventListener('click', () => {
-      _promptEntry('Nouveau revenu récurrent', null, (name, amount) => {
+      _promptEntry('Nouveau revenu récurrent', 'startMonth', (name, amount, month) => {
         const list = getIncomeRecur();
-        list.push({ id: App.uid(), name, amount });
+        list.push({ id: App.uid(), name, amount, startMonth: month || '' });
         saveIncomeRecur(list);
         render();
       });
@@ -338,9 +344,9 @@ window.Prevision = (() => {
 
     /* Ajouter dépense récurrente */
     document.getElementById('prev-add-expense-recur')?.addEventListener('click', () => {
-      _promptEntry('Nouvelle dépense récurrente', null, (name, amount) => {
+      _promptEntry('Nouvelle dépense récurrente', 'startMonth', (name, amount, month) => {
         const list = getExpenseRecur();
-        list.push({ id: App.uid(), name, amount });
+        list.push({ id: App.uid(), name, amount, startMonth: month || '' });
         saveExpenseRecur(list);
         render();
       });
@@ -427,10 +433,19 @@ window.Prevision = (() => {
       monthOptions.push(`<option value="${mk}">${ml}</option>`);
     }
 
-    const monthField = withMonth ? `
-      <label class="form-label" style="margin-top:14px">Mois prévu</label>
-      <select class="form-select" id="_prev-month">${monthOptions.join('')}</select>
-    ` : '';
+    let monthField = '';
+    if (withMonth === 'month') {
+      monthField = `
+        <label class="form-label" style="margin-top:14px">Mois prévu</label>
+        <select class="form-select" id="_prev-month">${monthOptions.join('')}</select>`;
+    } else if (withMonth === 'startMonth') {
+      monthField = `
+        <label class="form-label" style="margin-top:14px">À partir de (optionnel)</label>
+        <select class="form-select" id="_prev-month">
+          <option value="">Dès maintenant</option>
+          ${monthOptions.join('')}
+        </select>`;
+    }
 
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';

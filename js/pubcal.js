@@ -71,8 +71,9 @@ window.PubCal = (() => {
                 </div>`;
       }
 
-      const isToday  = cell.dateStr === today;
-      const isPubDay = cell.isPubDay;
+      const isToday   = cell.dateStr === today;
+      const isPubDay  = cell.isPubDay;
+      const isProgDay = cell.isProgDay;
 
       let checksHTML = '';
       if (isPubDay) {
@@ -96,10 +97,16 @@ window.PubCal = (() => {
         '</div>';
       }
 
+      let progHTML = '';
+      if (isProgDay) {
+        progHTML = '<div class="pcal-prog-label">Jour de programmation</div>';
+      }
+
       return `
-        <div class="cal-day pcal-day${isToday ? ' today' : ''}${isPubDay ? ' pub-day' : ''}">
+        <div class="cal-day pcal-day${isToday ? ' today' : ''}${isPubDay ? ' pub-day' : ''}${isProgDay ? ' prog-day' : ''}">
           <div class="cal-day-num">${cell.day}</div>
           ${isPubDay ? '<div class="pub-day-dot"></div>' : ''}
+          ${progHTML}
           ${checksHTML}
         </div>`;
     }).join('');
@@ -156,10 +163,22 @@ window.PubCal = (() => {
     }
 
     /* Jours du mois courant */
+    /* Trouver le 1er samedi du mois */
+    let firstSaturday = null;
+    for (let d = 1; d <= 7; d++) {
+      if (new Date(_year, _month, d).getDay() === 6) { firstSaturday = d; break; }
+    }
+
     for (let d = 1; d <= daysCount; d++) {
       const dateStr = `${_year}-${String(_month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const dow     = new Date(_year, _month, d).getDay();
-      cells.push({ day: d, current: true, dateStr, isPubDay: PUB_DAYS.has(dow) });
+      cells.push({
+        day: d,
+        current: true,
+        dateStr,
+        isPubDay: PUB_DAYS.has(dow),
+        isProgDay: d === firstSaturday,
+      });
     }
 
     /* Complétion de la grille (multiple de 7) */

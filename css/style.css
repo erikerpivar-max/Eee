@@ -1189,6 +1189,64 @@ code {
   opacity: .9;
 }
 
+/* Kanban : engrenage checklist */
+.kanban-gear-btn {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  transition: background var(--dur), color var(--dur);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.kanban-gear-btn:hover { background: var(--surface); color: var(--text); }
+
+/* Kanban : popup checklist */
+.kanban-cl-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.kanban-cl-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background var(--dur);
+}
+.kanban-cl-item:hover { background: var(--border-light); }
+.kanban-cl-checkbox {
+  width: 18px; height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Config checklist */
+.kanban-clc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+.kanban-clc-text {
+  flex: 1;
+  font-size: .88rem;
+}
+.kanban-clc-del {
+  color: var(--text-3);
+  padding: 2px;
+  border-radius: 4px;
+  transition: color var(--dur), background var(--dur);
+}
+.kanban-clc-del:hover { color: var(--danger); background: var(--danger-bg); }
+
 /* ─── CONTENU ADVANCE (dashboard) ───────────────────────────────── */
 .content-advance-grid {
   background: var(--surface);
@@ -1261,6 +1319,7 @@ code {
   white-space: nowrap;
 }
 .advance-good    { background: var(--success-bg); color: var(--success); }
+.advance-ok      { background: var(--success-bg); color: var(--success); }
 .advance-warning { background: var(--warning-bg); color: var(--warning); }
 .advance-danger,
 .advance-critical { background: var(--danger-bg);  color: var(--danger); }
@@ -1358,6 +1417,20 @@ code {
 }
 .pcal-check:hover { opacity: .75; transform: scale(1.1); }
 .pcal-check.checked { /* background et border inlinés */ }
+
+/* Jour de programmation (1er samedi du mois) */
+.pcal-day.prog-day {
+  border: 2px solid #3B82F6 !important;
+  background: #EFF6FF;
+}
+.pcal-prog-label {
+  font-size: .65rem;
+  font-weight: 700;
+  color: #3B82F6;
+  text-align: center;
+  margin: 2px 0 4px;
+  line-height: 1.2;
+}
 
 .cal-nav-btn:disabled {
   opacity: .3;
@@ -2600,3 +2673,70 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   font-size: .75rem;
   padding: 4px 10px;
 }
+
+/* ── To Do : Catégories ────────────────────────────────────────── */
+.todo-cat-section {
+  margin-top: 10px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.todo-cat-section:first-child { margin-top: 0; }
+
+.todo-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.todo-cat-label {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.todo-cat-del-btn {
+  color: var(--text-3);
+  padding: 2px;
+  border-radius: 4px;
+  transition: color var(--dur), background var(--dur);
+}
+.todo-cat-del-btn:hover { color: var(--danger); background: var(--danger-bg); }
+
+.todo-cat-items {
+  padding: 4px 0;
+}
+.todo-cat-empty {
+  padding: 10px 12px;
+  font-size: .82rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Priorité ultime */
+.todo-priority-section {
+  border: 2px solid #EAB308;
+  background: #FEFCE8;
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+}
+.todo-priority-section .todo-cat-header {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+.todo-item-priority {
+  background: #FEFCE822;
+}
+
+/* Bouton étoile priorité */
+.todo-prio-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity var(--dur), color var(--dur);
+  padding: 2px;
+}
+.todo-item:hover .todo-prio-btn { opacity: 1; }
+.todo-prio-btn.active { opacity: 1; }
