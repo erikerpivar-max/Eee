@@ -159,6 +159,8 @@ window.TodoList = {
     this.render();
   },
 
+  _pendingDeletes: {},
+
   toggle(id) {
     const todos = this.load();
     const item = todos.find(t => t.id === id);
@@ -166,6 +168,21 @@ window.TodoList = {
       item.done = !item.done;
       this.save(todos);
       this.render();
+
+      if (item.done) {
+        /* Suppression auto après 5 secondes */
+        if (this._pendingDeletes[id]) clearTimeout(this._pendingDeletes[id]);
+        this._pendingDeletes[id] = setTimeout(() => {
+          delete this._pendingDeletes[id];
+          this.remove(id);
+        }, 5000);
+      } else {
+        /* Décochée → annuler la suppression */
+        if (this._pendingDeletes[id]) {
+          clearTimeout(this._pendingDeletes[id]);
+          delete this._pendingDeletes[id];
+        }
+      }
     }
   },
 
