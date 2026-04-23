@@ -100,6 +100,18 @@
 
 
       <div class="nav-group">
+        <p class="nav-group-label">Gestion</p>
+        <ul>
+          <li>
+            <a class="nav-link" data-view="prevision" href="#">
+              <svg class="nav-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <span>Prévision</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
         <p class="nav-group-label">Production</p>
         <ul>
           <li>
@@ -289,6 +301,15 @@
           <span class="daily-total-label">↳ Autre</span>
           <span class="daily-total-value" id="autreTotalValue">0h 00min</span>
         </div>
+      </section>
+
+      <!-- ── VUE : PRÉVISION ──────────────────────────────────── -->
+      <section class="view" id="view-prevision">
+        <div class="view-intro">
+          <h2 class="view-title">Prévision</h2>
+          <p class="view-subtitle">Gérez votre trésorerie, vos revenus et dépenses.</p>
+        </div>
+        <div id="prevision-container"></div>
       </section>
 
       <!-- ── VUE : KANBAN ──────────────────────────────────────── -->
@@ -532,12 +553,13 @@
       </div>
     </div>
   </div>
-  <script src="js/app.js?v=4"></script>
+  <script src="js/app.js?v=5"></script>
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=2"></script>
   <script src="js/pubcal.js?v=2"></script>
   <script src="js/portal.js?v=2"></script>
   <script src="js/scriptorga.js?v=1"></script>
+  <script src="js/prevision.js?v=1"></script>
 
 </body>
 </html>

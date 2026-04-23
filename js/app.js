@@ -149,6 +149,7 @@ window.App = {
   PAGE_TITLES: {
     'dashboard':   'Dashboard',
     'timetracker': 'Time Tracking',
+    'prevision':   'Prévision',
     'kanban':      'Kanban',
     'publication': 'Publication',
     'portal':      'Portail Client',
@@ -172,6 +173,7 @@ window.App = {
 
     if (viewId === 'dashboard')   Dashboard.refresh();
     if (viewId === 'timetracker') { TimeTracker.renderTable(); TimeTracker.populateClientSelect(); }
+    if (viewId === 'prevision')   _safeRender('prevision-container', () => Prevision.render());
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
     if (viewId === 'portal')      _safeRender('view-portal',      () => Portal.init());

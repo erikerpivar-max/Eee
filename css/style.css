@@ -2267,3 +2267,227 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   user-select: none;
   opacity: .8;
 }
+
+/* ================================================================
+   PRÉVISION — Section financière
+   ================================================================ */
+
+/* ── Summary cards ──────────────────────────────────────────────── */
+.prev-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.prev-summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  transition: box-shadow var(--dur) var(--ease);
+}
+
+.prev-summary-card:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.prev-card-treasury {
+  border-left: 3px solid #6366F1;
+}
+
+.prev-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--c);
+  flex-shrink: 0;
+}
+
+.prev-card-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+.prev-card-label {
+  font-size: .78rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.prev-edit-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur), background var(--dur);
+}
+
+.prev-edit-btn:hover {
+  color: var(--primary);
+  background: var(--primary-bg);
+}
+
+/* ── Sections ───────────────────────────────────────────────────── */
+.prev-section {
+  margin-bottom: 28px;
+}
+
+.prev-section .section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── Item list ──────────────────────────────────────────────────── */
+.prev-list {
+  margin-top: 10px;
+}
+
+.prev-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  transition: box-shadow var(--dur) var(--ease);
+}
+
+.prev-item:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+.prev-item-name {
+  flex: 1;
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.prev-item-date {
+  font-size: .78rem;
+  color: var(--text-3);
+  background: var(--bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.prev-item-amount {
+  font-size: .9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+.prev-item-income .prev-item-amount {
+  color: var(--success);
+}
+
+.prev-item-expense .prev-item-amount {
+  color: var(--danger);
+}
+
+.prev-item-del {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color var(--dur), background var(--dur);
+  flex-shrink: 0;
+}
+
+.prev-item-del:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+/* ── Forecast table ─────────────────────────────────────────────── */
+.prev-forecast-table td,
+.prev-forecast-table th {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.prev-forecast-table td:first-child,
+.prev-forecast-table th:first-child {
+  text-align: left;
+}
+
+.prev-month-cell {
+  font-weight: 500;
+}
+
+.prev-positive {
+  color: var(--success);
+}
+
+.prev-negative {
+  color: var(--danger);
+}
+
+/* ── Advice ─────────────────────────────────────────────────────── */
+.prev-advice {
+  margin-top: 24px;
+}
+
+.prev-advice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.prev-advice-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.prev-advice-warn {
+  color: var(--warning);
+}
+
+.prev-advice-ok {
+  color: var(--success);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .prev-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .prev-item {
+    flex-wrap: wrap;
+  }
+  .prev-item-amount {
+    min-width: unset;
+  }
+}
