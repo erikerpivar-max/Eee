@@ -211,6 +211,25 @@
         </div>
         <div class="content-advance-grid" id="content-advance-grid"></div>
 
+        <!-- To Do List -->
+        <div class="section-header" style="margin-top:36px">
+          <h3 class="section-title">To Do List</h3>
+          <span class="section-hint" id="todo-counter">0 restante(s)</span>
+        </div>
+        <div class="todo-widget" id="todo-widget">
+          <div class="todo-add-row">
+            <input type="text" id="todoInput" class="todo-input" placeholder="Ajouter une tâche…" autocomplete="off" />
+            <button class="btn btn-primary btn-sm" id="todoAddBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Ajouter
+            </button>
+          </div>
+          <ul class="todo-list" id="todoList"></ul>
+          <div class="todo-footer" id="todoFooter" style="display:none">
+            <button class="btn btn-ghost btn-xs" id="todoClearDone">Supprimer terminées</button>
+          </div>
+        </div>
+
         <!-- Dernières tâches -->
         <div class="section-header" style="margin-top:36px">
           <h3 class="section-title">Dernières tâches</h3>
@@ -553,6 +572,7 @@
       </div>
     </div>
   </div>
+  <script src="js/todo.js?v=1"></script>
   <script src="js/app.js?v=5"></script>
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=2"></script>

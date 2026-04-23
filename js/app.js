@@ -384,6 +384,7 @@ window.Dashboard = {
     this._stats();
     this._clientHours();
     this._contentAdvance();
+    if (window.TodoList) TodoList.render();
     this._recentTasks();
   },
 
@@ -642,6 +643,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Données démo (première visite) */
   _initDemoData();
+
+  /* To Do List */
+  if (window.TodoList) TodoList.init();
 
   /* Bloquer la navigation pour les sessions client */
   const _origNavigateTo = App.navigateTo.bind(App);
