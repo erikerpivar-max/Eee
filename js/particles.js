@@ -11,15 +11,15 @@
 
   /* ── Config ─────────────────────────────────────────── */
   const CFG = {
-    count: 60,            // number of particles
-    minR: 1,              // min radius
-    maxR: 2.8,            // max radius
-    speed: 0.15,          // base drift speed
-    lineAlpha: 0.06,      // connection line opacity
-    lineDist: 140,        // max distance to draw a line
+    count: 80,            // number of particles
+    minR: 1.5,            // min radius
+    maxR: 3.5,            // max radius
+    speed: 0.2,           // base drift speed
+    lineAlpha: 0.14,      // connection line opacity
+    lineDist: 160,        // max distance to draw a line
     particleColor: [200, 136, 42],   // --primary #C8882A
-    particleAlpha: 0.18,
-    mouse: { x: -9999, y: -9999, radius: 160 },
+    particleAlpha: 0.35,
+    mouse: { x: -9999, y: -9999, radius: 180 },
   };
 
   let W, H, particles = [], dpr = 1, animId;
