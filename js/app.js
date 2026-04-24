@@ -679,3 +679,25 @@ function _initDemoData() {
     App.save(App.KEYS.TASKS, []);
   }
 }
+
+/* ─── Dark mode toggle ───────────────────────────────────────────── */
+(function initThemeToggle() {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+
+  btn.addEventListener('click', function() {
+    var html = document.documentElement;
+    /* Ajoute la classe de transition pour un changement fluide */
+    html.classList.add('theme-transitioning');
+    var isDark = html.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('the-house-theme', 'light');
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('the-house-theme', 'dark');
+    }
+    /* Retire la classe après la transition */
+    setTimeout(function() { html.classList.remove('theme-transitioning'); }, 260);
+  });
+})();
