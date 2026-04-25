@@ -3299,3 +3299,292 @@ html.theme-transitioning *::after {
 [data-theme="dark"] .color-palette .color-swatch:hover {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px currentColor;
 }
+
+/* ================================================================
+   SCRIPT ORGA — Nouvelles fonctionnalités
+   ================================================================ */
+
+/* ── Hint raccourci notes ──────────────────────────────────────── */
+.so-notes-hint {
+  font-size: .75rem;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.so-notes-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text-2);
+  font-family: var(--font);
+  line-height: 1.6;
+}
+
+/* ── Drag handle ───────────────────────────────────────────────── */
+.so-drag-cell {
+  padding: 0 6px !important;
+  text-align: center;
+  cursor: grab;
+  width: 28px;
+}
+.so-drag-handle {
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity .15s;
+  display: block;
+  margin: auto;
+}
+.so-row:hover .so-drag-handle {
+  opacity: .55;
+}
+.so-drag-cell:hover .so-drag-handle { opacity: 1; }
+.so-row--dragging {
+  opacity: .4;
+  background: var(--primary-bg) !important;
+}
+.so-row--dragover {
+  box-shadow: inset 0 2px 0 var(--primary);
+  background: var(--primary-bg) !important;
+}
+
+/* ── Cellule format avec bouton toggle ─────────────────────────── */
+.so-fmt-cell-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.so-section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--text-3);
+  transition: background .15s, color .15s;
+  padding: 0;
+}
+.so-section-toggle:hover {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+.so-section-toggle--today {
+  color: var(--primary);
+}
+.so-section-toggle--today:hover {
+  background: var(--primary-bg);
+}
+
+/* ── Section headers dans le tableau ──────────────────────────── */
+.so-section-header-row td,
+.so-section-label {
+  padding: 8px 16px !important;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-light) !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.so-section-label--today {
+  color: var(--primary);
+}
+
+/* ── Zone vide de section (drop target) ───────────────────────── */
+.so-section-empty-row td,
+.so-section-empty-cell {
+  padding: 14px 16px !important;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--text-3);
+  font-style: italic;
+  border: 1.5px dashed transparent !important;
+  border-radius: 6px;
+  margin: 6px !important;
+  transition: border-color .15s, background .15s;
+}
+.so-section-empty-cell--dragover {
+  border-color: var(--primary) !important;
+  background: var(--primary-bg) !important;
+  color: var(--primary) !important;
+  font-style: normal;
+}
+
+/* ── Séparateur de sections ────────────────────────────────────── */
+.so-separator-row td {
+  padding: 0 !important;
+  border: none !important;
+}
+.so-separator-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  margin: 4px 0;
+}
+.so-separator-line::before,
+.so-separator-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.so-separator-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  white-space: nowrap;
+  padding: 6px 0;
+}
+
+/* ── Compteur de scripts ───────────────────────────────────────── */
+.so-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: .85rem;
+  color: var(--text-2);
+  box-shadow: var(--shadow-sm);
+}
+.so-counter-icon {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.so-counter-label {
+  font-weight: 500;
+}
+.so-counter-val {
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--primary);
+}
+.so-counter-val--done {
+  color: var(--success);
+}
+.so-counter-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--success-bg, #ECFDF5);
+  color: var(--success, #10B981);
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* ── Popup "Appliquer l'angle" ─────────────────────────────────── */
+.so-angle-popup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0,0,0,.12));
+  font-size: .82rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity .18s, transform .18s;
+  pointer-events: none;
+}
+.so-angle-popup--visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.so-angle-popup-text {
+  color: var(--text-2);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.so-angle-popup-btn {
+  padding: 4px 12px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 6px;
+  font-size: .8rem;
+  font-weight: 600;
+  transition: opacity .15s;
+  white-space: nowrap;
+}
+.so-angle-popup-btn:hover { opacity: .85; }
+
+/* ── Modal Notes ───────────────────────────────────────────────── */
+.so-notes-modal-box {
+  max-width: 560px;
+  width: min(560px, 94vw);
+  height: min(70vh, 520px);
+  max-height: min(70vh, 520px);
+  display: flex;
+  flex-direction: column;
+}
+.so-notes-ta {
+  width: 100%;
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: .9rem;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--surface);
+  font-family: var(--font);
+  transition: border-color var(--dur), box-shadow var(--dur);
+  min-height: 200px;
+}
+.so-notes-ta:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.1);
+  outline: none;
+}
+
+/* ── Dark mode ─────────────────────────────────────────────────── */
+[data-theme="dark"] .so-angle-popup {
+  background: var(--surface);
+  border-color: var(--border);
+}
+[data-theme="dark"] .so-counter {
+  background: var(--surface);
+  border-color: var(--border);
+}
+[data-theme="dark"] .so-notes-ta {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+[data-theme="dark"] .so-notes-kbd {
+  background: #252119;
+  border-color: var(--border);
+}
+[data-theme="dark"] .so-section-label,
+[data-theme="dark"] .so-separator-line::before,
+[data-theme="dark"] .so-separator-line::after {
+  background: transparent;
+}
+[data-theme="dark"] .so-section-header-row td {
+  background: var(--bg);
+}
