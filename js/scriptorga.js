@@ -11,10 +11,10 @@ window.ScriptOrga = (() => {
   const KEY_PLAN  = 'so_plan';
   const KEY_NOTES = 'so_notes';
 
-  let _db         = null;
-  let _plan       = null;
-  let _editingRow = null; // { gid, rid }
-  let _dragState  = null; // { type: 'row', gid, rid }
+  let _db              = null;
+  let _plan            = null;
+  let _editingRow      = null; // { gid, rid }
+  let _dragGid         = null; // id du groupe en cours de drag
   let _anglePopupTimer = null;
 
   /* ─── Persistence ─────────────────────────────────────────────── */
@@ -33,11 +33,6 @@ window.ScriptOrga = (() => {
   function renderView() {
     _loadDB();
     _plan = App.load(KEY_PLAN, { clientId: null, groups: [] });
-
-    // Migration : ajouter section aux groupes existants sans section
-    _plan.groups.forEach(g => {
-      if (!g.section) g.section = 'unknown';
-    });
 
     const el = document.getElementById('scriptorga-container');
     if (!el) return;
@@ -61,7 +56,7 @@ window.ScriptOrga = (() => {
         <div class="so-block so-block--orga">
           <div class="section-header">
             <h3 class="section-title">Organisateur</h3>
-            <span class="so-notes-hint">Notes : <kbd class="so-notes-kbd">Ctrl</kbd>+<kbd class="so-notes-kbd">.</kbd></span>
+            <span class="so-notes-hint">Notes : <kbd class="so-notes-kbd">Ctrl</kbd>+<kbd class="so-notes-kbd">4</kbd></span>
           </div>
           <div id="so-orga">${_renderOrga()}</div>
         </div>
@@ -184,7 +179,6 @@ window.ScriptOrga = (() => {
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
             <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
           </svg>
           <span class="so-counter-label">Scripts rédigés :</span>
           <span class="so-counter-val ${doneScripts === totalRows && totalRows > 0 ? 'so-counter-val--done' : ''}">${doneScripts} / ${totalRows}</span>
@@ -195,91 +189,31 @@ window.ScriptOrga = (() => {
       </div>`;
   }
 
-  /* ─── Table body avec séparateur de sections ──────────────────── */
+  /* ─── Table body ──────────────────────────────────────────────── */
   function _renderTableBody() {
-    const todayGroups   = _plan.groups.filter(g => g.section === 'today');
-    const unknownGroups = _plan.groups.filter(g => g.section !== 'today');
-
-    let html = '';
-
-    // En-tête section "Aujourd'hui"
-    html += `<tr class="so-section-header-row">
-      <td colspan="6" class="so-section-label so-section-label--today">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        À faire aujourd'hui
-      </td>
-    </tr>`;
-
-    if (todayGroups.length === 0) {
-      html += `<tr class="so-section-empty-row">
-        <td colspan="6" class="so-section-empty-cell" data-droptarget="today">
-          Glisse un format ici pour le planifier aujourd'hui
-        </td>
-      </tr>`;
-    } else {
-      todayGroups.forEach(g => { html += _renderGroup(g); });
-    }
-
-    // Séparateur
-    html += `<tr class="so-separator-row">
-      <td colspan="6">
-        <div class="so-separator-line">
-          <span class="so-separator-label">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            À planifier
-          </span>
-        </div>
-      </td>
-    </tr>`;
-
-    if (unknownGroups.length === 0) {
-      html += `<tr class="so-section-empty-row">
-        <td colspan="6" class="so-section-empty-cell" data-droptarget="unknown">
-          Glisse un format ici
-        </td>
-      </tr>`;
-    } else {
-      unknownGroups.forEach(g => { html += _renderGroup(g); });
-    }
-
-    return html;
+    return _plan.groups.map(g => _renderGroup(g)).join('');
   }
 
+  /* ─── Groupe (format + lignes) ────────────────────────────────── */
   function _renderGroup(group) {
     let html = group.rows.map((row, i) => {
       const done = !!(row.script && row.script.trim());
-      const isToday = group.section === 'today';
       return `
-        <tr class="so-row" draggable="true"
-            data-gid="${group.id}" data-rid="${row.id}" data-rowidx="${i}">
-          <td class="so-drag-cell">
-            <svg class="so-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <circle cx="9"  cy="6"  r="1.5" fill="currentColor"/>
-              <circle cx="15" cy="6"  r="1.5" fill="currentColor"/>
-              <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
-              <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
-              <circle cx="9"  cy="18" r="1.5" fill="currentColor"/>
-              <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
-            </svg>
+        <tr class="so-row" data-gid="${group.id}" data-rid="${row.id}" data-rowidx="${i}">
+          <td class="so-drag-cell" ${i === 0 ? `draggable="true" data-drag-gid="${group.id}"` : ''}>
+            ${i === 0 ? `
+              <svg class="so-drag-handle" width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <circle cx="9"  cy="6"  r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="6"  r="1.5" fill="currentColor"/>
+                <circle cx="9"  cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="12" r="1.5" fill="currentColor"/>
+                <circle cx="9"  cy="18" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="18" r="1.5" fill="currentColor"/>
+              </svg>` : ''}
           </td>
           <td class="so-fmt-cell">
             ${i === 0
-              ? `<div class="so-fmt-cell-inner">
-                   <button class="so-section-toggle ${isToday ? 'so-section-toggle--today' : ''}"
-                           data-gid="${group.id}"
-                           title="${isToday ? 'Retirer des tâches du jour' : 'Planifier aujourd\'hui'}">
-                     ${isToday
-                       ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`
-                       : `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`}
-                   </button>
-                   <span class="so-fmt-badge">${escHtml(group.format)}</span>
-                 </div>`
+              ? `<span class="so-fmt-badge">${escHtml(group.format)}</span>`
               : `<span class="so-fmt-bar"></span>`}
           </td>
           <td class="so-sel-cell">
@@ -305,6 +239,12 @@ window.ScriptOrga = (() => {
           </td>
         </tr>`;
     }).join('');
+
+    /* Ligne drop-target entre groupes */
+    html += `
+      <tr class="so-group-drop-row" data-drop-gid="${group.id}">
+        <td colspan="6" class="so-group-drop-cell"></td>
+      </tr>`;
 
     /* Ligne footer du groupe */
     html += `
@@ -344,7 +284,6 @@ window.ScriptOrga = (() => {
   /* ─── Bind events ──────────────────────────────────────────────── */
   function _bindAll(el) {
 
-    /* DB : afficher le champ inline */
     el.querySelectorAll('.so-db-add-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const row = el.querySelector(`.so-db-inline[data-for="${btn.dataset.type}"]`);
@@ -352,12 +291,10 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* DB : confirmer */
     el.querySelectorAll('.so-db-confirm').forEach(btn => {
       btn.addEventListener('click', () => _confirmAddDB(el, btn.dataset.type));
     });
 
-    /* DB : annuler */
     el.querySelectorAll('.so-db-cancel').forEach(btn => {
       btn.addEventListener('click', () => {
         const row = el.querySelector(`.so-db-inline[data-for="${btn.dataset.for}"]`);
@@ -365,14 +302,12 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* DB : Entrée dans le champ */
     el.querySelectorAll('.so-db-input').forEach(inp => {
       inp.addEventListener('keydown', e => {
         if (e.key === 'Enter') _confirmAddDB(el, inp.dataset.type);
       });
     });
 
-    /* DB : supprimer tag */
     el.querySelectorAll('.so-tag-del').forEach(btn => {
       btn.addEventListener('click', () => {
         _db[btn.dataset.type].splice(parseInt(btn.dataset.idx), 1);
@@ -381,11 +316,9 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* Orga : démarrer */
     el.querySelector('#so-start-btn')?.addEventListener('click', () => {
       const sel = el.querySelector('#so-client-sel');
       if (!sel?.value) { App.toast('Choisissez un client', 'warning'); return; }
-
       if (_plan.clientId !== sel.value) {
         _plan = { clientId: sel.value, groups: [] };
         _savePlan();
@@ -397,15 +330,12 @@ window.ScriptOrga = (() => {
   }
 
   function _bindPlan(el) {
-    /* Sélection format initial */
     el.querySelectorAll('#so-init-picker .so-pill').forEach(pill => {
       pill.addEventListener('click', () => _addGroup(el, pill.dataset.format));
     });
 
-    /* Export */
     el.querySelector('#so-export-btn')?.addEventListener('click', _exportMd);
 
-    /* Nouveau plan */
     el.querySelector('#so-reset-btn')?.addEventListener('click', () => {
       App.confirm('Effacer le plan en cours ?', () => {
         _plan = { clientId: null, groups: [] };
@@ -414,7 +344,6 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* Ajouter format */
     el.querySelectorAll('.so-add-fmt-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const picker = el.querySelector('#so-extra-picker');
@@ -432,29 +361,15 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* + ligne */
     el.querySelectorAll('.so-add-row').forEach(btn => {
       btn.addEventListener('click', () => _addRow(el, btn.dataset.gid));
     });
 
-    /* Supprimer ligne */
     el.querySelectorAll('.so-row-del').forEach(btn => {
       btn.addEventListener('click', () => _deleteRow(el, btn.dataset.gid, btn.dataset.rid));
     });
 
-    /* Toggle section (aujourd'hui / à planifier) */
-    el.querySelectorAll('.so-section-toggle').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const g = _plan.groups.find(x => x.id === btn.dataset.gid);
-        if (!g) return;
-        g.section = g.section === 'today' ? 'unknown' : 'today';
-        _savePlan();
-        _rerenderPlan(el);
-      });
-    });
-
-    /* Angle — avec popup sur la 1ère ligne seulement */
+    /* Angle — popup sur la 1ère ligne seulement */
     el.querySelectorAll('.so-sel-angle').forEach(sel => {
       sel.addEventListener('change', () => {
         const rowIdx = parseInt(sel.dataset.rowidx);
@@ -469,7 +384,6 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* Hook */
     el.querySelectorAll('.so-sel-hook').forEach(sel => {
       sel.addEventListener('change', () => {
         const row = _findRow(sel.dataset.gid, sel.dataset.rid);
@@ -477,13 +391,90 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* Écrire script */
     el.querySelectorAll('.so-script-btn').forEach(btn => {
       btn.addEventListener('click', () => _openScriptModal(btn.dataset.gid, btn.dataset.rid));
     });
 
-    /* Drag & Drop */
-    _bindDragDrop(el);
+    /* Drag & drop de groupes entiers */
+    _bindGroupDragDrop(el);
+  }
+
+  /* ─── Drag & Drop — groupes entiers ──────────────────────────── */
+  function _bindGroupDragDrop(el) {
+    /* Handles de drag (cellule de la 1ère ligne de chaque groupe) */
+    el.querySelectorAll('[data-drag-gid]').forEach(handle => {
+      handle.addEventListener('dragstart', e => {
+        _dragGid = handle.dataset.dragGid;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', _dragGid);
+
+        // Marquer visuellement toutes les lignes du groupe
+        el.querySelectorAll(`[data-gid="${_dragGid}"]`).forEach(tr => {
+          tr.classList.add('so-group--dragging');
+        });
+      });
+
+      handle.addEventListener('dragend', () => {
+        el.querySelectorAll('.so-group--dragging').forEach(tr => tr.classList.remove('so-group--dragging'));
+        el.querySelectorAll('.so-group-drop-cell--over').forEach(td => td.classList.remove('so-group-drop-cell--over'));
+        _dragGid = null;
+      });
+    });
+
+    /* Drop targets : la ligne intercalaire sous chaque groupe */
+    el.querySelectorAll('.so-group-drop-row').forEach(dropRow => {
+      const cell = dropRow.querySelector('.so-group-drop-cell');
+
+      dropRow.addEventListener('dragover', e => {
+        if (!_dragGid) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.querySelectorAll('.so-group-drop-cell--over').forEach(td => td.classList.remove('so-group-drop-cell--over'));
+        cell.classList.add('so-group-drop-cell--over');
+      });
+
+      dropRow.addEventListener('dragleave', e => {
+        if (!dropRow.contains(e.relatedTarget)) {
+          cell.classList.remove('so-group-drop-cell--over');
+        }
+      });
+
+      dropRow.addEventListener('drop', e => {
+        e.preventDefault();
+        if (!_dragGid) return;
+        cell.classList.remove('so-group-drop-cell--over');
+
+        const targetGid = dropRow.dataset.dropGid;
+        if (_dragGid === targetGid) return; // drop sur soi-même → rien
+
+        const srcIdx = _plan.groups.findIndex(g => g.id === _dragGid);
+        const dstIdx = _plan.groups.findIndex(g => g.id === targetGid);
+        if (srcIdx === -1 || dstIdx === -1) return;
+
+        // Déplacer le groupe src juste après le groupe dst
+        const [moved] = _plan.groups.splice(srcIdx, 1);
+        const newDst  = _plan.groups.findIndex(g => g.id === targetGid);
+        _plan.groups.splice(newDst + 1, 0, moved);
+
+        _savePlan();
+        _rerenderPlan(el);
+      });
+    });
+
+    /* Drop target en tête de tableau (avant le premier groupe) */
+    const tbody = el.querySelector('#so-tbody');
+    if (tbody && _plan.groups.length > 0) {
+      tbody.addEventListener('dragover', e => {
+        if (!_dragGid) return;
+        const firstRow = tbody.querySelector('.so-row');
+        if (!firstRow) return;
+        const rect = firstRow.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+          e.preventDefault();
+          el.querySelectorAll('.so-group-drop-cell--over').forEach(td => td.classList.remove('so-group-drop-cell--over'));
+        }
+      });
+    }
   }
 
   /* ─── Popup "Appliquer l'angle aux autres lignes" ─────────────── */
@@ -531,110 +522,6 @@ window.ScriptOrga = (() => {
     }, 1500);
   }
 
-  /* ─── Drag & Drop ─────────────────────────────────────────────── */
-  function _bindDragDrop(el) {
-    const rows = el.querySelectorAll('.so-row[draggable="true"]');
-
-    rows.forEach(tr => {
-      tr.addEventListener('dragstart', e => {
-        _dragState = { type: 'row', gid: tr.dataset.gid, rid: tr.dataset.rid };
-        tr.classList.add('so-row--dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', tr.dataset.rid);
-      });
-
-      tr.addEventListener('dragend', () => {
-        tr.classList.remove('so-row--dragging');
-        el.querySelectorAll('.so-row--dragover').forEach(r => r.classList.remove('so-row--dragover'));
-        el.querySelectorAll('.so-section-empty-cell--dragover').forEach(c => c.classList.remove('so-section-empty-cell--dragover'));
-        _dragState = null;
-      });
-
-      tr.addEventListener('dragover', e => {
-        if (!_dragState) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        el.querySelectorAll('.so-row--dragover').forEach(r => r.classList.remove('so-row--dragover'));
-        if (tr.dataset.rid !== _dragState.rid) tr.classList.add('so-row--dragover');
-      });
-
-      tr.addEventListener('dragleave', () => {
-        tr.classList.remove('so-row--dragover');
-      });
-
-      tr.addEventListener('drop', e => {
-        e.preventDefault();
-        if (!_dragState || _dragState.type !== 'row') return;
-
-        const srcGid = _dragState.gid;
-        const srcRid = _dragState.rid;
-        const dstGid = tr.dataset.gid;
-        const dstRid = tr.dataset.rid;
-
-        if (srcRid === dstRid) return;
-
-        if (srcGid === dstGid) {
-          // Même groupe : réordonner
-          const g    = _plan.groups.find(x => x.id === srcGid);
-          const srcI = g.rows.findIndex(r => r.id === srcRid);
-          const dstI = g.rows.findIndex(r => r.id === dstRid);
-          const [row] = g.rows.splice(srcI, 1);
-          g.rows.splice(dstI, 0, row);
-        } else {
-          // Groupes différents : déplacer la ligne
-          const srcG  = _plan.groups.find(x => x.id === srcGid);
-          const dstG  = _plan.groups.find(x => x.id === dstGid);
-          const srcI  = srcG.rows.findIndex(r => r.id === srcRid);
-          const dstI  = dstG.rows.findIndex(r => r.id === dstRid);
-          const [row] = srcG.rows.splice(srcI, 1);
-          dstG.rows.splice(dstI, 0, row);
-          if (srcG.rows.length === 0) {
-            _plan.groups = _plan.groups.filter(x => x.id !== srcGid);
-          }
-        }
-
-        _savePlan();
-        _rerenderPlan(el);
-      });
-    });
-
-    /* Drop sur les zones vides de section */
-    el.querySelectorAll('[data-droptarget]').forEach(cell => {
-      cell.addEventListener('dragover', e => {
-        if (!_dragState) return;
-        e.preventDefault();
-        cell.classList.add('so-section-empty-cell--dragover');
-      });
-      cell.addEventListener('dragleave', () => {
-        cell.classList.remove('so-section-empty-cell--dragover');
-      });
-      cell.addEventListener('drop', e => {
-        e.preventDefault();
-        if (!_dragState || _dragState.type !== 'row') return;
-        cell.classList.remove('so-section-empty-cell--dragover');
-
-        const targetSection = cell.dataset.droptarget;
-        const srcG = _plan.groups.find(x => x.id === _dragState.gid);
-        if (!srcG) return;
-
-        if (srcG.rows.length === 1) {
-          srcG.section = targetSection;
-        } else {
-          const srcI  = srcG.rows.findIndex(r => r.id === _dragState.rid);
-          const [row] = srcG.rows.splice(srcI, 1);
-          _plan.groups.push({
-            id:      App.uid(),
-            format:  srcG.format,
-            section: targetSection,
-            rows:    [row],
-          });
-        }
-        _savePlan();
-        _rerenderPlan(el);
-      });
-    });
-  }
-
   /* ─── Opérations DB ───────────────────────────────────────────── */
   function _confirmAddDB(el, type) {
     const row = el.querySelector(`.so-db-inline[data-for="${type}"]`);
@@ -650,9 +537,8 @@ window.ScriptOrga = (() => {
   /* ─── Opérations Plan ─────────────────────────────────────────── */
   function _addGroup(el, format) {
     _plan.groups.push({
-      id:      App.uid(),
+      id:   App.uid(),
       format,
-      section: 'unknown',
       rows: [
         { id: App.uid(), angle: '', hook: '', script: '' },
         { id: App.uid(), angle: '', hook: '', script: '' },
@@ -757,7 +643,7 @@ window.ScriptOrga = (() => {
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
               Notes rapides
-              <kbd class="so-notes-kbd">Ctrl+.</kbd>
+              <kbd class="so-notes-kbd">Ctrl+4</kbd>
             </h3>
             <button class="modal-close-btn" id="so-notes-close-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -797,8 +683,6 @@ window.ScriptOrga = (() => {
       modal.addEventListener('click', e => {
         if (e.target === modal) App.closeModal('so-notes-modal');
       });
-
-      // Ctrl+S dans le textarea pour sauvegarder
       modal.querySelector('#so-notes-ta').addEventListener('keydown', e => {
         if (e.ctrlKey && e.key === 's') {
           e.preventDefault();
@@ -832,38 +716,17 @@ window.ScriptOrga = (() => {
 
     let md = `# Scripts — ${clientName}\n*Généré le ${date}*\n\n---\n\n`;
 
-    const todayGroups   = _plan.groups.filter(g => g.section === 'today');
-    const unknownGroups = _plan.groups.filter(g => g.section !== 'today');
-
-    if (todayGroups.length > 0) {
-      md += `## À faire aujourd'hui\n\n`;
-      todayGroups.forEach(g => {
-        md += `### Format : ${g.format}\n\n`;
-        g.rows.forEach((row, i) => {
-          md += `#### Vidéo ${i + 1}\n\n`;
-          if (row.angle) md += `**Angle :** ${row.angle}  \n`;
-          if (row.hook)  md += `**Hook :** ${row.hook}  \n`;
-          md += '\n';
-          md += row.script && row.script.trim() ? row.script.trim() + '\n' : '*Script non rédigé*\n';
-          md += '\n---\n\n';
-        });
+    _plan.groups.forEach(g => {
+      md += `## Format : ${g.format}\n\n`;
+      g.rows.forEach((row, i) => {
+        md += `### Vidéo ${i + 1}\n\n`;
+        if (row.angle) md += `**Angle :** ${row.angle}  \n`;
+        if (row.hook)  md += `**Hook :** ${row.hook}  \n`;
+        md += '\n';
+        md += row.script && row.script.trim() ? row.script.trim() + '\n' : '*Script non rédigé*\n';
+        md += '\n---\n\n';
       });
-    }
-
-    if (unknownGroups.length > 0) {
-      md += `## À planifier\n\n`;
-      unknownGroups.forEach(g => {
-        md += `### Format : ${g.format}\n\n`;
-        g.rows.forEach((row, i) => {
-          md += `#### Vidéo ${i + 1}\n\n`;
-          if (row.angle) md += `**Angle :** ${row.angle}  \n`;
-          if (row.hook)  md += `**Hook :** ${row.hook}  \n`;
-          md += '\n';
-          md += row.script && row.script.trim() ? row.script.trim() + '\n' : '*Script non rédigé*\n';
-          md += '\n---\n\n';
-        });
-      });
-    }
+    });
 
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
@@ -880,9 +743,9 @@ window.ScriptOrga = (() => {
     document.getElementById('so-save-script-btn')
       ?.addEventListener('click', _saveScript);
 
-    // Raccourci clavier Ctrl+. pour les notes (global)
+    // Raccourci clavier Ctrl+4 pour les notes (global)
     document.addEventListener('keydown', e => {
-      if (e.ctrlKey && e.key === '.') {
+      if (e.ctrlKey && e.key === '4') {
         const active = document.activeElement;
         const inInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
         if (!inInput) {
