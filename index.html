@@ -135,9 +135,21 @@
             </a>
           </li>
           <li>
-            <a class="nav-link" data-view="scriptorga" href="#">
+            <a class="nav-link" data-view="scripting" href="#">
               <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              <span>Script Orga</span>
+              <span>Scripting</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-group-label">Données</p>
+        <ul>
+          <li>
+            <a class="nav-link" data-view="database" href="#">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span>Base de données</span>
             </a>
           </li>
         </ul>
@@ -385,13 +397,22 @@
       </section>
 
 
-      <!-- ── VUE : SCRIPT ORGA ─────────────────────────────────── -->
-      <section class="view" id="view-scriptorga">
+      <!-- ── VUE : SCRIPTING ──────────────────────────────────── -->
+      <section class="view" id="view-scripting">
         <div class="view-intro">
-          <h2 class="view-title">Script Orga</h2>
-          <p class="view-subtitle">Gérez vos formats, angles et hooks. Organisez vos scripts.</p>
+          <h2 class="view-title">Scripting</h2>
+          <p class="view-subtitle">Organisez et rédigez vos scripts vidéo.</p>
         </div>
-        <div id="scriptorga-container"></div>
+        <div id="scripting-container"></div>
+      </section>
+
+      <!-- ── VUE : BASE DE DONNÉES ─────────────────────────────── -->
+      <section class="view" id="view-database">
+        <div class="view-intro">
+          <h2 class="view-title">Base de données</h2>
+          <p class="view-subtitle">Gérez vos formats, angles, hooks et consultez vos données.</p>
+        </div>
+        <div id="database-container"></div>
       </section>
 
       <!-- ── VUE : PUBLICATION ─────────────────────────────────── -->
@@ -453,11 +474,17 @@
         </select>
         <label class="form-label" style="margin-top:14px">Étape initiale</label>
         <select id="newProjectStage" class="form-select">
-          <option value="scripting">Scripting</option>
+          <option value="ecrire">Écrire</option>
           <option value="tournage">Tournage</option>
-          <option value="brouillon">Brouillon</option>
+          <option value="draft">Faire le DRAFT</option>
+          <option value="verif-draft">Vérification DRAFT</option>
+          <option value="sous-titre">Sous-titre</option>
           <option value="montage">Montage</option>
-          <option value="verification">Vérification</option>
+          <option value="sheets">Compléter le Sheets</option>
+          <option value="verif-v1">Vérification V1</option>
+          <option value="verif-final">Vérification Final</option>
+          <option value="prog">Programmation</option>
+          <option value="archivage">Archivage</option>
         </select>
       </div>
       <div class="modal-foot">
@@ -612,12 +639,12 @@
     </div>
   </div>
   <script src="js/todo.js?v=1"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/app.js?v=6"></script>
   <script src="js/timetracker.js?v=4"></script>
-  <script src="js/kanban.js?v=2"></script>
+  <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=2"></script>
   <script src="js/portal.js?v=2"></script>
-  <script src="js/scriptorga.js?v=1"></script>
+  <script src="js/scriptorga.js?v=2"></script>
   <script src="js/prevision.js?v=1"></script>
 
 </body>

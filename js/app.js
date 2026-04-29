@@ -30,8 +30,6 @@ window.App = {
 
   /* ── Étapes de production (13) ──────────────────────────────────── */
   STAGES: [
-    { id: 'format',      label: 'Choose Format',       color: '#3B82F6', group: 'pre-prod'   },
-    { id: 'hook',        label: 'Choose Hook',          color: '#3B82F6', group: 'pre-prod'   },
     { id: 'ecrire',      label: 'Écrire',               color: '#3B82F6', group: 'pre-prod'   },
     { id: 'tournage',    label: 'Tournage',             color: '#8B5CF6', group: 'tournage'   },
     { id: 'draft',       label: 'Faire le DRAFT',       color: '#8B5CF6', group: 'tournage'   },
@@ -80,7 +78,7 @@ window.App = {
 
   /* ── Migration anciens IDs de stages → nouveaux ─────────────── */
   migrateStages() {
-    const MAP = { scripting: 'format', brouillon: 'draft', verification: 'verif-final' };
+    const MAP = { scripting: 'ecrire', format: 'ecrire', hook: 'ecrire', brouillon: 'draft', verification: 'verif-final' };
     const validIds = new Set(this.STAGES.map(s => s.id));
     this.CLIENTS.forEach(client => {
       const key      = `${this.KEYS.PROJECTS}_${client.id}`;
@@ -88,7 +86,7 @@ window.App = {
       let changed    = false;
       projects.forEach(p => {
         if (MAP[p.stage])                { p.stage = MAP[p.stage]; changed = true; }
-        else if (!validIds.has(p.stage)) { p.stage = 'format';     changed = true; }
+        else if (!validIds.has(p.stage)) { p.stage = 'ecrire';     changed = true; }
       });
       if (changed) this.save(key, projects);
     });
@@ -153,7 +151,8 @@ window.App = {
     'kanban':      'Kanban',
     'publication': 'Publication',
     'portal':      'Portail Client',
-    'scriptorga':  'Script Orga',
+    'database':    'Base de données',
+    'scripting':   'Scripting',
   },
 
   navigateTo(viewId) {
@@ -177,7 +176,8 @@ window.App = {
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
     if (viewId === 'portal')      _safeRender('view-portal',      () => Portal.init());
-    if (viewId === 'scriptorga') _safeRender('scriptorga-container', () => ScriptOrga.renderView());
+    if (viewId === 'database')   _safeRender('database-container',   () => ScriptOrga.renderDatabase());
+    if (viewId === 'scripting')  _safeRender('scripting-container',  () => ScriptOrga.renderScripting());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
@@ -656,7 +656,7 @@ function _initDemoData() {
   const DEMO_PROJECTS = {
     'ixina-ath': [
       { id: 'p1', name: 'Vidéo Cuisine 2025',  stage: 'montage',      createdAt: '2025-04-01' },
-      { id: 'p2', name: 'Réels Instagram',      stage: 'format',       createdAt: '2025-04-05' },
+      { id: 'p2', name: 'Réels Instagram',      stage: 'ecrire',       createdAt: '2025-04-05' },
       { id: 'p3', name: 'Vidéo Showroom',       stage: 'verif-final',  createdAt: '2025-03-28' },
     ],
     'ixina-tours': [

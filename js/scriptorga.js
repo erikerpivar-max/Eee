@@ -1,6 +1,7 @@
 /* ================================================================
    THE HOUSE — scriptorga.js
-   Section Script Orga : Base de données + Organisateur
+   Sections : Base de données (formats, angles, hooks par angle,
+              données time tracking) + Scripting (organisateur)
    ================================================================ */
 
 'use strict';
@@ -23,50 +24,85 @@ window.ScriptOrga = (() => {
     _db = {
       formats: s?.formats ?? ['Clone vs Clone', 'White board', 'Voix Off'],
       angles:  s?.angles  ?? ['Comparaison', 'Tier list', 'Note sur 10'],
-      hooks:   s?.hooks   ?? [],
+      hooks:   s?.hooks   ?? {},
     };
+    // Migration : ancien format hooks (tableau plat) → objet par angle
+    if (Array.isArray(_db.hooks)) {
+      const old = _db.hooks;
+      _db.hooks = {};
+      // Mettre les anciens hooks dans un angle "Général" si pas d'angles
+      if (old.length > 0) {
+        _db.hooks['__general__'] = old;
+      }
+      _saveDB();
+    }
   }
   function _saveDB()   { App.save(KEY_DB,   _db);   }
   function _savePlan() { App.save(KEY_PLAN, _plan); }
 
-  /* ─── Entrée principale ──────────────────────────────────────── */
-  function renderView() {
-    _loadDB();
-    _plan = App.load(KEY_PLAN, { clientId: null, groups: [] });
+  /* ─── Tous les hooks à plat (pour export, etc.) ────────────────── */
+  function _allHooks() {
+    const all = [];
+    Object.values(_db.hooks).forEach(arr => arr.forEach(h => {
+      if (!all.includes(h)) all.push(h);
+    }));
+    return all;
+  }
 
-    const el = document.getElementById('scriptorga-container');
+  /* ─── Hooks pour un angle donné ────────────────────────────────── */
+  function _hooksForAngle(angle) {
+    if (!angle) return [];
+    return _db.hooks[angle] || [];
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     VUE 1 : BASE DE DONNÉES
+     ═══════════════════════════════════════════════════════════════ */
+  function renderDatabase() {
+    _loadDB();
+
+    const el = document.getElementById('database-container');
     if (!el) return;
+
+    // Time tracking stats
+    const ttStats = _getTimeTrackingStats();
 
     el.innerHTML = `
       <div class="so-wrap">
 
-        <!-- Sous-section 1 : Base de données -->
+        <!-- Sous-section : Scripting DB -->
         <div class="so-block">
           <div class="section-header">
-            <h3 class="section-title">Base de données</h3>
+            <h3 class="section-title">Scripting</h3>
           </div>
           <div class="so-db-grid">
             ${_renderDBCard('formats', 'Formats',  'un format')}
             ${_renderDBCard('angles',  'Angles',   'un angle')}
-            ${_renderDBCard('hooks',   'Hooks',    'un hook')}
           </div>
         </div>
 
-        <!-- Sous-section 2 : Organisateur -->
-        <div class="so-block so-block--orga">
+        <!-- Sous-section : Hooks par angle -->
+        <div class="so-block">
           <div class="section-header">
-            <h3 class="section-title">Organisateur</h3>
-            <span class="so-notes-hint">Notes : <kbd class="so-notes-kbd">Ctrl</kbd>+<kbd class="so-notes-kbd">4</kbd></span>
+            <h3 class="section-title">Hooks par angle</h3>
           </div>
-          <div id="so-orga">${_renderOrga()}</div>
+          ${_renderHooksByAngle()}
+        </div>
+
+        <!-- Sous-section : Données Time Tracking -->
+        <div class="so-block">
+          <div class="section-header">
+            <h3 class="section-title">Données Time Tracking</h3>
+          </div>
+          ${_renderTimeTrackingData(ttStats)}
         </div>
 
       </div>`;
 
-    _bindAll(el);
+    _bindDatabase(el);
   }
 
-  /* ─── DB Card ─────────────────────────────────────────────────── */
+  /* ─── DB Card (formats & angles) ─────────────────────────────── */
   function _renderDBCard(type, title, addLabel) {
     const items = _db[type];
     return `
@@ -101,6 +137,254 @@ window.ScriptOrga = (() => {
       </div>`;
   }
 
+  /* ─── Hooks groupés par angle ────────────────────────────────── */
+  function _renderHooksByAngle() {
+    if (_db.angles.length === 0) {
+      return `<p class="empty-hint" style="font-size:.85rem">Ajoutez d'abord des angles pour pouvoir y associer des hooks.</p>`;
+    }
+
+    // Inclure aussi __general__ s'il existe
+    const sections = [];
+
+    _db.angles.forEach(angle => {
+      const hooks = _db.hooks[angle] || [];
+      sections.push(_renderHookAngleSection(angle, angle, hooks));
+    });
+
+    // Hooks généraux (migrés depuis l'ancien format)
+    if (_db.hooks['__general__'] && _db.hooks['__general__'].length > 0) {
+      sections.push(_renderHookAngleSection('__general__', 'Général (non classés)', _db.hooks['__general__']));
+    }
+
+    return `<div class="so-hooks-by-angle">${sections.join('')}</div>`;
+  }
+
+  function _renderHookAngleSection(angleKey, displayName, hooks) {
+    return `
+      <div class="so-hook-angle-section" data-angle-key="${escHtml(angleKey)}">
+        <div class="so-hook-angle-head">
+          <span class="so-hook-angle-name">${escHtml(displayName)}</span>
+          <span class="so-hook-angle-count">${hooks.length} hook${hooks.length !== 1 ? 's' : ''}</span>
+          <button class="btn btn-outline btn-sm so-hook-add-btn" data-angle="${escHtml(angleKey)}">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            + Hook
+          </button>
+        </div>
+        <div class="so-db-tags">
+          ${hooks.length === 0
+            ? `<span class="so-db-empty">Aucun hook</span>`
+            : hooks.map((h, i) => `
+                <span class="so-tag">
+                  ${escHtml(h)}
+                  <button class="so-hook-del" data-angle="${escHtml(angleKey)}" data-idx="${i}" title="Supprimer">
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </span>`).join('')}
+        </div>
+        <div class="so-db-inline so-hook-inline" data-hook-angle="${escHtml(angleKey)}" style="display:none">
+          <input class="form-input so-hook-input" type="text" placeholder="Nouveau hook…" data-angle="${escHtml(angleKey)}" />
+          <button class="btn btn-primary btn-sm so-hook-confirm" data-angle="${escHtml(angleKey)}">OK</button>
+          <button class="btn btn-ghost btn-sm so-hook-cancel" data-angle="${escHtml(angleKey)}">✕</button>
+        </div>
+      </div>`;
+  }
+
+  /* ─── Données Time Tracking ──────────────────────────────────── */
+  function _getTimeTrackingStats() {
+    const tasks = App.load(App.KEYS.TASKS, []);
+    const now = new Date();
+
+    // Cette semaine
+    const day = now.getDay();
+    const offset = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + offset);
+    monday.setHours(0, 0, 0, 0);
+
+    const weekTasks = tasks.filter(t => new Date(t.date + 'T00:00:00') >= monday);
+    const todayTasks = tasks.filter(t => t.date === App.today());
+
+    // Par client cette semaine
+    const byClient = {};
+    weekTasks.forEach(t => {
+      if (t.clientId === App.AUTRE_CLIENT_ID) return;
+      const key = t.clientId || '__none__';
+      if (!byClient[key]) byClient[key] = { total: 0, count: 0 };
+      byClient[key].total += (t.totalDuration || 0);
+      byClient[key].count++;
+    });
+
+    const totalWeek = Object.values(byClient).reduce((s, v) => s + v.total, 0);
+    const totalToday = todayTasks.filter(t => t.clientId !== App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
+
+    return { byClient, totalWeek, totalToday, weekTaskCount: weekTasks.length, todayTaskCount: todayTasks.length, allTasks: tasks };
+  }
+
+  function _renderTimeTrackingData(stats) {
+    const clientRows = App.CLIENTS
+      .filter(c => stats.byClient[c.id])
+      .map(c => {
+        const data = stats.byClient[c.id];
+        const pct = stats.totalWeek > 0 ? ((data.total / stats.totalWeek) * 100).toFixed(1) : 0;
+        return `
+          <div class="advance-row">
+            <div class="advance-client">
+              <span class="advance-dot" style="background:${c.color}"></span>
+              <span class="advance-name">${escHtml(c.name)}</span>
+            </div>
+            <div class="advance-bar-wrap">
+              <div class="advance-bar-fill" style="width:${pct}%;background:${c.color}"></div>
+            </div>
+            <div class="advance-right">
+              <span class="advance-value" style="color:${c.color}">${App.fmtDur(data.total)}</span>
+              <span style="font-size:.72rem;color:var(--text-3);margin-left:6px">${data.count} tâche${data.count > 1 ? 's' : ''}</span>
+            </div>
+          </div>`;
+      }).join('');
+
+    return `
+      <div class="so-tt-stats">
+        <div class="stats-grid" style="margin-bottom:20px">
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#6366F1;--bg:#EEF2FF">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="stat-value">${stats.totalToday > 0 ? App.fmtDur(stats.totalToday) : '0h 00min'}</div>
+              <div class="stat-label">Aujourd'hui</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#10B981;--bg:#ECFDF5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="stat-value">${stats.totalWeek > 0 ? App.fmtDur(stats.totalWeek) : '0h 00min'}</div>
+              <div class="stat-label">Cette semaine</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="--c:#F59E0B;--bg:#FFF7ED">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <div>
+              <div class="stat-value">${stats.weekTaskCount}</div>
+              <div class="stat-label">Tâches cette semaine</div>
+            </div>
+          </div>
+        </div>
+        ${clientRows
+          ? `<h4 style="font-size:.85rem;font-weight:600;margin-bottom:10px;color:var(--text-2)">Répartition par client (semaine)</h4>${clientRows}`
+          : `<p class="empty-hint">Aucune donnée de temps enregistrée cette semaine.</p>`}
+      </div>`;
+  }
+
+  /* ─── Bind events (Base de données) ────────────────────────────── */
+  function _bindDatabase(el) {
+    // Formats & Angles — add
+    el.querySelectorAll('.so-db-add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = el.querySelector(`.so-db-inline[data-for="${btn.dataset.type}"]`);
+        if (row) { row.style.display = 'flex'; row.querySelector('input')?.focus(); }
+      });
+    });
+    el.querySelectorAll('.so-db-confirm').forEach(btn => {
+      btn.addEventListener('click', () => _confirmAddDB(el, btn.dataset.type, 'database'));
+    });
+    el.querySelectorAll('.so-db-cancel').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = el.querySelector(`.so-db-inline[data-for="${btn.dataset.for}"]`);
+        if (row) row.style.display = 'none';
+      });
+    });
+    el.querySelectorAll('.so-db-input').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') _confirmAddDB(el, inp.dataset.type, 'database');
+      });
+    });
+    el.querySelectorAll('.so-tag-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        _db[btn.dataset.type].splice(parseInt(btn.dataset.idx), 1);
+        _saveDB();
+        renderDatabase();
+      });
+    });
+
+    // Hooks par angle — add
+    el.querySelectorAll('.so-hook-add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = el.querySelector(`.so-hook-inline[data-hook-angle="${btn.dataset.angle}"]`);
+        if (row) { row.style.display = 'flex'; row.querySelector('input')?.focus(); }
+      });
+    });
+    el.querySelectorAll('.so-hook-confirm').forEach(btn => {
+      btn.addEventListener('click', () => _confirmAddHook(el, btn.dataset.angle));
+    });
+    el.querySelectorAll('.so-hook-cancel').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = el.querySelector(`.so-hook-inline[data-hook-angle="${btn.dataset.angle}"]`);
+        if (row) row.style.display = 'none';
+      });
+    });
+    el.querySelectorAll('.so-hook-input').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') _confirmAddHook(el, inp.dataset.angle);
+      });
+    });
+    el.querySelectorAll('.so-hook-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const angle = btn.dataset.angle;
+        const idx = parseInt(btn.dataset.idx);
+        if (_db.hooks[angle]) {
+          _db.hooks[angle].splice(idx, 1);
+          if (_db.hooks[angle].length === 0) delete _db.hooks[angle];
+          _saveDB();
+          renderDatabase();
+        }
+      });
+    });
+  }
+
+  function _confirmAddHook(el, angleKey) {
+    const row = el.querySelector(`.so-hook-inline[data-hook-angle="${angleKey}"]`);
+    const inp = row?.querySelector('input');
+    const val = inp?.value.trim();
+    if (!val) { inp?.focus(); return; }
+    if (!_db.hooks[angleKey]) _db.hooks[angleKey] = [];
+    if (_db.hooks[angleKey].includes(val)) { App.toast('Déjà dans la liste', 'warning'); return; }
+    _db.hooks[angleKey].push(val);
+    _saveDB();
+    renderDatabase();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     VUE 2 : SCRIPTING (Organisateur)
+     ═══════════════════════════════════════════════════════════════ */
+  function renderScripting() {
+    _loadDB();
+    _plan = App.load(KEY_PLAN, { clientId: null, groups: [] });
+
+    const el = document.getElementById('scripting-container');
+    if (!el) return;
+
+    el.innerHTML = `
+      <div class="so-wrap">
+        <div class="so-block so-block--orga">
+          <div class="section-header">
+            <h3 class="section-title">Organisateur</h3>
+            <span class="so-notes-hint">Notes : <kbd class="so-notes-kbd">Ctrl</kbd>+<kbd class="so-notes-kbd">4</kbd></span>
+          </div>
+          <div id="so-orga">${_renderOrga()}</div>
+        </div>
+      </div>`;
+
+    _bindScripting(el);
+  }
+
   /* ─── Organisateur ────────────────────────────────────────────── */
   function _renderOrga() {
     return `
@@ -131,6 +415,7 @@ window.ScriptOrga = (() => {
     // Compteur de scripts
     const totalRows   = _plan.groups.reduce((s, g) => s + g.rows.length, 0);
     const doneScripts = _plan.groups.reduce((s, g) => s + g.rows.filter(r => r.script && r.script.trim()).length, 0);
+    const allDone     = doneScripts === totalRows && totalRows > 0;
 
     return `
       <div class="so-plan">
@@ -168,10 +453,19 @@ window.ScriptOrga = (() => {
         </div>
 
         <!-- Format picker inline (caché par défaut) -->
-        <div class="so-extra-picker" id="so-extra-picker" style="display:none">
-          <p class="so-picker-lbl">Choisir un format :</p>
-          ${_renderFormatPills('extra')}
-        </div>
+        ${allDone
+          ? `<div class="so-extra-picker" id="so-extra-picker" style="display:none">
+               <p class="so-picker-lbl">Choisir un format :</p>
+               ${_renderFormatPills('extra')}
+             </div>`
+          : `<div class="so-format-locked" id="so-extra-picker">
+               <p class="so-locked-msg">
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px">
+                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                 </svg>
+                 Terminez tous les scripts du format en cours avant d'en ajouter un nouveau.
+               </p>
+             </div>`}
 
         <!-- Compteur de scripts -->
         <div class="so-counter">
@@ -181,8 +475,8 @@ window.ScriptOrga = (() => {
             <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
           </svg>
           <span class="so-counter-label">Scripts rédigés :</span>
-          <span class="so-counter-val ${doneScripts === totalRows && totalRows > 0 ? 'so-counter-val--done' : ''}">${doneScripts} / ${totalRows}</span>
-          ${doneScripts === totalRows && totalRows > 0
+          <span class="so-counter-val ${allDone ? 'so-counter-val--done' : ''}">${doneScripts} / ${totalRows}</span>
+          ${allDone
             ? `<span class="so-counter-badge">✓ Tous complétés !</span>`
             : ''}
         </div>
@@ -196,8 +490,12 @@ window.ScriptOrga = (() => {
 
   /* ─── Groupe (format + lignes) ────────────────────────────────── */
   function _renderGroup(group) {
+    // Vérifier si tous les scripts du groupe sont faits
+    const groupDone = group.rows.every(r => r.script && r.script.trim());
+
     let html = group.rows.map((row, i) => {
       const done = !!(row.script && row.script.trim());
+      const angleHooks = _hooksForAngle(row.angle);
       return `
         <tr class="so-row" data-gid="${group.id}" data-rid="${row.id}" data-rowidx="${i}">
           <td class="so-drag-cell" ${i === 0 ? `draggable="true" data-drag-gid="${group.id}"` : ''}>
@@ -223,9 +521,9 @@ window.ScriptOrga = (() => {
             </select>
           </td>
           <td class="so-sel-cell">
-            <select class="form-select so-sel-hook" data-gid="${group.id}" data-rid="${row.id}">
-              <option value="">— Hook —</option>
-              ${_db.hooks.map(h => `<option value="${escHtml(h)}" ${row.hook === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('')}
+            <select class="form-select so-sel-hook" data-gid="${group.id}" data-rid="${row.id}" ${!row.angle ? 'disabled' : ''}>
+              <option value="">${row.angle ? '— Hook —' : '— Choisir un angle d\'abord —'}</option>
+              ${angleHooks.map(h => `<option value="${escHtml(h)}" ${row.hook === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('')}
             </select>
           </td>
           <td style="padding:8px 12px">
@@ -256,7 +554,7 @@ window.ScriptOrga = (() => {
             </svg>
             +
           </button>
-          <button class="btn btn-ghost btn-sm so-add-fmt-btn">
+          <button class="btn btn-ghost btn-sm so-add-fmt-btn" ${!groupDone ? 'disabled title="Finissez les scripts de ce format d\'abord"' : ''}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -270,7 +568,7 @@ window.ScriptOrga = (() => {
   function _renderFormatPills(suffix) {
     if (_db.formats.length === 0) {
       return `<p class="empty-hint" style="font-size:.85rem;margin:0">
-        Aucun format dans la base de données. Ajoutez-en d'abord.
+        Aucun format dans la base de données. Ajoutez-en d'abord dans Base de données.
       </p>`;
     }
     const attr = suffix ? `data-src="${suffix}"` : '';
@@ -281,41 +579,8 @@ window.ScriptOrga = (() => {
     </div>`;
   }
 
-  /* ─── Bind events ──────────────────────────────────────────────── */
-  function _bindAll(el) {
-
-    el.querySelectorAll('.so-db-add-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const row = el.querySelector(`.so-db-inline[data-for="${btn.dataset.type}"]`);
-        if (row) { row.style.display = 'flex'; row.querySelector('input')?.focus(); }
-      });
-    });
-
-    el.querySelectorAll('.so-db-confirm').forEach(btn => {
-      btn.addEventListener('click', () => _confirmAddDB(el, btn.dataset.type));
-    });
-
-    el.querySelectorAll('.so-db-cancel').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const row = el.querySelector(`.so-db-inline[data-for="${btn.dataset.for}"]`);
-        if (row) row.style.display = 'none';
-      });
-    });
-
-    el.querySelectorAll('.so-db-input').forEach(inp => {
-      inp.addEventListener('keydown', e => {
-        if (e.key === 'Enter') _confirmAddDB(el, inp.dataset.type);
-      });
-    });
-
-    el.querySelectorAll('.so-tag-del').forEach(btn => {
-      btn.addEventListener('click', () => {
-        _db[btn.dataset.type].splice(parseInt(btn.dataset.idx), 1);
-        _saveDB();
-        renderView();
-      });
-    });
-
+  /* ─── Bind events (Scripting) ──────────────────────────────────── */
+  function _bindScripting(el) {
     el.querySelector('#so-start-btn')?.addEventListener('click', () => {
       const sel = el.querySelector('#so-client-sel');
       if (!sel?.value) { App.toast('Choisissez un client', 'warning'); return; }
@@ -340,12 +605,21 @@ window.ScriptOrga = (() => {
       App.confirm('Effacer le plan en cours ?', () => {
         _plan = { clientId: null, groups: [] };
         _savePlan();
-        renderView();
+        renderScripting();
       });
     });
 
     el.querySelectorAll('.so-add-fmt-btn').forEach(btn => {
+      if (btn.disabled) return;
       btn.addEventListener('click', () => {
+        // Vérifier que tous les scripts sont écrits
+        const allScriptsDone = _plan.groups.every(g =>
+          g.rows.every(r => r.script && r.script.trim())
+        );
+        if (!allScriptsDone) {
+          App.toast('Terminez tous les scripts avant d\'ajouter un nouveau format', 'warning');
+          return;
+        }
         const picker = el.querySelector('#so-extra-picker');
         if (!picker) return;
         const isOpen = picker.style.display !== 'none';
@@ -369,17 +643,20 @@ window.ScriptOrga = (() => {
       btn.addEventListener('click', () => _deleteRow(el, btn.dataset.gid, btn.dataset.rid));
     });
 
-    /* Angle — popup sur la 1ère ligne seulement */
+    /* Angle — popup sur la 1ère ligne seulement + rafraîchir les hooks */
     el.querySelectorAll('.so-sel-angle').forEach(sel => {
       sel.addEventListener('change', () => {
         const rowIdx = parseInt(sel.dataset.rowidx);
         const row    = _findRow(sel.dataset.gid, sel.dataset.rid);
         if (row) {
           row.angle = sel.value;
+          // Réinitialiser le hook quand l'angle change (puisque les hooks dépendent de l'angle)
+          row.hook = '';
           _savePlan();
           if (rowIdx === 0 && sel.value) {
             _showAngleApplyPopup(el, sel, sel.dataset.gid, sel.value);
           }
+          _rerenderPlan(el);
         }
       });
     });
@@ -401,19 +678,15 @@ window.ScriptOrga = (() => {
 
   /* ─── Drag & Drop — groupes entiers ──────────────────────────── */
   function _bindGroupDragDrop(el) {
-    /* Handles de drag (cellule de la 1ère ligne de chaque groupe) */
     el.querySelectorAll('[data-drag-gid]').forEach(handle => {
       handle.addEventListener('dragstart', e => {
         _dragGid = handle.dataset.dragGid;
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', _dragGid);
-
-        // Marquer visuellement toutes les lignes du groupe
         el.querySelectorAll(`[data-gid="${_dragGid}"]`).forEach(tr => {
           tr.classList.add('so-group--dragging');
         });
       });
-
       handle.addEventListener('dragend', () => {
         el.querySelectorAll('.so-group--dragging').forEach(tr => tr.classList.remove('so-group--dragging'));
         el.querySelectorAll('.so-group-drop-cell--over').forEach(td => td.classList.remove('so-group-drop-cell--over'));
@@ -421,10 +694,8 @@ window.ScriptOrga = (() => {
       });
     });
 
-    /* Drop targets : la ligne intercalaire sous chaque groupe */
     el.querySelectorAll('.so-group-drop-row').forEach(dropRow => {
       const cell = dropRow.querySelector('.so-group-drop-cell');
-
       dropRow.addEventListener('dragover', e => {
         if (!_dragGid) return;
         e.preventDefault();
@@ -432,36 +703,26 @@ window.ScriptOrga = (() => {
         el.querySelectorAll('.so-group-drop-cell--over').forEach(td => td.classList.remove('so-group-drop-cell--over'));
         cell.classList.add('so-group-drop-cell--over');
       });
-
       dropRow.addEventListener('dragleave', e => {
-        if (!dropRow.contains(e.relatedTarget)) {
-          cell.classList.remove('so-group-drop-cell--over');
-        }
+        if (!dropRow.contains(e.relatedTarget)) cell.classList.remove('so-group-drop-cell--over');
       });
-
       dropRow.addEventListener('drop', e => {
         e.preventDefault();
         if (!_dragGid) return;
         cell.classList.remove('so-group-drop-cell--over');
-
         const targetGid = dropRow.dataset.dropGid;
-        if (_dragGid === targetGid) return; // drop sur soi-même → rien
-
+        if (_dragGid === targetGid) return;
         const srcIdx = _plan.groups.findIndex(g => g.id === _dragGid);
         const dstIdx = _plan.groups.findIndex(g => g.id === targetGid);
         if (srcIdx === -1 || dstIdx === -1) return;
-
-        // Déplacer le groupe src juste après le groupe dst
         const [moved] = _plan.groups.splice(srcIdx, 1);
         const newDst  = _plan.groups.findIndex(g => g.id === targetGid);
         _plan.groups.splice(newDst + 1, 0, moved);
-
         _savePlan();
         _rerenderPlan(el);
       });
     });
 
-    /* Drop target en tête de tableau (avant le premier groupe) */
     const tbody = el.querySelector('#so-tbody');
     if (tbody && _plan.groups.length > 0) {
       tbody.addEventListener('dragover', e => {
@@ -505,7 +766,7 @@ window.ScriptOrga = (() => {
       applied = true;
       clearTimeout(_anglePopupTimer);
       group.rows.forEach((row, i) => {
-        if (i !== 0) row.angle = angle;
+        if (i !== 0) { row.angle = angle; row.hook = ''; }
       });
       _savePlan();
       popup.classList.remove('so-angle-popup--visible');
@@ -523,7 +784,7 @@ window.ScriptOrga = (() => {
   }
 
   /* ─── Opérations DB ───────────────────────────────────────────── */
-  function _confirmAddDB(el, type) {
+  function _confirmAddDB(el, type, view) {
     const row = el.querySelector(`.so-db-inline[data-for="${type}"]`);
     const inp = row?.querySelector('input');
     const val = inp?.value.trim();
@@ -531,7 +792,8 @@ window.ScriptOrga = (() => {
     if (_db[type].includes(val)) { App.toast('Déjà dans la liste', 'warning'); return; }
     _db[type].push(val);
     _saveDB();
-    renderView();
+    if (view === 'database') renderDatabase();
+    else renderScripting();
   }
 
   /* ─── Opérations Plan ─────────────────────────────────────────── */
@@ -622,7 +884,7 @@ window.ScriptOrga = (() => {
     }
     App.closeModal('so-script-modal');
     _editingRow = null;
-    const el = document.getElementById('scriptorga-container');
+    const el = document.getElementById('scripting-container');
     if (el) _rerenderPlan(el);
   }
 
@@ -743,7 +1005,6 @@ window.ScriptOrga = (() => {
     document.getElementById('so-save-script-btn')
       ?.addEventListener('click', _saveScript);
 
-    // Raccourci clavier Ctrl+4 pour les notes (global)
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === '4') {
         const active = document.activeElement;
@@ -756,5 +1017,8 @@ window.ScriptOrga = (() => {
     });
   });
 
-  return { renderView };
+  /* ─── Ancien renderView pour compatibilité ─────────────────── */
+  function renderView() { renderScripting(); }
+
+  return { renderView, renderDatabase, renderScripting };
 })();

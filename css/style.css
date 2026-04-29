@@ -2638,6 +2638,87 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
 }
 
 
+/* ─── Hooks par angle ────────────────────────────────────────────── */
+.so-hooks-by-angle {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.so-hook-angle-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--dur) var(--ease);
+}
+.so-hook-angle-section:hover {
+  box-shadow: var(--shadow);
+}
+.so-hook-angle-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.so-hook-angle-name {
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+.so-hook-angle-count {
+  font-size: .72rem;
+  color: var(--text-3);
+  font-weight: 500;
+  margin-right: auto;
+}
+.so-hook-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.so-hook-inline .form-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: .82rem;
+}
+.so-hook-del {
+  display: flex;
+  align-items: center;
+  color: var(--primary);
+  opacity: .55;
+  padding: 0;
+  transition: opacity var(--dur);
+}
+.so-hook-del:hover { opacity: 1; }
+
+/* ─── Format verrouillé ─────────────────────────────────────────── */
+.so-format-locked {
+  background: var(--warning-bg);
+  border: 1px dashed var(--warning);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+.so-locked-msg {
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--warning);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Time tracking stats dans BDD ──────────────────────────────── */
+.so-tt-stats {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
 /* ─── CHEVALIER décoratif (dashboard) ───────────────────────────── */
 .dashboard-knight {
   display: block;
@@ -3291,6 +3372,9 @@ html.theme-transitioning *::after {
 /* ── Script Orga cards ───────────────────────────────────────────── */
 [data-theme="dark"] .so-db-card { border-color: var(--border); }
 [data-theme="dark"] .so-picker-box { border-color: var(--border); }
+[data-theme="dark"] .so-hook-angle-section { border-color: var(--border); }
+[data-theme="dark"] .so-tt-stats { border-color: var(--border); }
+[data-theme="dark"] .so-format-locked { border-color: var(--warning); background: rgba(217,119,6,.08); }
 
 /* ── Kanban ──────────────────────────────────────────────────────── */
 [data-theme="dark"] .stage-group-header { opacity: .9; }
