@@ -1718,31 +1718,262 @@ code {
 .pcal-check:hover { opacity: .75; transform: scale(1.1); }
 .pcal-check.checked { /* background et border inlinés */ }
 
-/* Types de jours (programmation / tournage / scripting) */
-.pcal-day.day-type-programmation {
-  border: 2px solid #22C55E !important;
-  background: #F0FDF4;
+/* ─── Entrées sur le calendrier ──────────────────────────────────── */
+.pcal-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  width: 100%;
 }
-.pcal-day.day-type-tournage {
-  border: 2px solid #8B5CF6 !important;
-  background: #F5F3FF;
-}
-.pcal-day.day-type-scripting {
-  border: 2px solid #3B82F6 !important;
-  background: #EFF6FF;
-}
-.pcal-day-type-label {
+.pcal-entry {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity var(--dur), background var(--dur);
   font-size: .6rem;
-  font-weight: 700;
-  text-align: center;
-  margin: 2px 0 4px;
   line-height: 1.2;
-  text-transform: uppercase;
-  letter-spacing: .03em;
+  background: color-mix(in srgb, var(--cat-color) 10%, transparent);
+  border-left: 2px solid var(--cat-color);
 }
-.pcal-day-type-label.type-programmation { color: #22C55E; }
-.pcal-day-type-label.type-tournage { color: #8B5CF6; }
-.pcal-day-type-label.type-scripting { color: #3B82F6; }
+.pcal-entry:hover { opacity: .8; }
+.pcal-entry-done {
+  opacity: .55;
+  text-decoration: line-through;
+}
+.pcal-entry-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pcal-entry-label {
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50px;
+}
+.pcal-entry-client {
+  font-weight: 700;
+  font-size: .55rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ─── Popup publication ─────────────────────────────────────────── */
+.pcal-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
+.pcal-popup {
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 380px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: pcalPopIn .2s ease;
+}
+@keyframes pcalPopIn {
+  from { transform: scale(.92); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.pcal-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.pcal-popup-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text-1);
+  text-transform: capitalize;
+}
+.pcal-popup-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--text-3);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+.pcal-popup-close:hover { color: var(--text-1); }
+.pcal-popup-body {
+  padding: 20px;
+}
+.pcal-popup-step-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+/* Grille catégories */
+.pcal-cat-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pcal-cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text-1);
+  transition: all var(--dur);
+}
+.pcal-cat-btn:hover {
+  border-color: var(--cat-color);
+  background: color-mix(in srgb, var(--cat-color) 8%, var(--bg));
+  transform: translateX(4px);
+}
+.pcal-cat-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Input "Autre" */
+.pcal-custom-input {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.pcal-custom-confirm {
+  width: 100%;
+}
+
+/* Liste clients */
+.pcal-client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.pcal-client-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.pcal-client-option:hover {
+  border-color: var(--primary);
+  background: var(--bg);
+}
+.pcal-client-option input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+.pcal-client-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pcal-client-name {
+  font-size: .85rem;
+  font-weight: 500;
+  color: var(--text-1);
+}
+.pcal-confirm-btn {
+  width: 100%;
+}
+
+/* Détail entrée */
+.pcal-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pcal-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pcal-detail-cat {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.pcal-detail-client {
+  font-size: .85rem;
+  font-weight: 600;
+  margin-left: auto;
+}
+.pcal-detail-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pcal-status-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.pcal-status-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: none;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.pcal-status-btn.draft {
+  background: #FEF3C7;
+  color: #92400E;
+}
+.pcal-status-btn.done {
+  background: #D1FAE5;
+  color: #065F46;
+}
+.pcal-status-btn:hover { opacity: .8; transform: scale(1.02); }
+.pcal-detail-actions {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.pcal-delete-btn {
+  background: none;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--dur);
+}
+.pcal-delete-btn:hover {
+  background: #FEF2F2;
+}
 
 .cal-nav-btn:disabled {
   opacity: .3;

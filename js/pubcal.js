@@ -1,7 +1,6 @@
 /* ================================================================
    THE HOUSE — pubcal.js
-   Calendrier de publication avec types de jours cliquables
-   + paramètres de publication dynamiques
+   Calendrier de publication avec popup de catégorie + client
    ================================================================ */
 
 'use strict';
@@ -9,30 +8,39 @@
 window.PubCal = (() => {
 
   /* ── Constantes ─────────────────────────────────────────────── */
-  const KEY          = 'th_pubcal';
-  const KEY_DAYTYPES = 'th_pubcal_daytypes';
+  const KEY_ENTRIES  = 'th_pubcal_entries';
   const KEY_SETTINGS = 'th_pubcal_settings';
 
   const MONTHS_BACK    = 2;
   const MONTHS_FORWARD = 6;
 
-  const DAY_TYPES = [
-    { id: 'programmation', label: 'Prog',     color: '#22C55E' },
-    { id: 'tournage',      label: 'Tournage', color: '#8B5CF6' },
-    { id: 'scripting',     label: 'Script',   color: '#3B82F6' },
+  const CATEGORIES = [
+    { id: 'programmation', label: 'Programmation', color: '#22C55E' },
+    { id: 'tournage',      label: 'Tournage',      color: '#8B5CF6' },
+    { id: 'script',        label: 'Script',         color: '#3B82F6' },
+    { id: 'montage',       label: 'Montage',        color: '#F59E0B' },
+    { id: 'autre',         label: 'Autre',          color: '#6B7280' },
   ];
 
-  const DAY_NAMES_FULL = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
   const DAY_NAMES_SHORT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
   /* ── État ────────────────────────────────────────────────────── */
   const _origin = new Date();
   let _year  = _origin.getFullYear();
   let _month = _origin.getMonth();
+  let _popupDate = null; // date currently showing popup
 
-  /* ── Helpers settings ───────────────────────────────────────── */
+  /* ── Helpers ────────────────────────────────────────────────── */
   function _loadSettings() {
     return App.load(KEY_SETTINGS, { startDate: App.today(), pubDays: [1, 3, 5] });
+  }
+
+  function _loadEntries() {
+    return App.load(KEY_ENTRIES, []);
+  }
+
+  function _saveEntries(entries) {
+    App.save(KEY_ENTRIES, entries);
   }
 
   function _isPubDay(dateStr) {
@@ -40,6 +48,14 @@ window.PubCal = (() => {
     if (dateStr < settings.startDate) return false;
     const d = new Date(dateStr + 'T12:00:00');
     return settings.pubDays.includes(d.getDay());
+  }
+
+  function _uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function _getCategoryInfo(catId) {
+    return CATEGORIES.find(c => c.id === catId) || { id: catId, label: catId, color: '#6B7280' };
   }
 
   /* ── Rendu principal ────────────────────────────────────────── */
@@ -52,8 +68,7 @@ window.PubCal = (() => {
 
   /* ── Construction de la page ─────────────────────────────────── */
   function _buildPage() {
-    const data      = App.load(KEY, {});
-    const dayTypes  = App.load(KEY_DAYTYPES, {});
+    const entries   = _loadEntries();
     const settings  = _loadSettings();
 
     /* Limites de navigation */
@@ -65,28 +80,10 @@ window.PubCal = (() => {
     const monthLabel = new Date(_year, _month, 1)
       .toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-    /* Alerte : jours de publication non entièrement cochés dans les 14 prochains jours */
-    const _todayD = new Date();
-    _todayD.setHours(0, 0, 0, 0);
-    const alertDates = [];
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(_todayD);
-      d.setDate(_todayD.getDate() + i);
-      const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (!_isPubDay(ds)) continue;
-      if (App.CLIENTS.some(c => !data[ds]?.[c.id])) alertDates.push(d.getDate());
-    }
-    const alertHTML = alertDates.length
-      ? `<div class="pcal-alert">
-           <span class="pcal-alert-icon">!</span>
-           Cases manquantes dans les 14 prochains jours : <strong>${alertDates.join(', ')}</strong>
-         </div>`
-      : '';
-
     /* Grille de jours */
     const cells = _buildCells();
     const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-    const today    = App.today();
+    const today = App.today();
 
     const cellsHTML = cells.map(cell => {
       if (!cell.current) {
@@ -95,62 +92,51 @@ window.PubCal = (() => {
                 </div>`;
       }
 
-      const isToday   = cell.dateStr === today;
-      const isPubDay  = _isPubDay(cell.dateStr);
-      const dayType   = dayTypes[cell.dateStr] || null;
-      const typeClass = dayType ? ` day-type-${dayType}` : '';
-      const typeInfo  = dayType ? DAY_TYPES.find(t => t.id === dayType) : null;
+      const isToday  = cell.dateStr === today;
+      const isPubDay = _isPubDay(cell.dateStr);
+      const dayEntries = entries.filter(e => e.date === cell.dateStr);
 
-      let typeLabel = '';
-      if (typeInfo) {
-        typeLabel = `<div class="pcal-day-type-label type-${dayType}">${typeInfo.label}</div>`;
-      }
-
-      let checksHTML = '';
-      if (isPubDay) {
-        checksHTML = '<div class="pcal-checks">' +
-          App.CLIENTS.map(client => {
-            const checked = !!(data[cell.dateStr]?.[client.id]);
-            return `<button
-                      class="pcal-check${checked ? ' checked' : ''}"
-                      style="${checked
-                        ? `background:${client.color};border-color:${client.color}`
-                        : `border-color:${client.color}`}"
-                      title="${escHtml(client.name)}"
-                      data-date="${cell.dateStr}"
-                      data-client="${client.id}"
-                      data-color="${client.color}">
-                      ${checked
-                        ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
-                        : ''}
-                    </button>`;
+      let entriesHTML = '';
+      if (dayEntries.length > 0) {
+        entriesHTML = '<div class="pcal-entries">' +
+          dayEntries.map(entry => {
+            const cat = _getCategoryInfo(entry.category);
+            const client = App.CLIENTS.find(c => c.id === entry.clientId);
+            const clientLabel = client ? client.name : '';
+            const label = entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label;
+            const statusClass = entry.status === 'termine' ? 'pcal-entry-done' : 'pcal-entry-draft';
+            return `<div class="pcal-entry ${statusClass}" style="--cat-color:${cat.color}"
+                         data-entry-id="${entry.id}" title="${label} — ${clientLabel}">
+                      <span class="pcal-entry-dot" style="background:${cat.color}"></span>
+                      <span class="pcal-entry-label">${escHtml(label)}</span>
+                      ${client ? `<span class="pcal-entry-client" style="color:${client.color}">${escHtml(client.initials || client.name.slice(0,2))}</span>` : ''}
+                    </div>`;
           }).join('') +
         '</div>';
       }
 
       return `
-        <div class="cal-day pcal-day current-month${isToday ? ' today' : ''}${isPubDay ? ' pub-day' : ''}${typeClass}"
+        <div class="cal-day pcal-day current-month${isToday ? ' today' : ''}${isPubDay ? ' pub-day' : ''}"
              data-date="${cell.dateStr}">
           <div class="cal-day-num">${cell.day}</div>
           ${isPubDay ? '<div class="pub-day-dot"></div>' : ''}
-          ${typeLabel}
-          ${checksHTML}
+          ${entriesHTML}
         </div>`;
     }).join('');
+
+    /* Légende catégories */
+    const catLegendHTML = CATEGORIES.map(c =>
+      `<span class="pcal-type-legend-item">
+         <span class="pcal-type-dot" style="background:${c.color}"></span>
+         ${c.label}
+       </span>`
+    ).join('');
 
     /* Légende clients */
     const legendHTML = App.CLIENTS.map(c =>
       `<span class="pcal-legend-item">
          <span class="pcal-legend-dot" style="background:${c.color}"></span>
          ${escHtml(c.name)}
-       </span>`
-    ).join('');
-
-    /* Légende types */
-    const typeLegendHTML = DAY_TYPES.map(t =>
-      `<span class="pcal-type-legend-item">
-         <span class="pcal-type-dot" style="background:${t.color}"></span>
-         ${t.label}
        </span>`
     ).join('');
 
@@ -175,10 +161,8 @@ window.PubCal = (() => {
       <div style="margin-top:20px">
         <div class="pubcal-toolbar">
           <div class="pcal-legend">${legendHTML}</div>
-          <div class="pcal-type-legend">${typeLegendHTML}</div>
+          <div class="pcal-type-legend">${catLegendHTML}</div>
         </div>
-
-        ${alertHTML}
 
         <div class="calendar-wrapper">
           <div class="calendar-nav">
@@ -199,8 +183,19 @@ window.PubCal = (() => {
         </div>
 
         <p style="font-size:.75rem;color:var(--text-3);margin-top:8px;text-align:center">
-          Cliquez sur un jour pour le marquer : Programmation \u2192 Tournage \u2192 Scripting \u2192 Vide
+          Cliquez sur un jour pour ajouter une t\u00e2che de publication
         </p>
+      </div>
+
+      <!-- Popup ajout (caché par défaut) -->
+      <div class="pcal-popup-overlay" id="pcal-popup-overlay" style="display:none">
+        <div class="pcal-popup" id="pcal-popup">
+          <div class="pcal-popup-header">
+            <span class="pcal-popup-title" id="pcal-popup-title">Nouvelle entrée</span>
+            <button class="pcal-popup-close" id="pcal-popup-close">&times;</button>
+          </div>
+          <div class="pcal-popup-body" id="pcal-popup-body"></div>
+        </div>
       </div>`;
   }
 
@@ -252,23 +247,16 @@ window.PubCal = (() => {
 
     const cells = [];
 
-    /* Jours du mois précédent */
     const prevLast = new Date(_year, _month, 0).getDate();
     for (let i = startDow - 1; i >= 0; i--) {
       cells.push({ day: prevLast - i, current: false });
     }
 
-    /* Jours du mois courant */
     for (let d = 1; d <= daysCount; d++) {
       const dateStr = `${_year}-${String(_month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-      cells.push({
-        day: d,
-        current: true,
-        dateStr,
-      });
+      cells.push({ day: d, current: true, dateStr });
     }
 
-    /* Complétion de la grille (multiple de 7) */
     const rem = cells.length % 7;
     if (rem > 0) {
       for (let d = 1; d <= 7 - rem; d++) {
@@ -277,6 +265,187 @@ window.PubCal = (() => {
     }
 
     return cells;
+  }
+
+  /* ── Popup : Étape 1 — Choix de catégorie ───────────────────── */
+  function _showCategoryPopup(dateStr) {
+    _popupDate = dateStr;
+    const overlay = document.getElementById('pcal-popup-overlay');
+    const title   = document.getElementById('pcal-popup-title');
+    const body    = document.getElementById('pcal-popup-body');
+
+    const d = new Date(dateStr + 'T12:00:00');
+    const dateLabel = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    title.textContent = dateLabel;
+
+    body.innerHTML = `
+      <div class="pcal-popup-step-label">Choisir une cat\u00e9gorie :</div>
+      <div class="pcal-cat-grid">
+        ${CATEGORIES.map(cat => `
+          <button class="pcal-cat-btn" data-cat="${cat.id}" style="--cat-color:${cat.color}">
+            <span class="pcal-cat-dot" style="background:${cat.color}"></span>
+            ${cat.label}
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    overlay.style.display = 'flex';
+
+    // Wire category buttons
+    body.querySelectorAll('.pcal-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const catId = btn.dataset.cat;
+        if (catId === 'autre') {
+          _showCustomInput(dateStr);
+        } else {
+          _showClientStep(dateStr, catId, null);
+        }
+      });
+    });
+  }
+
+  /* ── Popup : Étape intermédiaire — Input "Autre" ────────────── */
+  function _showCustomInput(dateStr) {
+    const body = document.getElementById('pcal-popup-body');
+    body.innerHTML = `
+      <div class="pcal-popup-step-label">Nom de la t\u00e2che :</div>
+      <input type="text" class="form-input pcal-custom-input" id="pcal-custom-name"
+             placeholder="Ex: R\u00e9union, Brainstorm..." autofocus />
+      <button class="btn-primary pcal-custom-confirm" id="pcal-custom-ok">Valider</button>
+    `;
+
+    const input = document.getElementById('pcal-custom-name');
+    const okBtn = document.getElementById('pcal-custom-ok');
+
+    const confirm = () => {
+      const val = input.value.trim();
+      if (val) _showClientStep(dateStr, 'autre', val);
+    };
+
+    okBtn.addEventListener('click', confirm);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') confirm(); });
+    setTimeout(() => input.focus(), 50);
+  }
+
+  /* ── Popup : Étape 2 — Choix du client ──────────────────────── */
+  function _showClientStep(dateStr, catId, customLabel) {
+    const body = document.getElementById('pcal-popup-body');
+    const cat = _getCategoryInfo(catId);
+    const labelText = customLabel || cat.label;
+
+    body.innerHTML = `
+      <div class="pcal-popup-step-label">
+        <span class="pcal-cat-dot" style="background:${cat.color};display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>
+        ${escHtml(labelText)} — Choisir le(s) client(s) :
+      </div>
+      <div class="pcal-client-list">
+        ${App.CLIENTS.map(client => `
+          <label class="pcal-client-option" data-client-id="${client.id}">
+            <input type="checkbox" class="pcal-client-cb" value="${client.id}" />
+            <span class="pcal-client-dot" style="background:${client.color}"></span>
+            <span class="pcal-client-name">${escHtml(client.name)}</span>
+          </label>
+        `).join('')}
+      </div>
+      <button class="btn-primary pcal-confirm-btn" id="pcal-confirm-add">Ajouter</button>
+    `;
+
+    document.getElementById('pcal-confirm-add').addEventListener('click', () => {
+      const checked = body.querySelectorAll('.pcal-client-cb:checked');
+      if (checked.length === 0) return;
+
+      const entries = _loadEntries();
+      checked.forEach(cb => {
+        entries.push({
+          id: _uid(),
+          date: dateStr,
+          category: catId,
+          customLabel: customLabel || null,
+          clientId: cb.value,
+          status: 'brouillon',
+        });
+      });
+      _saveEntries(entries);
+      _closePopup();
+      renderView();
+    });
+  }
+
+  /* ── Popup : Detail d'une entrée existante ──────────────────── */
+  function _showEntryDetail(entryId) {
+    const entries = _loadEntries();
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry) return;
+
+    const overlay = document.getElementById('pcal-popup-overlay');
+    const title   = document.getElementById('pcal-popup-title');
+    const body    = document.getElementById('pcal-popup-body');
+
+    const cat = _getCategoryInfo(entry.category);
+    const client = App.CLIENTS.find(c => c.id === entry.clientId);
+    const label = entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label;
+
+    const d = new Date(entry.date + 'T12:00:00');
+    const dateLabel = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    title.textContent = dateLabel;
+
+    const isDone = entry.status === 'termine';
+
+    body.innerHTML = `
+      <div class="pcal-detail">
+        <div class="pcal-detail-header">
+          <span class="pcal-cat-dot" style="background:${cat.color}"></span>
+          <span class="pcal-detail-cat">${escHtml(label)}</span>
+          ${client ? `<span class="pcal-detail-client" style="color:${client.color}">${escHtml(client.name)}</span>` : ''}
+        </div>
+        <div class="pcal-detail-status">
+          <span class="pcal-status-label">Statut :</span>
+          <button class="pcal-status-btn ${isDone ? 'done' : 'draft'}" id="pcal-toggle-status">
+            ${isDone ? 'Terminé' : 'Brouillon'}
+          </button>
+        </div>
+        <div class="pcal-detail-actions">
+          <button class="pcal-delete-btn" id="pcal-delete-entry">Supprimer</button>
+        </div>
+      </div>
+    `;
+
+    overlay.style.display = 'flex';
+
+    document.getElementById('pcal-toggle-status').addEventListener('click', () => {
+      const ents = _loadEntries();
+      const e = ents.find(x => x.id === entryId);
+      if (e) {
+        e.status = e.status === 'termine' ? 'brouillon' : 'termine';
+        _saveEntries(ents);
+        _showEntryDetail(entryId); // refresh detail
+        // Also refresh calendar behind
+        const container = document.getElementById('pubcal-container');
+        if (container) {
+          const popup = document.getElementById('pcal-popup-overlay');
+          // We'll re-render after close
+        }
+      }
+    });
+
+    document.getElementById('pcal-delete-entry').addEventListener('click', () => {
+      const ents = _loadEntries();
+      const idx = ents.findIndex(x => x.id === entryId);
+      if (idx >= 0) {
+        ents.splice(idx, 1);
+        _saveEntries(ents);
+      }
+      _closePopup();
+      renderView();
+    });
+  }
+
+  /* ── Popup : Fermer ─────────────────────────────────────────── */
+  function _closePopup() {
+    const overlay = document.getElementById('pcal-popup-overlay');
+    if (overlay) overlay.style.display = 'none';
+    _popupDate = null;
   }
 
   /* ── Wiring ──────────────────────────────────────────────────── */
@@ -293,23 +462,28 @@ window.PubCal = (() => {
       renderView();
     });
 
-    /* Clic sur les cases du calendrier : toggle type de jour */
+    /* Clic sur le calendrier */
     document.querySelector('.pcal-grid')?.addEventListener('click', e => {
-      /* Si c'est un bouton client check, traiter le toggle client */
-      const btn = e.target.closest('.pcal-check');
-      if (btn) {
+      // Clic sur une entrée existante
+      const entryEl = e.target.closest('.pcal-entry');
+      if (entryEl) {
         e.stopPropagation();
-        toggle(btn.dataset.date, btn.dataset.client, btn);
+        _showEntryDetail(entryEl.dataset.entryId);
         return;
       }
 
-      /* Sinon, toggle le type de jour */
+      // Clic sur un jour → ouvrir popup catégorie
       const dayEl = e.target.closest('.cal-day.current-month');
       if (!dayEl) return;
       const dateStr = dayEl.dataset.date;
       if (!dateStr) return;
+      _showCategoryPopup(dateStr);
+    });
 
-      _cycleDayType(dateStr);
+    /* Fermer popup */
+    document.getElementById('pcal-popup-close')?.addEventListener('click', _closePopup);
+    document.getElementById('pcal-popup-overlay')?.addEventListener('click', e => {
+      if (e.target === e.currentTarget) _closePopup();
     });
 
     /* Paramètres : date de début */
@@ -338,25 +512,6 @@ window.PubCal = (() => {
 
     /* Sections collapsibles */
     _wireCollapsibles();
-  }
-
-  /* ── Cycle type de jour ─────────────────────────────────────── */
-  function _cycleDayType(dateStr) {
-    const dayTypes = App.load(KEY_DAYTYPES, {});
-    const current  = dayTypes[dateStr] || null;
-
-    const order = [null, 'programmation', 'tournage', 'scripting'];
-    const idx   = order.indexOf(current);
-    const next  = order[(idx + 1) % order.length];
-
-    if (next) {
-      dayTypes[dateStr] = next;
-    } else {
-      delete dayTypes[dateStr];
-    }
-
-    App.save(KEY_DAYTYPES, dayTypes);
-    renderView();
   }
 
   /* ── Sections collapsibles ──────────────────────────────────── */
@@ -388,48 +543,26 @@ window.PubCal = (() => {
     });
   }
 
-  /* ── Toggle d'une case client — mise à jour in-place ────────── */
-  function toggle(dateStr, clientId, btnEl) {
-    const data = App.load(KEY, {});
-    if (!data[dateStr]) data[dateStr] = {};
-    data[dateStr][clientId] = !data[dateStr][clientId];
-    if (!Object.values(data[dateStr]).some(Boolean)) delete data[dateStr];
-    App.save(KEY, data);
-
-    if (btnEl) {
-      const checked = !!(data[dateStr]?.[clientId]);
-      const color   = btnEl.dataset.color;
-      btnEl.classList.toggle('checked', checked);
-      btnEl.style.background  = checked ? color : '';
-      btnEl.style.borderColor = color;
-      btnEl.innerHTML = checked
-        ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
-        : '';
-    }
-
-    Dashboard.refresh();
-  }
-
   /* ── Calcul de l'avance de contenu (pour le dashboard) ──────── */
   function getDaysAdvance(clientId) {
-    const data = App.load(KEY, {});
+    const entries = _loadEntries();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let lastChecked = null;
-    Object.entries(data).forEach(([dateStr, clients]) => {
-      if (clients[clientId]) {
-        const d = new Date(dateStr + 'T12:00:00');
+    let lastDone = null;
+    entries.forEach(entry => {
+      if (entry.clientId === clientId && entry.status === 'termine') {
+        const d = new Date(entry.date + 'T12:00:00');
         d.setHours(0, 0, 0, 0);
-        if (!lastChecked || d > lastChecked) lastChecked = d;
+        if (!lastDone || d > lastDone) lastDone = d;
       }
     });
 
-    if (!lastChecked) return null;
-    return Math.round((lastChecked - today) / 86_400_000);
+    if (!lastDone) return null;
+    return Math.round((lastDone - today) / 86_400_000);
   }
 
   /* ── API publique ───────────────────────────────────────────── */
-  return { renderView, toggle, getDaysAdvance };
+  return { renderView, getDaysAdvance };
 
 })();
