@@ -150,7 +150,6 @@ window.App = {
     'prevision':   'Prévision',
     'kanban':      'Kanban',
     'publication': 'Publication',
-    'portal':      'Portail Client',
     'database':    'Base de données',
     'scripting':   'Scripting',
   },
@@ -175,7 +174,6 @@ window.App = {
     if (viewId === 'prevision')   _safeRender('prevision-container', () => Prevision.render());
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
-    if (viewId === 'portal')      _safeRender('view-portal',      () => Portal.init());
     if (viewId === 'database')   _safeRender('database-container',   () => ScriptOrga.renderDatabase());
     if (viewId === 'scripting')  _safeRender('scripting-container',  () => ScriptOrga.renderScripting());
 
@@ -252,7 +250,6 @@ App.Auth = {
   },
 
   lock() {
-    PortalAuth.endSession();
     document.body.classList.remove('is-client');
     this._entered = '';
     this._updateDots();
@@ -260,15 +257,10 @@ App.Auth = {
     document.getElementById('lock-screen').style.display = 'flex';
   },
 
-  _unlock(session) {
+  _unlock() {
     document.getElementById('lock-screen').style.display = 'none';
-    if (session.role === 'client') {
-      document.body.classList.add('is-client');
-      App.navigateTo('portal');
-    } else {
-      document.body.classList.remove('is-client');
-      App.navigateTo('dashboard');
-    }
+    document.body.classList.remove('is-client');
+    App.navigateTo('dashboard');
   },
 
   _updateDots() {
@@ -287,10 +279,10 @@ App.Auth = {
     this._updateDots();
 
     if (this._entered.length === 4) {
-      const session = PortalAuth.verify(this._entered);
-      if (session) {
-        PortalAuth.startSession(session);
-        this._unlock(session);
+      /* PIN simple — admin uniquement */
+      const ADMIN_PIN = '9186';
+      if (this._entered === ADMIN_PIN) {
+        this._unlock();
       } else {
         const disp = document.getElementById('auth-display');
         const err  = document.getElementById('auth-error');
@@ -640,12 +632,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /* To Do List */
   if (window.TodoList) TodoList.init();
 
-  /* Bloquer la navigation pour les sessions client */
-  const _origNavigateTo = App.navigateTo.bind(App);
-  App.navigateTo = function(viewId) {
-    if (document.body.classList.contains('is-client') && viewId !== 'portal') return;
-    _origNavigateTo(viewId);
-  };
 
   /* Auth — vérifie session ou affiche l'overlay */
   App.Auth.check();

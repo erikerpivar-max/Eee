@@ -19,7 +19,6 @@ window.ScriptOrga = (() => {
 
   const STATUSES = [
     { id: 'brouillon', label: 'Brouillon', css: 'status-brouillon' },
-    { id: 'en-cours',  label: 'En cours',  css: 'status-en-cours'  },
     { id: 'termine',   label: 'Termin\u00e9',   css: 'status-termine'   },
   ];
 
@@ -406,7 +405,7 @@ window.ScriptOrga = (() => {
 
   /* ─── Pipeline (cartes) ───────────────────────────────────────── */
   function _renderPipeline(scripts) {
-    const counts = { brouillon: 0, 'en-cours': 0, termine: 0 };
+    const counts = { brouillon: 0, termine: 0 };
     scripts.forEach(s => { counts[s.status || 'brouillon']++; });
     const total = scripts.length;
     const pct   = total > 0 ? Math.round((counts.termine / total) * 100) : 0;
@@ -588,7 +587,7 @@ window.ScriptOrga = (() => {
     const s = scripts.find(s => s.id === id);
     if (!s) return;
 
-    const order = ['brouillon', 'en-cours', 'termine'];
+    const order = ['brouillon', 'termine'];
     const idx = order.indexOf(s.status || 'brouillon');
     s.status = order[(idx + 1) % order.length];
     _saveScripts(scripts);
@@ -682,9 +681,7 @@ window.ScriptOrga = (() => {
       s.angle    = document.getElementById('so-modal-angle-sel')?.value || s.angle;
       s.hook     = document.getElementById('so-modal-hook-sel')?.value || s.hook;
 
-      if (s.status === 'brouillon' && s.content.trim()) {
-        s.status = 'en-cours';
-      }
+      /* Le statut reste brouillon jusqu'au toggle manuel */
 
       _saveScripts(scripts);
     }

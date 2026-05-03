@@ -94,17 +94,6 @@
         </ul>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-group-label">Clients</p>
-        <ul>
-          <li>
-            <a class="nav-link" data-view="portal" href="#">
-              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>Portail Client</span>
-            </a>
-          </li>
-        </ul>
-      </div>
 
 
       <div class="nav-group">
@@ -391,10 +380,6 @@
         <div class="pipeline-board" id="kanban-board"></div>
       </section>
 
-      <!-- ── VUE : PORTAIL CLIENT ────────────────────────────────── -->
-      <section class="view" id="view-portal">
-        <!-- rendu dynamique par portal.js -->
-      </section>
 
 
       <!-- ── VUE : SCRIPTING ──────────────────────────────────── -->
@@ -517,70 +502,6 @@
     </div>
   </div>
 
-  <!-- Modal : Saisie données portail -->
-  <div class="modal-backdrop" id="modal-portalData" style="display:none">
-    <div class="modal modal-lg">
-      <div class="modal-head">
-        <h3>Données — <span id="portalDataClientName"></span></h3>
-        <button class="modal-close-btn" data-close="modal-portalData">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="form-hint">Chaque ligne = une période (semaine, mois…). Quand l'API Meta sera connectée, ces données seront remplacées automatiquement.</p>
-        <input type="hidden" id="portalDataClientId" />
-        <div class="table-wrapper" style="margin-top:14px">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Période</th>
-                <th style="color:#6366F1">Portée</th>
-                <th style="color:#10B981">Abonnés</th>
-                <th style="color:#F59E0B">Likes</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="portalDataRows"></tbody>
-          </table>
-        </div>
-        <button class="btn btn-ghost" id="portalAddRowBtn" style="margin-top:10px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Ajouter une période
-        </button>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost" data-close="modal-portalData">Annuler</button>
-        <button class="btn btn-primary" id="confirmPortalDataBtn">Sauvegarder</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal : Gestion PINs -->
-  <div class="modal-backdrop" id="modal-portalPins" style="display:none">
-    <div class="modal modal-sm">
-      <div class="modal-head">
-        <h3>Gestion des PINs</h3>
-        <button class="modal-close-btn" data-close="modal-portalPins">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p class="form-hint">4 chiffres par PIN. Le PIN Admin donne accès à tous les clients.</p>
-        <label class="form-label" style="margin-top:14px">PIN Admin</label>
-        <input type="number" id="pinAdmin" class="form-input" maxlength="4" placeholder="0000" />
-        <label class="form-label" style="margin-top:12px">PIN Ixina Ath</label>
-        <input type="number" id="pinIxinaAth" class="form-input" maxlength="4" placeholder="1111" />
-        <label class="form-label" style="margin-top:12px">PIN Ixina Tours et taxi</label>
-        <input type="number" id="pinIxinaTours" class="form-input" maxlength="4" placeholder="2222" />
-        <label class="form-label" style="margin-top:12px">PIN Ixina Ixelles</label>
-        <input type="number" id="pinIxinaIxelles" class="form-input" maxlength="4" placeholder="3333" />
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost" data-close="modal-portalPins">Annuler</button>
-        <button class="btn btn-primary" id="confirmPortalPinsBtn">Sauvegarder</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Confirmation fin de journée -->
   <div class="modal-backdrop" id="modal-endOfDay" style="display:none">
@@ -643,7 +564,6 @@
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=3"></script>
-  <script src="js/portal.js?v=2"></script>
   <script src="js/scriptorga.js?v=3"></script>
   <script src="js/prevision.js?v=1"></script>
 

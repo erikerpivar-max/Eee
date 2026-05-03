@@ -8,6 +8,7 @@
 window.PubCal = (() => {
 
   /* ── Constantes ─────────────────────────────────────────────── */
+  const KEY          = 'th_pubcal';          // cases clients (ancien système)
   const KEY_ENTRIES  = 'th_pubcal_entries';
   const KEY_SETTINGS = 'th_pubcal_settings';
 
@@ -85,6 +86,8 @@ window.PubCal = (() => {
     const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     const today = App.today();
 
+    const pubData = App.load(KEY, {});
+
     const cellsHTML = cells.map(cell => {
       if (!cell.current) {
         return `<div class="cal-day pcal-day other-month">
@@ -96,6 +99,30 @@ window.PubCal = (() => {
       const isPubDay = _isPubDay(cell.dateStr);
       const dayEntries = entries.filter(e => e.date === cell.dateStr);
 
+      /* Cases clients (jours de publication) */
+      let checksHTML = '';
+      if (isPubDay) {
+        checksHTML = '<div class="pcal-checks">' +
+          App.CLIENTS.map(client => {
+            const checked = !!(pubData[cell.dateStr]?.[client.id]);
+            return `<button
+                      class="pcal-check${checked ? ' checked' : ''}"
+                      style="${checked
+                        ? `background:${client.color};border-color:${client.color}`
+                        : `border-color:${client.color}`}"
+                      title="${escHtml(client.name)}"
+                      data-date="${cell.dateStr}"
+                      data-client="${client.id}"
+                      data-color="${client.color}">
+                      ${checked
+                        ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
+                        : ''}
+                    </button>`;
+          }).join('') +
+        '</div>';
+      }
+
+      /* Entrées catégories */
       let entriesHTML = '';
       if (dayEntries.length > 0) {
         entriesHTML = '<div class="pcal-entries">' +
@@ -120,6 +147,7 @@ window.PubCal = (() => {
              data-date="${cell.dateStr}">
           <div class="cal-day-num">${cell.day}</div>
           ${isPubDay ? '<div class="pub-day-dot"></div>' : ''}
+          ${checksHTML}
           ${entriesHTML}
         </div>`;
     }).join('');
@@ -464,6 +492,14 @@ window.PubCal = (() => {
 
     /* Clic sur le calendrier */
     document.querySelector('.pcal-grid')?.addEventListener('click', e => {
+      // Clic sur une case client (toggle check)
+      const checkBtn = e.target.closest('.pcal-check');
+      if (checkBtn) {
+        e.stopPropagation();
+        _toggleCheck(checkBtn.dataset.date, checkBtn.dataset.client, checkBtn);
+        return;
+      }
+
       // Clic sur une entrée existante
       const entryEl = e.target.closest('.pcal-entry');
       if (entryEl) {
@@ -543,23 +579,45 @@ window.PubCal = (() => {
     });
   }
 
+  /* ── Toggle case client (système de coches publication) ──────── */
+  function _toggleCheck(dateStr, clientId, btnEl) {
+    const data = App.load(KEY, {});
+    if (!data[dateStr]) data[dateStr] = {};
+    data[dateStr][clientId] = !data[dateStr][clientId];
+    if (!Object.values(data[dateStr]).some(Boolean)) delete data[dateStr];
+    App.save(KEY, data);
+
+    if (btnEl) {
+      const checked = !!(data[dateStr]?.[clientId]);
+      const color   = btnEl.dataset.color;
+      btnEl.classList.toggle('checked', checked);
+      btnEl.style.background  = checked ? color : '';
+      btnEl.style.borderColor = color;
+      btnEl.innerHTML = checked
+        ? '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '';
+    }
+
+    if (typeof Dashboard !== 'undefined') Dashboard.refresh();
+  }
+
   /* ── Calcul de l'avance de contenu (pour le dashboard) ──────── */
   function getDaysAdvance(clientId) {
-    const entries = _loadEntries();
+    const data = App.load(KEY, {});
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let lastDone = null;
-    entries.forEach(entry => {
-      if (entry.clientId === clientId && entry.status === 'termine') {
-        const d = new Date(entry.date + 'T12:00:00');
+    let lastChecked = null;
+    Object.entries(data).forEach(([dateStr, clients]) => {
+      if (clients[clientId]) {
+        const d = new Date(dateStr + 'T12:00:00');
         d.setHours(0, 0, 0, 0);
-        if (!lastDone || d > lastDone) lastDone = d;
+        if (!lastChecked || d > lastChecked) lastChecked = d;
       }
     });
 
-    if (!lastDone) return null;
-    return Math.round((lastDone - today) / 86_400_000);
+    if (!lastChecked) return null;
+    return Math.round((lastChecked - today) / 86_400_000);
   }
 
   /* ── API publique ───────────────────────────────────────────── */

@@ -1296,7 +1296,6 @@ code {
   .topbar { padding: 0 20px; }
   .stage-group-cols { grid-template-columns: repeat(2, 1fr) !important; }
   .cpt-grid { grid-template-columns: 1fr; }
-  .portal-charts { grid-template-columns: 1fr 1fr; }
 }
 
 /* Tablets */
@@ -1309,8 +1308,6 @@ code {
   .view-title { font-size: 1.5rem; }
   .timer-card { padding: 24px 20px 20px; }
   .prev-summary-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  .portal-charts { grid-template-columns: 1fr; }
-  .portal-kpis { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .so-db-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .modal { max-width: 94vw; }
   .modal-body { padding: 20px 22px; }
@@ -1339,7 +1336,6 @@ code {
   .view-intro { margin-bottom: 28px; }
   .dashboard-knight { font-size: 2.8rem; }
   .prev-summary-grid { grid-template-columns: 1fr; }
-  .portal-kpis { grid-template-columns: 1fr; }
   .so-db-grid { grid-template-columns: 1fr; }
   .advance-client { min-width: 110px; }
   .advance-right { min-width: 80px; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -1350,7 +1346,6 @@ code {
   .todo-add-row { flex-direction: column; gap: 8px; }
   .todo-add-row .form-select { width: 100% !important; }
   .todo-add-row .btn { width: 100%; justify-content: center; }
-  .portal-login-card { width: 100%; padding: 36px 24px 32px; }
   .ls-card { width: 300px; padding: 40px 28px 32px; }
   .ls-title { font-size: 1.6rem; }
   .modal { border-radius: var(--radius-lg); }
@@ -2078,37 +2073,6 @@ code {
    ================================================================ */
 
 /* ── Login ──────────────────────────────────────────────────────── */
-.portal-login-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - var(--topbar-h) - 64px);
-}
-.portal-login-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 48px 44px 40px;
-  width: 360px;
-  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(0,0,0,.02);
-  text-align: center;
-  animation: fadeInUp .4s var(--ease) both;
-}
-.portal-login-icon {
-  width: 60px; height: 60px;
-  background: var(--primary-bg);
-  color: var(--primary);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 20px;
-}
-.portal-login-title {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-.portal-login-sub   { font-size: .85rem; color: var(--text-3); margin-bottom: 28px; }
 
 /* PIN display */
 .pin-display {
@@ -2170,102 +2134,7 @@ code {
   margin-top: 4px;
 }
 
-/* ── Header portail ─────────────────────────────────────────────── */
-.portal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 28px;
-  flex-wrap: wrap;
-}
-.portal-header-actions { display: flex; gap: 10px; flex-shrink: 0; margin-top: 4px; }
-
-.portal-mode-badge {
-  display: inline-block;
-  font-size: .72rem;
-  font-weight: 600;
-  letter-spacing: .04em;
-  padding: 2px 8px;
-  border-radius: 20px;
-  margin-left: 8px;
-  vertical-align: middle;
-}
-.portal-mode-api    { background: #ECFDF5; color: #059669; }
-.portal-mode-manual { background: #FFF7ED; color: #D97706; }
-
-/* ── Sections client ────────────────────────────────────────────── */
-.portal-client-section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 28px;
-  margin-bottom: 28px;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--dur) var(--ease);
-}
-.portal-client-section:hover {
-  box-shadow: var(--shadow);
-}
-.portal-client-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.portal-client-badge {
-  width: 38px; height: 38px;
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
-  font-size: .78rem;
-  letter-spacing: .04em;
-  flex-shrink: 0;
-}
-.portal-client-name { font-size: 1.05rem; font-weight: 600; flex: 1; }
-.portal-edit-btn { margin-left: auto; }
-
-/* ── KPIs ───────────────────────────────────────────────────────── */
-.portal-kpis {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-.portal-kpi {
-  background: var(--bg);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  border-left: 3px solid var(--kc, var(--primary));
-}
-.portal-kpi-value { font-size: 1.4rem; font-weight: 700; line-height: 1.1; }
-.portal-kpi-label { font-size: .78rem; color: var(--text-3); margin-top: 3px; }
-
-.portal-delta { font-size: .75rem; font-weight: 600; margin-left: 4px; }
-.delta-pos { color: var(--success); }
-.delta-neg { color: var(--danger); }
-
-/* ── Graphiques ─────────────────────────────────────────────────── */
-.portal-charts {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-.portal-chart-card {
-  background: var(--bg);
-  border-radius: var(--radius);
-  padding: 12px 12px 4px;
-}
-.portal-chart-label {
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.portal-canvas { display: block; }
-
-/* ── Modal données ──────────────────────────────────────────────── */
+/* ── Classes utilitaires (modals) ──────────────────────────────── */
 .modal-lg { width: 680px; max-width: 96vw; }
 .form-input-sm { padding: 5px 8px; font-size: .82rem; }
 .form-hint { font-size: .82rem; color: var(--text-3); }
@@ -2277,9 +2146,6 @@ code {
   transition: background var(--dur), color var(--dur);
 }
 .btn-icon-del:hover { background: var(--danger-bg); color: var(--danger); }
-
-/* ── Responsive portail ─────────────────────────────────────────── */
-/* portal responsive moved to main responsive section */
 
 /* ================================================================
    TOAST + CONFIRM
@@ -3961,7 +3827,6 @@ html.theme-transitioning *::after {
 }
 
 /* ── Portail client badges ───────────────────────────────────────── */
-[data-theme="dark"] .portal-mode-badge { border-color: var(--border); }
 
 /* ── EOD summary ─────────────────────────────────────────────────── */
 [data-theme="dark"] .eod-summary { background: #252119; }
