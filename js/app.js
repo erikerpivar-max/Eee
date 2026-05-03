@@ -152,6 +152,7 @@ window.App = {
     'publication': 'Publication',
     'database':    'Base de données',
     'scripting':   'Scripting',
+    'procedures':  'Procédures',
   },
 
   navigateTo(viewId) {
@@ -176,6 +177,7 @@ window.App = {
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
     if (viewId === 'database')   _safeRender('database-container',   () => ScriptOrga.renderDatabase());
     if (viewId === 'scripting')  _safeRender('scripting-container',  () => ScriptOrga.renderScripting());
+    if (viewId === 'procedures') _safeRender('procedures-container', () => Procedures.renderView());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
