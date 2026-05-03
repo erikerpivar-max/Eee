@@ -4181,6 +4181,50 @@ html.theme-transitioning *::after {
 .proc-empty-text { font-size: .95rem; font-weight: 600; color: var(--text-2); }
 .proc-empty-sub { font-size: .82rem; color: var(--text-3); margin-top: 4px; }
 
+/* ── Mini flowchart preview (dans les cards) ────────────────────── */
+.proc-mini-flow {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0 6px;
+  gap: 0;
+}
+.proc-mini-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.proc-mini-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.proc-mini-label {
+  font-size: .75rem;
+  color: var(--text-2);
+  font-weight: 500;
+}
+.proc-mini-branch {
+  font-size: .65rem;
+  background: var(--bg);
+  color: var(--text-3);
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.proc-mini-line {
+  width: 1px;
+  height: 10px;
+  margin-left: 4.5px;
+  border-left: 2px solid var(--border);
+}
+.proc-mini-more {
+  font-size: .7rem;
+  color: var(--text-3);
+  font-weight: 500;
+  padding-left: 18px;
+  margin-top: 2px;
+}
+
 /* ── Popup overlay ──────────────────────────────────────────────── */
 .proc-popup-overlay {
   position: fixed;
@@ -4201,14 +4245,16 @@ html.theme-transitioning *::after {
   background: var(--surface);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 520px;
-  max-height: 85vh;
+  max-width: 560px;
+  max-height: 88vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   transform: translateY(10px);
   transition: transform .2s var(--ease);
 }
 .proc-popup-overlay.visible .proc-popup { transform: translateY(0); }
+.proc-flow-popup { max-width: 640px; }
+.proc-editor-popup { max-width: 680px; }
 
 .proc-popup-head {
   display: flex;
@@ -4217,6 +4263,11 @@ html.theme-transitioning *::after {
   padding: 20px 24px 0;
 }
 .proc-popup-head h3 { font-size: 1.05rem; font-weight: 700; }
+.proc-flow-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .proc-popup-close {
   font-size: 1.5rem;
   color: var(--text-3);
@@ -4232,6 +4283,137 @@ html.theme-transitioning *::after {
   gap: 8px;
   padding: 12px 24px 20px;
   border-top: 1px solid var(--border-light);
+}
+
+/* ── Flow stats bar ─────────────────────────────────────────────── */
+.proc-flow-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.proc-flow-stat {
+  font-size: .75rem;
+  color: var(--text-2);
+  font-weight: 500;
+}
+.proc-flow-stat strong { font-weight: 700; }
+.proc-flow-stat-next { color: var(--text-3); }
+
+/* ══════════════════════════════════════════════════════════════════
+   FLOWCHART (vue détail)
+   ══════════════════════════════════════════════════════════════════ */
+.proc-flow-body { padding: 24px; }
+
+.proc-flowchart {
+  position: relative;
+  padding-left: 8px;
+}
+
+.flow-node {
+  position: relative;
+}
+
+.flow-node-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.flow-node-circle {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+}
+.flow-node-circle span {
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.flow-node-content {
+  display: flex;
+  flex-direction: column;
+  padding-top: 6px;
+  min-width: 0;
+}
+.flow-node-text {
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+.flow-node-note {
+  font-size: .75rem;
+  color: var(--text-3);
+  margin-top: 2px;
+  font-style: italic;
+}
+
+/* Connecteur vertical entre noeuds principaux */
+.flow-connector {
+  width: 2px;
+  height: 28px;
+  margin-left: 17px;
+  border-left: 2px dashed;
+  opacity: .5;
+}
+
+/* ── Branches (sous-étapes) ─────────────────────────────────────── */
+.flow-branches {
+  margin-left: 18px;
+  padding: 8px 0 4px 24px;
+  border-left: 2px solid var(--border);
+  position: relative;
+}
+
+.flow-branch {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 10px;
+  position: relative;
+}
+.flow-branch:last-child { margin-bottom: 0; }
+
+.flow-branch-connector {
+  position: absolute;
+  top: 14px;
+  left: -24px;
+  width: 20px;
+  height: 0;
+  border-top: 2px solid;
+  opacity: .4;
+}
+
+.flow-branch-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.flow-branch-circle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.flow-branch-circle span {
+  font-size: .6rem;
+  font-weight: 700;
 }
 
 /* ── Catégorie grid (création) ──────────────────────────────────── */
@@ -4261,104 +4443,127 @@ html.theme-transitioning *::after {
 }
 .proc-cat-icon { font-size: 1rem; }
 
-/* ── Steps editor ───────────────────────────────────────────────── */
-.proc-step-row {
+/* ══════════════════════════════════════════════════════════════════
+   ÉDITEUR FLOWCHART
+   ══════════════════════════════════════════════════════════════════ */
+.proc-ed-flow {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  background: var(--bg);
+}
+
+.proc-ed-node {
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.proc-ed-node-head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
 }
-.proc-step-num {
-  width: 22px; height: 22px;
+.proc-ed-node-num {
+  width: 26px; height: 26px;
   border-radius: 50%;
-  background: var(--primary-bg);
-  color: var(--primary);
+  background: var(--primary);
+  color: #fff;
   font-size: .7rem;
   font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.proc-step-input { flex: 1; font-size: .85rem; }
-.proc-step-del {
-  font-size: 1.2rem;
+.proc-ed-node-input {
+  flex: 1;
+  font-size: .85rem;
+  font-weight: 600;
+}
+.proc-ed-node-note {
+  flex: 0.6;
+  font-size: .78rem;
+  color: var(--text-3);
+}
+.proc-ed-del-node {
+  font-size: 1.3rem;
   color: var(--text-3);
   padding: 2px 6px;
   border-radius: 4px;
+  flex-shrink: 0;
 }
-.proc-step-del:hover { color: var(--danger); background: var(--danger-bg); }
+.proc-ed-del-node:hover { color: var(--danger); background: var(--danger-bg); }
 
-/* ── Détail popup ───────────────────────────────────────────────── */
-.proc-detail-top {
+/* Branches dans l'éditeur */
+.proc-ed-branches {
+  margin-left: 13px;
+  padding-left: 20px;
+  border-left: 2px solid var(--border);
+  margin-top: 6px;
+}
+.proc-ed-branch {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 6px;
+  position: relative;
 }
+.proc-ed-branch-line {
+  position: absolute;
+  top: 50%;
+  left: -20px;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid var(--border);
+}
+.proc-ed-branch-num {
+  width: 26px; height: 22px;
+  border-radius: 11px;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  font-size: .6rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.proc-ed-branch-input {
+  flex: 1;
+  font-size: .82rem;
+}
+.proc-ed-branch-note {
+  flex: 0.5;
+  font-size: .75rem;
+}
+.proc-ed-del-branch {
+  font-size: 1.1rem;
+  color: var(--text-3);
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.proc-ed-del-branch:hover { color: var(--danger); background: var(--danger-bg); }
+
+.proc-ed-add-branch {
+  margin-left: 34px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/* Connecteur vertical éditeur */
+.proc-ed-connector {
+  width: 2px;
+  height: 14px;
+  margin-left: 12px;
+  border-left: 2px dashed var(--border);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/* ── Detail badge ───────────────────────────────────────────────── */
 .proc-detail-badge {
   font-size: .75rem;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 12px;
-}
-.proc-detail-level {
-  font-size: .82rem;
-  color: var(--text-3);
-}
-.proc-detail-progress { margin-bottom: 18px; }
-.proc-detail-progress-bar {
-  height: 6px;
-  background: var(--border);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-.proc-detail-progress-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width .4s var(--ease);
-}
-.proc-detail-progress-text {
-  font-size: .72rem;
-  color: var(--text-3);
-}
-.proc-detail-stats {
-  display: flex;
-  gap: 24px;
-  margin-bottom: 20px;
-}
-.proc-detail-stat {
-  display: flex;
-  flex-direction: column;
-}
-.proc-detail-stat-val {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text);
-}
-.proc-detail-stat-label {
-  font-size: .7rem;
-  color: var(--text-3);
-  text-transform: uppercase;
-  letter-spacing: .03em;
-}
-.proc-detail-steps-title {
-  font-size: .82rem;
-  font-weight: 600;
-  color: var(--text-2);
-  margin-bottom: 8px;
-}
-.proc-detail-steps {
-  padding-left: 20px;
-}
-.proc-detail-steps li {
-  font-size: .85rem;
-  color: var(--text);
-  padding: 4px 0;
-  line-height: 1.5;
-}
-.proc-detail-steps li::marker {
-  color: var(--primary);
-  font-weight: 700;
 }
 
 /* ── Dark mode ──────────────────────────────────────────────────── */
@@ -4373,10 +4578,25 @@ html.theme-transitioning *::after {
   background: var(--surface);
   border-color: var(--border);
 }
+[data-theme="dark"] .proc-ed-flow {
+  background: var(--surface);
+  border-color: var(--border);
+}
+[data-theme="dark"] .flow-branch-circle {
+  background: var(--surface);
+}
+[data-theme="dark"] .proc-flow-stats-bar {
+  background: var(--surface);
+}
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .proc-list { grid-template-columns: 1fr; }
   .proc-cat-grid { grid-template-columns: 1fr 1fr; }
   .proc-topbar { flex-direction: column; align-items: flex-start; }
+  .proc-ed-node-head { flex-wrap: wrap; }
+  .proc-ed-node-note { flex: 1; min-width: 100%; margin-top: 4px; }
+  .proc-ed-branch { flex-wrap: wrap; }
+  .proc-ed-branch-note { flex: 1; min-width: 100%; margin-top: 4px; }
+  .proc-flow-popup, .proc-editor-popup { max-width: 100%; }
 }
