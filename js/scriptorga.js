@@ -40,6 +40,7 @@ window.ScriptOrga = (() => {
   let _editingId       = null;
   let _anglePopupTimer = null;
   let _autoSaveTimer   = null;
+  let _savedCardsHTML  = null;
 
   const STATUSES = [
     { id: 'brouillon', label: 'Brouillon', css: 'status-brouillon' },
@@ -535,7 +536,7 @@ window.ScriptOrga = (() => {
     /* Écrire / Modifier */
     el.querySelectorAll('.so-card-btn.btn-write').forEach(btn => {
       btn.addEventListener('click', () => {
-        _openScriptModal(btn.dataset.scriptId);
+        _openDocEditor(btn.dataset.scriptId);
       });
     });
 
@@ -618,215 +619,195 @@ window.ScriptOrga = (() => {
     renderScripting();
   }
 
-  /* ─── Modal Script ────────────────────────────────────────────── */
-  function _openScriptModal(scriptId) {
+  /* ─── Éditeur document plein écran ───────────────────────────── */
+  function _openDocEditor(scriptId) {
     const scripts = _loadScripts();
     const script  = scripts.find(s => s.id === scriptId);
     if (!script) return;
 
     _editingId = scriptId;
 
-    const formatEl = document.getElementById('so-modal-format');
-    const angleEl  = document.getElementById('so-modal-angle');
-    if (formatEl) formatEl.textContent = script.format || '—';
-    if (angleEl)  angleEl.textContent  = script.angle  || '—';
+    const container = document.getElementById('scripting-container');
+    if (!container) return;
 
-    /* Ajouter les sélecteurs client/format/angle/hook dans le modal */
-    _injectModalSelectors(script);
+    // Sauvegarder le contenu des cartes pour pouvoir revenir
+    _savedCardsHTML = container.innerHTML;
 
-    /* Appliquer le template selon le format */
-    _applyEditorTemplate(script.format);
+    const clients = App.CLIENTS || [];
+    const formats = _db.formats || [];
+    const angles  = _db.angles  || [];
+    const hooks   = script.angle ? _hooksForAngle(script.angle) : _allHooks();
 
-    /* Migration : si content sans sections, placer dans corps */
-    if (!script.sections) {
-      script.sections = { accroche: '', corps: script.content || '', cta: '' };
-    }
+    container.innerHTML = `
+      <div class="so-doc-wrap">
 
-    /* Remplir les 3 zones */
-    document.getElementById('so-ta-accroche').value = script.sections.accroche || '';
-    document.getElementById('so-ta-corps').value    = script.sections.corps    || '';
-    document.getElementById('so-ta-cta').value      = script.sections.cta      || '';
+        <!-- Barre de navigation haut -->
+        <div class="so-doc-topbar">
+          <button class="so-doc-back" id="so-doc-back-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Retour
+          </button>
 
-    /* Auto-fill accroche depuis hook si vide */
-    if (!script.sections.accroche && script.hook) {
-      document.getElementById('so-ta-accroche').value = script.hook;
-    }
+          <input class="so-doc-title-input" id="so-doc-title"
+                 value="${escHtml(script.title || '')}"
+                 placeholder="Titre du script…" />
 
-    /* Mettre à jour les compteurs de mots et auto-resize */
-    _updateWordCounts();
-    ['accroche', 'corps', 'cta'].forEach(key => {
-      _autoResizeTa(document.getElementById('so-ta-' + key));
-    });
-
-    /* Réinitialiser indicateur sauvegarde */
-    const statusEl = document.getElementById('so-save-status');
-    if (statusEl) { statusEl.textContent = ''; statusEl.className = 'so-save-status'; }
-
-    /* Lier l'auto-save */
-    _bindEditorAutoSave();
-
-    App.openModal('so-script-modal');
-    setTimeout(() => {
-      const ta = document.getElementById('so-ta-accroche');
-      if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
-    }, 150);
-  }
-
-  function _applyEditorTemplate(format) {
-    const tpl = SO_TEMPLATES[format] || SO_TEMPLATES._default;
-    ['accroche', 'corps', 'cta'].forEach(key => {
-      const t = tpl[key];
-      const labelEl = document.getElementById('so-label-' + key);
-      const hintEl  = document.getElementById('so-hint-'  + key);
-      const ta      = document.getElementById('so-ta-'    + key);
-      if (labelEl) labelEl.textContent = t.label;
-      if (hintEl)  hintEl.textContent  = t.hint;
-      if (ta)      ta.placeholder      = t.placeholder;
-    });
-  }
-
-  function _injectModalSelectors(script) {
-    let metaEl = document.querySelector('.so-modal-meta');
-    if (!metaEl) return;
-    document.querySelector('.so-modal-selectors')?.remove();
-    const allHooks = script.angle ? _hooksForAngle(script.angle) : _allHooks();
-    const sel = `
-      <div class="so-modal-selectors" style="display:flex;gap:10px;padding:10px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-wrap:wrap">
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)">Client</span>
-          <select class="form-select" id="so-modal-client" style="font-size:.82rem;padding:4px 8px">
-            <option value="">--</option>
-            ${App.CLIENTS.map(c => `<option value="${c.id}" ${script.clientId === c.id ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('')}
-          </select>
+          <span class="so-doc-save-status" id="so-doc-save-status"></span>
         </div>
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)">Format</span>
-          <select class="form-select" id="so-modal-format-sel" style="font-size:.82rem;padding:4px 8px">
-            <option value="">--</option>
-            ${_db.formats.map(f => `<option value="${escHtml(f)}" ${script.format === f ? 'selected' : ''}>${escHtml(f)}</option>`).join('')}
-          </select>
+
+        <!-- Barre de métadonnées -->
+        <div class="so-doc-metabar">
+          <div class="so-doc-meta-field">
+            <label class="so-doc-meta-label">Format</label>
+            <select class="so-doc-select" id="so-doc-format">
+              <option value="">—</option>
+              ${formats.map(f => `<option value="${escHtml(f)}" ${script.format === f ? 'selected' : ''}>${escHtml(f)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="so-doc-meta-field">
+            <label class="so-doc-meta-label">Angle</label>
+            <select class="so-doc-select" id="so-doc-angle">
+              <option value="">—</option>
+              ${angles.map(a => `<option value="${escHtml(a)}" ${script.angle === a ? 'selected' : ''}>${escHtml(a)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="so-doc-meta-field">
+            <label class="so-doc-meta-label">Hook</label>
+            <select class="so-doc-select so-doc-select--hook" id="so-doc-hook">
+              <option value="">—</option>
+              ${hooks.map(h => `<option value="${escHtml(h)}" ${script.hook === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="so-doc-meta-field">
+            <label class="so-doc-meta-label">Client</label>
+            <select class="so-doc-select" id="so-doc-client">
+              <option value="">—</option>
+              ${clients.map(c => `<option value="${c.id}" ${script.clientId === c.id ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('')}
+            </select>
+          </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)">Angle</span>
-          <select class="form-select" id="so-modal-angle-sel" style="font-size:.82rem;padding:4px 8px">
-            <option value="">--</option>
-            ${_db.angles.map(a => `<option value="${escHtml(a)}" ${script.angle === a ? 'selected' : ''}>${escHtml(a)}</option>`).join('')}
-          </select>
+
+        <!-- Zone document -->
+        <div class="so-doc-area">
+          <div class="so-doc-page">
+            <textarea class="so-doc-ta" id="so-doc-ta"
+              placeholder="Écrire le script ici…">${escHtml(script.content || '')}</textarea>
+          </div>
         </div>
-        <div style="display:flex;flex-direction:column;gap:2px">
-          <span style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)">Hook</span>
-          <select class="form-select" id="so-modal-hook-sel" style="font-size:.82rem;padding:4px 8px">
-            <option value="">--</option>
-            ${allHooks.map(h => `<option value="${escHtml(h)}" ${script.hook === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('')}
-          </select>
-        </div>
+
       </div>`;
-    metaEl.insertAdjacentHTML('afterend', sel);
 
-    /* Format change → mettre à jour template */
-    document.getElementById('so-modal-format-sel')?.addEventListener('change', e => {
-      _applyEditorTemplate(e.target.value);
-      const fEl = document.getElementById('so-modal-format');
-      if (fEl) fEl.textContent = e.target.value || '—';
+    // Auto-resize initial
+    setTimeout(() => {
+      const ta = document.getElementById('so-doc-ta');
+      if (ta) { _docAutoResize(ta); ta.focus(); }
+    }, 50);
+
+    _bindDocEditor();
+  }
+
+  function _bindDocEditor() {
+    const ta     = document.getElementById('so-doc-ta');
+    const title  = document.getElementById('so-doc-title');
+    const back   = document.getElementById('so-doc-back-btn');
+    const fmtSel = document.getElementById('so-doc-format');
+    const angSel = document.getElementById('so-doc-angle');
+
+    // Auto-resize textarea
+    ta?.addEventListener('input', () => {
+      _docAutoResize(ta);
+      _docDebounceSave();
     });
 
-    /* Angle change → mettre à jour les hooks disponibles */
-    document.getElementById('so-modal-angle-sel')?.addEventListener('change', e => {
-      const hooks = e.target.value ? _hooksForAngle(e.target.value) : _allHooks();
-      const hookSel = document.getElementById('so-modal-hook-sel');
+    // Title auto-save
+    title?.addEventListener('input', _docDebounceSave);
+    title?.addEventListener('blur',  _docSaveNow);
+
+    // Meta fields
+    document.getElementById('so-doc-format')?.addEventListener('change', _docDebounceSave);
+    document.getElementById('so-doc-client')?.addEventListener('change', _docDebounceSave);
+
+    // Angle change → reload hooks
+    angSel?.addEventListener('change', () => {
+      const hooks = angSel.value ? _hooksForAngle(angSel.value) : _allHooks();
+      const hookSel = document.getElementById('so-doc-hook');
       if (hookSel) {
-        const curVal = hookSel.value;
-        hookSel.innerHTML = '<option value="">--</option>' +
-          hooks.map(h => `<option value="${escHtml(h)}" ${curVal === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('');
+        const cur = hookSel.value;
+        hookSel.innerHTML = '<option value="">—</option>' +
+          hooks.map(h => `<option value="${escHtml(h)}" ${cur === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('');
       }
-      const aEl = document.getElementById('so-modal-angle');
-      if (aEl) aEl.textContent = e.target.value || '—';
+      _docDebounceSave();
     });
 
-    /* Hook change → auto-fill accroche si vide */
-    document.getElementById('so-modal-hook-sel')?.addEventListener('change', e => {
-      if (!e.target.value) return;
-      const accTa = document.getElementById('so-ta-accroche');
-      if (accTa && !accTa.value.trim()) {
-        accTa.value = e.target.value;
-        _updateWordCount('accroche');
-        _autoResizeTa(accTa);
-        clearTimeout(_autoSaveTimer);
-        _autoSaveTimer = setTimeout(_autoSaveScript, 800);
-      }
+    document.getElementById('so-doc-hook')?.addEventListener('change', _docDebounceSave);
+
+    // Retour
+    back?.addEventListener('click', () => {
+      _docSaveNow();
+      document.removeEventListener('keydown', _docCtrlS);
+      _editingId    = null;
+      _savedCardsHTML = null;
+      clearTimeout(_autoSaveTimer);
+      renderScripting();
     });
+
+    // Ctrl+S pour forcer la sauvegarde
+    document.addEventListener('keydown', _docCtrlS);
   }
 
-  function _bindEditorAutoSave() {
+  function _docCtrlS(e) {
+    if (e.ctrlKey && e.key === 's' && _editingId) {
+      e.preventDefault();
+      _docSaveNow();
+    }
+  }
+
+  function _docAutoResize(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(ta.scrollHeight, 500) + 'px';
+  }
+
+  function _docDebounceSave() {
     clearTimeout(_autoSaveTimer);
-    ['accroche', 'corps', 'cta'].forEach(key => {
-      const ta = document.getElementById('so-ta-' + key);
-      if (!ta) return;
-      ta.oninput = () => {
-        _autoResizeTa(ta);
-        _updateWordCount(key);
-        clearTimeout(_autoSaveTimer);
-        _autoSaveTimer = setTimeout(_autoSaveScript, 800);
-      };
-    });
+    _autoSaveTimer = setTimeout(_docSaveNow, 600);
   }
 
-  function _autoSaveScript() {
+  function _docSaveNow() {
     if (!_editingId) return;
+    clearTimeout(_autoSaveTimer);
+
     const scripts = _loadScripts();
     const s = scripts.find(x => x.id === _editingId);
     if (!s) return;
-    s.sections = {
-      accroche: document.getElementById('so-ta-accroche')?.value || '',
-      corps:    document.getElementById('so-ta-corps')?.value    || '',
-      cta:      document.getElementById('so-ta-cta')?.value      || '',
-    };
-    s.content = [s.sections.accroche, s.sections.corps, s.sections.cta]
-      .filter(Boolean).join('\n\n');
+
+    const ta     = document.getElementById('so-doc-ta');
+    const title  = document.getElementById('so-doc-title');
+    const format = document.getElementById('so-doc-format');
+    const angle  = document.getElementById('so-doc-angle');
+    const hook   = document.getElementById('so-doc-hook');
+    const client = document.getElementById('so-doc-client');
+
+    if (ta)     s.content  = ta.value;
+    if (title)  s.title    = title.value;
+    if (format) s.format   = format.value;
+    if (angle)  s.angle    = angle.value;
+    if (hook)   s.hook     = hook.value;
+    if (client) s.clientId = client.value;
+
     _saveScripts(scripts);
-    const statusEl = document.getElementById('so-save-status');
+
+    const statusEl = document.getElementById('so-doc-save-status');
     if (statusEl) {
       statusEl.textContent = '✓ Sauvegardé';
-      statusEl.className   = 'so-save-status so-save-status--saved';
+      statusEl.className   = 'so-doc-save-status so-doc-save-status--ok';
       setTimeout(() => {
-        if (statusEl) { statusEl.textContent = ''; statusEl.className = 'so-save-status'; }
-      }, 2000);
+        if (statusEl) { statusEl.textContent = ''; statusEl.className = 'so-doc-save-status'; }
+      }, 1800);
     }
   }
 
-  function _autoResizeTa(ta) {
-    if (!ta) return;
-    ta.style.height = 'auto';
-    ta.style.height = ta.scrollHeight + 'px';
-  }
-
-  function _updateWordCount(key) {
-    const val   = document.getElementById('so-ta-' + key)?.value || '';
-    const count = val.trim() ? val.trim().split(/\s+/).length : 0;
-    const el    = document.getElementById('so-count-' + key);
-    if (el) el.textContent = count + ' mot' + (count > 1 ? 's' : '');
-  }
-
-  function _updateWordCounts() {
-    ['accroche', 'corps', 'cta'].forEach(_updateWordCount);
-  }
-
-  function _saveScript() {
-    _autoSaveScript();
-    const scripts = _loadScripts();
-    const s = scripts.find(x => x.id === _editingId);
-    if (s) {
-      s.clientId = document.getElementById('so-modal-client')?.value || s.clientId;
-      s.format   = document.getElementById('so-modal-format-sel')?.value || s.format;
-      s.angle    = document.getElementById('so-modal-angle-sel')?.value || s.angle;
-      s.hook     = document.getElementById('so-modal-hook-sel')?.value || s.hook;
-      _saveScripts(scripts);
-    }
-    document.querySelector('.so-modal-selectors')?.remove();
-    App.closeModal('so-script-modal');
-    _editingId = null;
-    renderScripting();
-  }
 
   /* ─── Notes ───────────────────────────────────────────────────── */
   function _openNotesModal() {
@@ -983,8 +964,7 @@ window.ScriptOrga = (() => {
 
   /* ─── Init ───────────────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('so-save-script-btn')
-      ?.addEventListener('click', _saveScript);
+    // so-save-script-btn kept for legacy modal use
 
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === '4') {

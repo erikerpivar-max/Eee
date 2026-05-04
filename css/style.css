@@ -4688,3 +4688,171 @@ html.theme-transitioning *::after {
   .proc-ed-branch-note { flex: 1; min-width: 100%; margin-top: 4px; }
   .proc-flow-popup, .proc-editor-popup { max-width: 100%; }
 }
+
+/* ─── Éditeur document plein écran ──────────────────────────────── */
+.so-doc-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 60px);
+  background: var(--bg);
+}
+
+/* Barre haut */
+.so-doc-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-shrink: 0;
+}
+.so-doc-back {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: .85rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur), color var(--dur);
+  flex-shrink: 0;
+}
+.so-doc-back:hover {
+  background: var(--border-light);
+  color: var(--text);
+}
+.so-doc-title-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--font);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur);
+  min-width: 0;
+}
+.so-doc-title-input:hover { background: var(--border-light); }
+.so-doc-title-input:focus { background: var(--border-light); }
+.so-doc-save-status {
+  font-size: .8rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+  min-width: 80px;
+  text-align: right;
+  transition: color .3s;
+}
+.so-doc-save-status--ok { color: #22c55e; }
+
+/* Barre de métadonnées */
+.so-doc-metabar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border-light);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.so-doc-meta-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.so-doc-meta-label {
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.so-doc-select {
+  font-size: .82rem;
+  padding: 3px 24px 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color var(--dur);
+  max-width: 160px;
+}
+.so-doc-select--hook { max-width: 220px; }
+.so-doc-select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(200,136,42,.12);
+}
+.so-doc-metabar .so-doc-meta-field + .so-doc-meta-field::before {
+  content: '';
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin-right: 6px;
+}
+
+/* Zone document */
+.so-doc-area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 40px 24px 80px;
+  background: #f5f4f2;
+}
+[data-theme=dark] .so-doc-area { background: #111010; }
+
+.so-doc-page {
+  width: 100%;
+  max-width: 700px;
+  background: #ffffff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  padding: 48px 64px;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+[data-theme=dark] .so-doc-page {
+  background: #1c1a17;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+
+.so-doc-ta {
+  flex: 1;
+  width: 100%;
+  min-height: 500px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: #1a1a1a;
+  letter-spacing: .01em;
+  overflow: hidden;
+}
+[data-theme=dark] .so-doc-ta { color: #e8e3dc; }
+.so-doc-ta::placeholder { color: #bbb; }
+[data-theme=dark] .so-doc-ta::placeholder { color: #555; }
+
+@media (max-width: 640px) {
+  .so-doc-page { padding: 28px 22px; }
+  .so-doc-ta { font-size: .97rem; }
+  .so-doc-metabar { gap: 8px; }
+  .so-doc-metabar .so-doc-meta-field + .so-doc-meta-field::before { display: none; }
+}
