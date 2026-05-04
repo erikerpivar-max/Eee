@@ -568,10 +568,40 @@
           <span class="so-modal-meta-value" id="so-modal-angle">—</span>
         </div>
       </div>
-      <div class="modal-body so-script-body">
-        <textarea id="so-script-ta" class="so-script-ta" placeholder="Écrivez votre script ici…"></textarea>
+            <div class="modal-body so-script-body">
+        <div class="so-editor-section">
+          <div class="so-section-header">
+            <span class="so-section-label" id="so-label-accroche">Accroche</span>
+            <span class="so-section-meta">
+              <span class="so-section-hint" id="so-hint-accroche"></span>
+              <span class="so-word-count" id="so-count-accroche">0 mot</span>
+            </span>
+          </div>
+          <textarea id="so-ta-accroche" class="so-section-ta" placeholder="Première phrase choc…"></textarea>
+        </div>
+        <div class="so-editor-section">
+          <div class="so-section-header">
+            <span class="so-section-label" id="so-label-corps">Corps du script</span>
+            <span class="so-section-meta">
+              <span class="so-section-hint" id="so-hint-corps"></span>
+              <span class="so-word-count" id="so-count-corps">0 mot</span>
+            </span>
+          </div>
+          <textarea id="so-ta-corps" class="so-section-ta so-section-ta--main" placeholder="Développement…"></textarea>
+        </div>
+        <div class="so-editor-section">
+          <div class="so-section-header">
+            <span class="so-section-label" id="so-label-cta">Call to action</span>
+            <span class="so-section-meta">
+              <span class="so-section-hint" id="so-hint-cta"></span>
+              <span class="so-word-count" id="so-count-cta">0 mot</span>
+            </span>
+          </div>
+          <textarea id="so-ta-cta" class="so-section-ta" placeholder="Clôture et action attendue…"></textarea>
+        </div>
       </div>
       <div class="modal-foot">
+        <span class="so-save-status" id="so-save-status"></span>
         <button class="btn btn-ghost" data-close="so-script-modal">Annuler</button>
         <button class="btn btn-primary" id="so-save-script-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -585,7 +615,7 @@
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=3"></script>
-  <script src="js/scriptorga.js?v=3"></script>
+  <script src="js/scriptorga.js?v=4"></script>
   <script src="js/prevision.js?v=1"></script>
   <script src="js/procedures.js?v=1"></script>
 

@@ -6,6 +6,29 @@
 
 'use strict';
 
+/* ─── Templates par format ────────────────────────────────────────────── */
+const SO_TEMPLATES = {
+  'Clone vs Clone': {
+    accroche: { label: 'Accroche',        placeholder: 'La première phrase choc — question, stat, comparaison directe…', hint: '~3s / 10 mots' },
+    corps:    { label: 'Développement',   placeholder: 'Compare les deux options clairement, un angle par camp…', hint: '~45s / 120 mots' },
+    cta:      { label: 'Call to action',  placeholder: 'Abonne-toi, enregistre, laisse un commentaire…', hint: '~5s / 15 mots' },
+  },
+  'White board': {
+    accroche: { label: 'Accroche',        placeholder: 'La question ou le problème posé à la craie…', hint: '~5s' },
+    corps:    { label: 'Explication',     placeholder: 'Le déroulé pédagogique, étape par étape…', hint: '~60s' },
+    cta:      { label: 'Call to action',  placeholder: 'Prochain épisode, lien en bio…', hint: '~5s' },
+  },
+  'Voix Off': {
+    accroche: { label: 'Intro voix',      placeholder: 'Phrase d’entrée, ton posé, ambiance…', hint: '~5s' },
+    corps:    { label: 'Script voix',     placeholder: 'Texte complet à lire, rythme naturel…', hint: '~50s' },
+    cta:      { label: 'Outro',           placeholder: 'Phrase finale, redirection…', hint: '~5s' },
+  },
+  _default: {
+    accroche: { label: 'Accroche',        placeholder: 'Première phrase choc…', hint: '' },
+    corps:    { label: 'Corps du script', placeholder: 'Développement…', hint: '' },
+    cta:      { label: 'Call to action',  placeholder: 'Clôture et action attendue…', hint: '' },
+  },
+};
 window.ScriptOrga = (() => {
 
   const KEY_DB      = 'so_database';
@@ -16,6 +39,7 @@ window.ScriptOrga = (() => {
   let _db              = null;
   let _editingId       = null;
   let _anglePopupTimer = null;
+  let _autoSaveTimer   = null;
 
   const STATUSES = [
     { id: 'brouillon', label: 'Brouillon', css: 'status-brouillon' },
@@ -451,7 +475,7 @@ window.ScriptOrga = (() => {
   function _renderCard(script) {
     const client = App.getClient(script.clientId);
     const status = STATUSES.find(s => s.id === script.status) || STATUSES[0];
-    const hasScript = !!(script.content?.trim());
+    const hasScript = !!(script.content?.trim()) || !!(script.sections && (script.sections.accroche || script.sections.corps || script.sections.cta));
 
     const metaTags = [];
     if (script.format) metaTags.push(script.format);
@@ -604,38 +628,69 @@ window.ScriptOrga = (() => {
 
     const formatEl = document.getElementById('so-modal-format');
     const angleEl  = document.getElementById('so-modal-angle');
-    const ta       = document.getElementById('so-script-ta');
+    if (formatEl) formatEl.textContent = script.format || '—';
+    if (angleEl)  angleEl.textContent  = script.angle  || '—';
 
-    if (formatEl) formatEl.textContent = script.format || '\u2014';
-    if (angleEl)  angleEl.textContent  = script.angle  || '\u2014';
-
-    /* Ajouter les sélecteurs client/format/angle dans le modal */
+    /* Ajouter les sélecteurs client/format/angle/hook dans le modal */
     _injectModalSelectors(script);
 
-    if (script.content) {
-      ta.value = script.content;
-    } else if (script.hook) {
-      ta.value = script.hook + '\n\n';
-    } else {
-      ta.value = '';
+    /* Appliquer le template selon le format */
+    _applyEditorTemplate(script.format);
+
+    /* Migration : si content sans sections, placer dans corps */
+    if (!script.sections) {
+      script.sections = { accroche: '', corps: script.content || '', cta: '' };
     }
+
+    /* Remplir les 3 zones */
+    document.getElementById('so-ta-accroche').value = script.sections.accroche || '';
+    document.getElementById('so-ta-corps').value    = script.sections.corps    || '';
+    document.getElementById('so-ta-cta').value      = script.sections.cta      || '';
+
+    /* Auto-fill accroche depuis hook si vide */
+    if (!script.sections.accroche && script.hook) {
+      document.getElementById('so-ta-accroche').value = script.hook;
+    }
+
+    /* Mettre à jour les compteurs de mots et auto-resize */
+    _updateWordCounts();
+    ['accroche', 'corps', 'cta'].forEach(key => {
+      _autoResizeTa(document.getElementById('so-ta-' + key));
+    });
+
+    /* Réinitialiser indicateur sauvegarde */
+    const statusEl = document.getElementById('so-save-status');
+    if (statusEl) { statusEl.textContent = ''; statusEl.className = 'so-save-status'; }
+
+    /* Lier l'auto-save */
+    _bindEditorAutoSave();
 
     App.openModal('so-script-modal');
     setTimeout(() => {
-      ta.focus();
-      ta.setSelectionRange(ta.value.length, ta.value.length);
+      const ta = document.getElementById('so-ta-accroche');
+      if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
     }, 150);
+  }
+
+  function _applyEditorTemplate(format) {
+    const tpl = SO_TEMPLATES[format] || SO_TEMPLATES._default;
+    ['accroche', 'corps', 'cta'].forEach(key => {
+      const t = tpl[key];
+      const labelEl = document.getElementById('so-label-' + key);
+      const hintEl  = document.getElementById('so-hint-'  + key);
+      const ta      = document.getElementById('so-ta-'    + key);
+      if (labelEl) labelEl.textContent = t.label;
+      if (hintEl)  hintEl.textContent  = t.hint;
+      if (ta)      ta.placeholder      = t.placeholder;
+    });
   }
 
   function _injectModalSelectors(script) {
     let metaEl = document.querySelector('.so-modal-meta');
     if (!metaEl) return;
-
     document.querySelector('.so-modal-selectors')?.remove();
-
     const allHooks = script.angle ? _hooksForAngle(script.angle) : _allHooks();
-
-    const selectorsHTML = `
+    const sel = `
       <div class="so-modal-selectors" style="display:flex;gap:10px;padding:10px 24px;background:var(--bg);border-bottom:1px solid var(--border-light);flex-wrap:wrap">
         <div style="display:flex;flex-direction:column;gap:2px">
           <span style="font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)">Client</span>
@@ -666,28 +721,108 @@ window.ScriptOrga = (() => {
           </select>
         </div>
       </div>`;
+    metaEl.insertAdjacentHTML('afterend', sel);
 
-    metaEl.insertAdjacentHTML('afterend', selectorsHTML);
+    /* Format change → mettre à jour template */
+    document.getElementById('so-modal-format-sel')?.addEventListener('change', e => {
+      _applyEditorTemplate(e.target.value);
+      const fEl = document.getElementById('so-modal-format');
+      if (fEl) fEl.textContent = e.target.value || '—';
+    });
+
+    /* Angle change → mettre à jour les hooks disponibles */
+    document.getElementById('so-modal-angle-sel')?.addEventListener('change', e => {
+      const hooks = e.target.value ? _hooksForAngle(e.target.value) : _allHooks();
+      const hookSel = document.getElementById('so-modal-hook-sel');
+      if (hookSel) {
+        const curVal = hookSel.value;
+        hookSel.innerHTML = '<option value="">--</option>' +
+          hooks.map(h => `<option value="${escHtml(h)}" ${curVal === h ? 'selected' : ''}>${escHtml(h)}</option>`).join('');
+      }
+      const aEl = document.getElementById('so-modal-angle');
+      if (aEl) aEl.textContent = e.target.value || '—';
+    });
+
+    /* Hook change → auto-fill accroche si vide */
+    document.getElementById('so-modal-hook-sel')?.addEventListener('change', e => {
+      if (!e.target.value) return;
+      const accTa = document.getElementById('so-ta-accroche');
+      if (accTa && !accTa.value.trim()) {
+        accTa.value = e.target.value;
+        _updateWordCount('accroche');
+        _autoResizeTa(accTa);
+        clearTimeout(_autoSaveTimer);
+        _autoSaveTimer = setTimeout(_autoSaveScript, 800);
+      }
+    });
+  }
+
+  function _bindEditorAutoSave() {
+    clearTimeout(_autoSaveTimer);
+    ['accroche', 'corps', 'cta'].forEach(key => {
+      const ta = document.getElementById('so-ta-' + key);
+      if (!ta) return;
+      ta.oninput = () => {
+        _autoResizeTa(ta);
+        _updateWordCount(key);
+        clearTimeout(_autoSaveTimer);
+        _autoSaveTimer = setTimeout(_autoSaveScript, 800);
+      };
+    });
+  }
+
+  function _autoSaveScript() {
+    if (!_editingId) return;
+    const scripts = _loadScripts();
+    const s = scripts.find(x => x.id === _editingId);
+    if (!s) return;
+    s.sections = {
+      accroche: document.getElementById('so-ta-accroche')?.value || '',
+      corps:    document.getElementById('so-ta-corps')?.value    || '',
+      cta:      document.getElementById('so-ta-cta')?.value      || '',
+    };
+    s.content = [s.sections.accroche, s.sections.corps, s.sections.cta]
+      .filter(Boolean).join('\n\n');
+    _saveScripts(scripts);
+    const statusEl = document.getElementById('so-save-status');
+    if (statusEl) {
+      statusEl.textContent = '✓ Sauvegardé';
+      statusEl.className   = 'so-save-status so-save-status--saved';
+      setTimeout(() => {
+        if (statusEl) { statusEl.textContent = ''; statusEl.className = 'so-save-status'; }
+      }, 2000);
+    }
+  }
+
+  function _autoResizeTa(ta) {
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  }
+
+  function _updateWordCount(key) {
+    const val   = document.getElementById('so-ta-' + key)?.value || '';
+    const count = val.trim() ? val.trim().split(/\s+/).length : 0;
+    const el    = document.getElementById('so-count-' + key);
+    if (el) el.textContent = count + ' mot' + (count > 1 ? 's' : '');
+  }
+
+  function _updateWordCounts() {
+    ['accroche', 'corps', 'cta'].forEach(_updateWordCount);
   }
 
   function _saveScript() {
-    if (!_editingId) return;
+    _autoSaveScript();
     const scripts = _loadScripts();
-    const s = scripts.find(s => s.id === _editingId);
+    const s = scripts.find(x => x.id === _editingId);
     if (s) {
-      s.content  = document.getElementById('so-script-ta').value;
       s.clientId = document.getElementById('so-modal-client')?.value || s.clientId;
       s.format   = document.getElementById('so-modal-format-sel')?.value || s.format;
       s.angle    = document.getElementById('so-modal-angle-sel')?.value || s.angle;
       s.hook     = document.getElementById('so-modal-hook-sel')?.value || s.hook;
-
-      /* Le statut reste brouillon jusqu'au toggle manuel */
-
       _saveScripts(scripts);
     }
-
     document.querySelector('.so-modal-selectors')?.remove();
-
     App.closeModal('so-script-modal');
     _editingId = null;
     renderScripting();

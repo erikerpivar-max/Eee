@@ -3100,6 +3100,85 @@ body.is-client .main-wrapper   { margin-left: 0 !important; }
   box-shadow: 0 0 0 3px rgba(200,136,42,.1);
   outline: none;
 }
+/* ─── Éditeur structuré (3 sections) ─────────────────────────────── */
+.so-script-body {
+  overflow-y: auto;
+  gap: 0;
+  padding: 0 !important;
+}
+.so-editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+.so-editor-section:last-child { border-bottom: none; }
+
+.so-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.so-section-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--primary);
+}
+.so-section-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.so-section-hint {
+  font-size: .72rem;
+  color: var(--text-3);
+}
+.so-word-count {
+  font-size: .72rem;
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+.so-section-ta {
+  width: 100%;
+  min-height: 72px;
+  resize: none;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: .9rem;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--surface);
+  font-family: var(--font);
+  transition: border-color var(--dur), box-shadow var(--dur);
+  box-sizing: border-box;
+}
+.so-section-ta--main {
+  min-height: 130px;
+}
+.so-section-ta:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.1);
+  outline: none;
+}
+.so-save-status {
+  font-size: .8rem;
+  color: var(--text-3);
+  margin-right: auto;
+  transition: opacity .3s;
+}
+.so-save-status--saved {
+  color: #22c55e;
+}
+
+
 
 
 /* ─── Hooks par angle ────────────────────────────────────────────── */
@@ -3774,6 +3853,15 @@ html.theme-transitioning *::after {
 [data-theme="dark"] .so-script-ta:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(200,136,42,.12);
+}
+[data-theme="dark"] .so-section-ta {
+  background: #1a1713;
+  color: var(--text);
+  border-color: var(--border);
+}
+[data-theme="dark"] .so-section-ta:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.15);
 }
 [data-theme="dark"] .so-modal-meta { background: #1A1713; border-bottom-color: var(--border); }
 [data-theme="dark"] .so-modal-meta-sep { background: var(--border); }
