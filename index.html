@@ -123,12 +123,6 @@
               <span>Publication</span>
             </a>
           </li>
-          <li>
-            <a class="nav-link" data-view="scripting" href="#">
-              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-              <span>Scripting</span>
-            </a>
-          </li>
         </ul>
       </div>
 
@@ -143,19 +137,7 @@
           </li>
         </ul>
       </div>
-
-      <div class="nav-group">
-        <p class="nav-group-label">Données</p>
-        <ul>
-          <li>
-            <a class="nav-link" data-view="database" href="#">
-              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-              <span>Base de données</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
+      </nav>
 
     <div class="sidebar-footer">
     </div>
@@ -392,26 +374,6 @@
         <div class="pipeline-board" id="kanban-board"></div>
       </section>
 
-
-
-      <!-- ── VUE : SCRIPTING ──────────────────────────────────── -->
-      <section class="view" id="view-scripting">
-        <div class="view-intro">
-          <h2 class="view-title">Scripting</h2>
-          <p class="view-subtitle">Pipeline de scripts. Cr\u00e9ez, \u00e9crivez et suivez votre progression.</p>
-        </div>
-        <div id="scripting-container"></div>
-      </section>
-
-      <!-- ── VUE : BASE DE DONNÉES ─────────────────────────────── -->
-      <section class="view" id="view-database">
-        <div class="view-intro">
-          <h2 class="view-title">Base de données</h2>
-          <p class="view-subtitle">Gérez vos formats, angles, hooks et consultez vos données.</p>
-        </div>
-        <div id="database-container"></div>
-      </section>
-
       <!-- ── VUE : PUBLICATION ─────────────────────────────────── -->
       <section class="view" id="view-publication">
         <div class="view-intro">
@@ -546,46 +508,11 @@
       </div>
     </div>
   </div>
-
-
-  <!-- Modal : Script Orga - Éditeur -->
-  <div class="modal-backdrop" id="so-script-modal" style="display:none">
-    <div class="modal so-script-modal">
-      <div class="modal-head">
-        <h3>Écrire le script</h3>
-        <button class="modal-close-btn" data-close="so-script-modal">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="so-modal-meta">
-        <div class="so-modal-meta-item">
-          <span class="so-modal-meta-label">Format</span>
-          <span class="so-modal-meta-value" id="so-modal-format">—</span>
-        </div>
-        <div class="so-modal-meta-sep"></div>
-        <div class="so-modal-meta-item">
-          <span class="so-modal-meta-label">Angle</span>
-          <span class="so-modal-meta-value" id="so-modal-angle">—</span>
-        </div>
-      </div>
-            <div class="modal-body so-script-body">
-        <textarea id="so-script-ta" class="so-script-ta" placeholder="Écrivez votre script ici…"></textarea>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost" data-close="so-script-modal">Annuler</button>
-        <button class="btn btn-primary" id="so-save-script-btn">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Sauvegarder
-        </button>
-      </div>
-    </div>
-  </div>
   <script src="js/todo.js?v=1"></script>
   <script src="js/app.js?v=6"></script>
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=3"></script>
-  <script src="js/scriptorga.js?v=5"></script>
   <script src="js/prevision.js?v=1"></script>
   <script src="js/procedures.js?v=1"></script>
 

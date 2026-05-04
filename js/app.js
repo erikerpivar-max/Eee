@@ -78,7 +78,7 @@ window.App = {
 
   /* ── Migration anciens IDs de stages → nouveaux ─────────────── */
   migrateStages() {
-    const MAP = { scripting: 'ecrire', format: 'ecrire', hook: 'ecrire', brouillon: 'draft', verification: 'verif-final' };
+    const MAP = { verification: 'verif-final' };
     const validIds = new Set(this.STAGES.map(s => s.id));
     this.CLIENTS.forEach(client => {
       const key      = `${this.KEYS.PROJECTS}_${client.id}`;
@@ -150,8 +150,6 @@ window.App = {
     'prevision':   'Prévision',
     'kanban':      'Kanban',
     'publication': 'Publication',
-    'database':    'Base de données',
-    'scripting':   'Scripting',
     'procedures':  'Procédures',
   },
 
@@ -175,8 +173,6 @@ window.App = {
     if (viewId === 'prevision')   _safeRender('prevision-container', () => Prevision.render());
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
-    if (viewId === 'database')   _safeRender('database-container',   () => ScriptOrga.renderDatabase());
-    if (viewId === 'scripting')  _safeRender('scripting-container',  () => ScriptOrga.renderScripting());
     if (viewId === 'procedures') _safeRender('procedures-container', () => Procedures.renderView());
 
     if (window.innerWidth < 1024) {
