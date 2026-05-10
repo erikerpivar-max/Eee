@@ -496,29 +496,30 @@ window.Dashboard = {
       const pct = days === null ? 0 : Math.min(100, Math.max(0, (days / 30) * 100)).toFixed(1);
 
       /* Badge statut */
+      const badgeLabel = status === 'good' ? '✓ Large' : status === 'ok' ? '✓ OK' : status === 'warning' ? '⚠ Attention' : '● Retard';
       const badge = status === 'none' ? '' :
-        `<span class="advance-status-badge advance-${status}">
-           ${status === 'good' ? '✓ On est large' : status === 'ok' ? '✓ OK' : status === 'warning' ? '⚠ Attention' : '● Retard'}
-         </span>`;
+        `<span class="ca-badge ca-${status}">${badgeLabel}</span>`;
 
       /* Badge stock */
       const stock = StockContenu.get(client.id);
       const stockBadge = stock !== null
-        ? `<span style="font-size:.72rem;font-weight:600;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;white-space:nowrap">${stock} en stock</span>`
+        ? `<span class="ca-stock">${stock} en stock</span>`
         : '';
 
       return `
-        <div class="advance-row">
-          <div class="advance-client">
-            <span class="advance-dot" style="background:${client.color}"></span>
-            <span class="advance-name">${escHtml(client.name)}</span>
-          </div>
-          <div class="advance-bar-wrap">
-            <div class="advance-bar-fill" style="width:${pct}%;background:${color}"></div>
-          </div>
-          <div class="advance-right">
+        <div class="ca-card" style="--cc:${client.color}">
+          <div class="ca-header">
+            <div class="ca-client">
+              <div class="ca-avatar" style="background:${client.color}22;color:${client.color}">${escHtml(client.initials)}</div>
+              <span class="ca-name">${escHtml(client.name)}</span>
+            </div>
             ${stockBadge}
-            <span class="advance-value" style="color:${color}">${label}</span>
+          </div>
+          <div class="ca-bar-wrap">
+            <div class="ca-bar-fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <div class="ca-footer">
+            <span class="ca-value" style="color:${color}">${label}</span>
             ${badge}
           </div>
         </div>`;
