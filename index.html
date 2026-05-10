@@ -229,7 +229,12 @@
         <!-- Avance de contenu -->
         <div class="section-header" style="margin-top:28px">
           <h3 class="section-title">Avance de contenu</h3>
-          <span class="section-hint">15j+ = OK · 30j+ = Large</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="section-hint">15j+ = OK · 30j+ = Large</span>
+            <button class="btn btn-ghost btn-sm" id="stockContenuBtn" title="Stock de vidéos non planifiées" style="padding:3px 7px;line-height:1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </button>
+          </div>
         </div>
         <div class="content-advance-grid" id="content-advance-grid"></div>
 
@@ -486,6 +491,26 @@
   </div>
 
 
+  <!-- Modal stock de vidéos par magasin -->
+  <div class="modal-backdrop" id="modal-stockContenu" style="display:none">
+    <div class="modal modal-sm">
+      <div class="modal-head">
+        <h3>Stock de vidéos</h3>
+        <button class="modal-close-btn" data-close="modal-stockContenu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:.82rem;color:var(--text-3);margin-bottom:16px">Vidéos tournées non encore planifiées, par magasin.</p>
+        <div id="stock-contenu-body"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-stockContenu">Annuler</button>
+        <button class="btn btn-primary" id="confirmStockContenuBtn">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Confirmation fin de journée -->
   <div class="modal-backdrop" id="modal-endOfDay" style="display:none">
     <div class="modal modal-sm">
@@ -509,7 +534,7 @@
     </div>
   </div>
   <script src="js/todo.js?v=1"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/app.js?v=7"></script>
   <script src="js/timetracker.js?v=4"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=3"></script>

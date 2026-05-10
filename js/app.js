@@ -48,6 +48,7 @@ window.App = {
     PROJECTS: 'th_projects',
     PUBCAL:   'th_pubcal',
     CLIENTS:  'th_clients',
+    STOCK:    'th_stock_contenu',
   },
 
   /* ── Gestion clients dynamiques ──────────────────────────────── */
@@ -500,6 +501,12 @@ window.Dashboard = {
            ${status === 'good' ? '✓ On est large' : status === 'ok' ? '✓ OK' : status === 'warning' ? '⚠ Attention' : '● Retard'}
          </span>`;
 
+      /* Badge stock */
+      const stock = StockContenu.get(client.id);
+      const stockBadge = stock !== null
+        ? `<span style="font-size:.72rem;font-weight:600;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);border-radius:4px;padding:1px 6px;white-space:nowrap">${stock} en stock</span>`
+        : '';
+
       return `
         <div class="advance-row">
           <div class="advance-client">
@@ -510,6 +517,7 @@ window.Dashboard = {
             <div class="advance-bar-fill" style="width:${pct}%;background:${color}"></div>
           </div>
           <div class="advance-right">
+            ${stockBadge}
             <span class="advance-value" style="color:${color}">${label}</span>
             ${badge}
           </div>
@@ -566,6 +574,40 @@ function escHtml(str) {
 window.escHtml = escHtml;
 
 /* ─── Init ───────────────────────────────────────────────────────── */
+/* ─── Stock de vidéos par magasin ───────────────────────────────── */
+window.StockContenu = {
+  getAll() { return App.load(App.KEYS.STOCK, {}); },
+  get(clientId) { return this.getAll()[clientId] ?? null; },
+
+  openModal() {
+    const stocks = this.getAll();
+    const body   = document.getElementById('stock-contenu-body');
+    if (!body) return;
+    body.innerHTML = App.CLIENTS.map(c => `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></span>
+        <span style="flex:1;font-size:.88rem;font-weight:500">${escHtml(c.name)}</span>
+        <input type="number" min="0" class="form-input stock-input" data-id="${c.id}"
+               value="${stocks[c.id] ?? ''}" placeholder="–"
+               style="width:72px;text-align:center;padding:5px 8px" />
+        <span style="font-size:.78rem;color:var(--text-3);white-space:nowrap">vidéo(s)</span>
+      </div>`).join('');
+    App.openModal('modal-stockContenu');
+  },
+
+  save() {
+    const stocks = {};
+    document.querySelectorAll('.stock-input').forEach(inp => {
+      const val = parseInt(inp.value, 10);
+      if (!isNaN(val) && val >= 0) stocks[inp.dataset.id] = val;
+    });
+    App.save(App.KEYS.STOCK, stocks);
+    App.closeModal('modal-stockContenu');
+    Dashboard._contentAdvance();
+    App.toast('Stock mis à jour !', 'success');
+  },
+};
+
 document.addEventListener('DOMContentLoaded', () => {
 
   /* Dates supprimées de l'UI */
@@ -623,6 +665,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ?.addEventListener('click', () => ClientManager.confirmAdd());
   document.getElementById('newClientName')
     ?.addEventListener('keydown', e => { if (e.key === 'Enter') ClientManager.confirmAdd(); });
+
+  /* Bouton engrenage stock de contenu */
+  document.getElementById('stockContenuBtn')
+    ?.addEventListener('click', () => StockContenu.openModal());
+  document.getElementById('confirmStockContenuBtn')
+    ?.addEventListener('click', () => StockContenu.save());
 
   /* Données démo (première visite) */
   _initDemoData();
