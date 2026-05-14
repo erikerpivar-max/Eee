@@ -320,6 +320,73 @@ window.TimeTracker = (() => {
     });
   }
 
+  /* ── Ajout manuel d'une tâche ───────────────────────────────── */
+  function _openAddManual() {
+    const sel = document.getElementById('manualTaskClient');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Aucun client —</option>' +
+        App.CLIENTS.map(c =>
+          `<option value="${c.id}">${escHtml(c.name)}</option>`
+        ).join('') +
+        `<option value="${App.AUTRE_CLIENT_ID}">Autre</option>`;
+    }
+
+    const today = App.today();
+    const dateEl = document.getElementById('manualTaskDate');
+    if (dateEl) dateEl.value = today;
+
+    const now  = new Date();
+    const timeEl = document.getElementById('manualTaskStart');
+    if (timeEl) timeEl.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+    const nameEl = document.getElementById('manualTaskName');
+    if (nameEl) nameEl.value = '';
+    const hoursEl = document.getElementById('manualTaskHours');
+    if (hoursEl) hoursEl.value = '0';
+    const minsEl = document.getElementById('manualTaskMinutes');
+    if (minsEl) minsEl.value = '0';
+
+    App.openModal('modal-addManualTask');
+  }
+
+  function _confirmAddManual() {
+    const nameEl = document.getElementById('manualTaskName');
+    const name   = (nameEl?.value || '').trim();
+    if (!name) {
+      nameEl?.classList.add('input-error');
+      setTimeout(() => nameEl?.classList.remove('input-error'), 800);
+      return;
+    }
+
+    const clientId     = document.getElementById('manualTaskClient')?.value || null;
+    const dateVal      = document.getElementById('manualTaskDate')?.value || App.today();
+    const timeVal      = document.getElementById('manualTaskStart')?.value || '00:00';
+    const hours        = Math.max(0, parseInt(document.getElementById('manualTaskHours')?.value || '0', 10) || 0);
+    const minutes      = Math.max(0, Math.min(59, parseInt(document.getElementById('manualTaskMinutes')?.value || '0', 10) || 0));
+    const totalDuration = hours * 3600 + minutes * 60;
+
+    const startedAt = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+
+    const tasks = App.load(App.KEYS.TASKS, []);
+    tasks.push({
+      id:            App.uid(),
+      name:          name,
+      clientId:      clientId || null,
+      startedAt:     startedAt,
+      date:          dateVal,
+      totalDuration: totalDuration,
+      sessions:      [],
+      sourceType:    'manual',
+      projectId:     null,
+    });
+    App.save(App.KEYS.TASKS, tasks);
+
+    App.closeModal('modal-addManualTask');
+    renderTable();
+    Dashboard.refresh();
+    App.toast('Tâche ajoutée manuellement.', 'success');
+  }
+
   /* ── Fin de journée ─────────────────────────────────────────── */
   function _openEndOfDay() {
     const today = App.today();
@@ -417,9 +484,11 @@ ${clientRows}
     document.getElementById('timerPauseBtn') ?.addEventListener('click', pause);
     document.getElementById('timerResumeBtn')?.addEventListener('click', resume);
     document.getElementById('timerStopBtn')  ?.addEventListener('click', stop);
-    document.getElementById('endOfDayBtn')   ?.addEventListener('click', _openEndOfDay);
-    document.getElementById('confirmEndOfDayBtn')?.addEventListener('click', _confirmEndOfDay);
-    document.getElementById('confirmEditTaskBtn') ?.addEventListener('click', _confirmEdit);
+    document.getElementById('endOfDayBtn')           ?.addEventListener('click', _openEndOfDay);
+    document.getElementById('confirmEndOfDayBtn')    ?.addEventListener('click', _confirmEndOfDay);
+    document.getElementById('confirmEditTaskBtn')    ?.addEventListener('click', _confirmEdit);
+    document.getElementById('addManualTaskBtn')      ?.addEventListener('click', _openAddManual);
+    document.getElementById('confirmAddManualTaskBtn')?.addEventListener('click', _confirmAddManual);
 
     document.getElementById('taskNameInput')?.addEventListener('keydown', e => {
       if (e.key === 'Enter') start();

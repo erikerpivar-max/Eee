@@ -326,10 +326,16 @@
 
         <div class="section-header" style="margin-top:36px">
           <h3 class="section-title">Tâches du jour</h3>
-          <button class="btn btn-danger-outline" id="endOfDayBtn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Fin de journée
-          </button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-outline btn-sm" id="addManualTaskBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Ajouter manuellement
+            </button>
+            <button class="btn btn-danger-outline" id="endOfDayBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Fin de journée
+            </button>
+          </div>
         </div>
 
         <div class="table-wrapper">
@@ -511,6 +517,50 @@
     </div>
   </div>
 
+  <!-- Ajouter une tâche manuellement -->
+  <div class="modal-backdrop" id="modal-addManualTask" style="display:none">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Ajouter une tâche manuellement</h3>
+        <button class="modal-close-btn" data-close="modal-addManualTask">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Nom de la tâche</label>
+        <input type="text" id="manualTaskName" class="form-input" placeholder="Description de la tâche…" autocomplete="off" />
+        <label class="form-label" style="margin-top:14px">Client</label>
+        <select id="manualTaskClient" class="form-select">
+          <option value="">— Aucun client —</option>
+        </select>
+        <div style="display:flex;gap:12px;margin-top:14px">
+          <div style="flex:1">
+            <label class="form-label">Date</label>
+            <input type="date" id="manualTaskDate" class="form-input" />
+          </div>
+          <div style="flex:1">
+            <label class="form-label">Heure de début</label>
+            <input type="time" id="manualTaskStart" class="form-input" />
+          </div>
+        </div>
+        <label class="form-label" style="margin-top:14px">Durée</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="manualTaskHours" class="form-input" min="0" max="23" value="0" style="width:72px;text-align:center" />
+          <span style="color:var(--text-3);font-weight:500">h</span>
+          <input type="number" id="manualTaskMinutes" class="form-input" min="0" max="59" value="0" style="width:72px;text-align:center" />
+          <span style="color:var(--text-3);font-weight:500">min</span>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" data-close="modal-addManualTask">Annuler</button>
+        <button class="btn btn-primary" id="confirmAddManualTaskBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Confirmation fin de journée -->
   <div class="modal-backdrop" id="modal-endOfDay" style="display:none">
     <div class="modal modal-sm">
@@ -535,7 +585,7 @@
   </div>
   <script src="js/todo.js?v=1"></script>
   <script src="js/app.js?v=7"></script>
-  <script src="js/timetracker.js?v=4"></script>
+  <script src="js/timetracker.js?v=5"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=3"></script>
   <script src="js/prevision.js?v=1"></script>
