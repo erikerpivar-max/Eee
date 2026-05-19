@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      background: #1C3B6A;
+      font-family: 'Barlow', sans-serif;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .chevron-bg {
+      position: absolute;
+      right: -80px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.10;
+    }
+    .chevron-bg2 {
+      position: absolute;
+      right: 120px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.07;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      padding: 90px 100px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .tag {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 60px;
+    }
+    .stat {
+      font-size: 200px;
+      font-weight: 900;
+      line-height: 1;
+      color: white;
+      margin-bottom: 0px;
+    }
+    .subtitle {
+      font-size: 42px;
+      font-weight: 300;
+      line-height: 1.3;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 10px;
+      max-width: 580px;
+    }
+    .highlight {
+      font-size: 56px;
+      font-weight: 800;
+      color: white;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    .logo {
+      position: absolute;
+      bottom: 70px;
+      right: 90px;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.8);
+    }
+    .logo span {
+      font-weight: 300;
+    }
+  </style>
+</head>
+<body>
+  <svg class="chevron-bg" width="700" height="900" viewBox="0 0 700 900">
+    <polygon points="0,0 180,0 500,450 180,900 0,900 320,450" fill="white"/>
+    <polygon points="220,0 400,0 720,450 400,900 220,900 540,450" fill="white"/>
+  </svg>
+
+  <div class="content">
+    <div class="tag">Le saviez-vous ?</div>
+    <div class="stat">80%</div>
+    <div class="subtitle">des cuisines qu'on vend sont en</div>
+    <div class="highlight">Stratifié</div>
+  </div>
+
+  <div class="logo"><span>i</span><strong>x</strong><span>ina</span></div>
+</body>
+</html>

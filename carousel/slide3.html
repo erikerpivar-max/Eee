@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1080px;
+      height: 1080px;
+      background: #1C3B6A;
+      font-family: 'Barlow', sans-serif;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+    .chevron-bg {
+      position: absolute;
+      left: -200px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.07;
+    }
+    .content {
+      position: relative;
+      z-index: 2;
+      padding: 90px 100px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-end;
+      text-align: right;
+    }
+    .number {
+      font-size: 160px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.08);
+      position: absolute;
+      top: 60px;
+      right: 80px;
+    }
+    .label {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 30px;
+    }
+    .title {
+      font-size: 76px;
+      font-weight: 800;
+      line-height: 1.05;
+      color: white;
+      margin-bottom: 50px;
+      text-transform: uppercase;
+      max-width: 700px;
+    }
+    .divider {
+      width: 80px;
+      height: 5px;
+      background: white;
+      margin-bottom: 50px;
+      opacity: 0.6;
+      margin-left: auto;
+    }
+    .description {
+      font-size: 38px;
+      font-weight: 300;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.85);
+      max-width: 680px;
+    }
+    .description strong {
+      font-weight: 700;
+      color: white;
+    }
+    .logo {
+      position: absolute;
+      bottom: 70px;
+      left: 90px;
+      font-size: 34px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.7);
+    }
+  </style>
+</head>
+<body>
+  <svg class="chevron-bg" width="600" height="700" viewBox="0 0 600 700">
+    <polygon points="600,0 440,0 160,350 440,700 600,700 320,350" fill="white"/>
+    <polygon points="400,0 240,0 -40,350 240,700 400,700 120,350" fill="white"/>
+  </svg>
+
+  <div class="number">02</div>
+
+  <div class="content">
+    <div class="label">Raison n°2</div>
+    <div class="title">Facile à<br>travailler.</div>
+    <div class="divider"></div>
+    <div class="description">
+      Le placeur fait ses <strong>découpes sur place</strong><br>
+      et ajuste les plans de travail<br>
+      et crédences <strong>au mieux</strong>.
+    </div>
+  </div>
+
+  <div class="logo">ixina</div>
+</body>
+</html>
