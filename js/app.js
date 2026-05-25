@@ -150,6 +150,7 @@ window.App = {
     'prevision':   'Prévision',
     'kanban':      'Kanban',
     'publication': 'Publication',
+    'process':     'Process',
   },
 
   navigateTo(viewId) {
@@ -172,6 +173,7 @@ window.App = {
     if (viewId === 'prevision')   _safeRender('prevision-container', () => Prevision.render());
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
+    if (viewId === 'process')     _safeRender('proc-timeline', () => Process.init());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');

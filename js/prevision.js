@@ -201,10 +201,19 @@ window.Prevision = (() => {
         </div>
       </div>
 
+      <!-- Graphique -->
+      <div class="prev-section">
+        <div class="section-header">
+          <h3 class="section-title">Projection sur 6 mois</h3>
+          <span class="section-hint">Cliquez sur la légende pour masquer/afficher une courbe</span>
+        </div>
+        <div id="prev-chart"></div>
+      </div>
+
       <!-- Prévision sur 6 mois -->
       <div class="prev-section">
         <div class="section-header">
-          <h3 class="section-title">Prévision sur 6 mois</h3>
+          <h3 class="section-title">Détail mensuel</h3>
           <span class="section-hint">Solde projeté fin de mois</span>
         </div>
         <div class="table-wrapper">
@@ -228,8 +237,148 @@ window.Prevision = (() => {
     `;
 
     _renderForecast(treasury, incomeRecur, incomeExpected, expenseRecur, expenseOnce);
+    _renderChart(treasury, incomeRecur, incomeExpected, expenseRecur, expenseOnce);
     _renderAdvice(treasury, netRecurring, expenseRecur);
     _bindEvents();
+  }
+
+  /* ── Graphique SVG linéaire ───────────────────────────────────── */
+  function _renderChart(treasury, incomeRecur, incomeExpected, expenseRecur, expenseOnce) {
+    const el = document.getElementById('prev-chart');
+    if (!el) return;
+
+    const now = new Date();
+    const labels = [], sRev = [], sDep = [], sBal = [], sTre = [];
+    let bal = treasury;
+
+    for (let i = 0; i < 6; i++) {
+      const d  = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const mk = monthKey(d.getFullYear(), d.getMonth());
+      labels.push(getMonthLabel(d.getFullYear(), d.getMonth()).split(' ')[0]);
+
+      const totalIn  = incomeRecur.filter(x => !x.startMonth || x.startMonth <= mk).reduce((s, x) => s + x.amount, 0)
+                     + incomeExpected.filter(x => x.month === mk).reduce((s, x) => s + x.amount, 0);
+      const totalOut = expenseRecur.filter(x => !x.startMonth || x.startMonth <= mk).reduce((s, x) => s + x.amount, 0)
+                     + expenseOnce.filter(x => x.month === mk).reduce((s, x) => s + x.amount, 0);
+      const net = totalIn - totalOut;
+      bal += net;
+
+      sRev.push(totalIn);
+      sDep.push(totalOut);
+      sBal.push(net);
+      sTre.push(bal);
+    }
+
+    /* Échelle Y */
+    const allVals = [...sRev, ...sDep, ...sBal, ...sTre, 0];
+    const rawMin  = Math.min(...allVals);
+    const rawMax  = Math.max(...allVals);
+    const pad     = (rawMax - rawMin) * 0.12 || 200;
+    const yMin    = rawMin - pad;
+    const yMax    = rawMax + pad;
+    const yRange  = yMax - yMin || 1;
+
+    /* Dimensions */
+    const W = 700, H = 260, ML = 72, MR = 16, MT = 18, MB = 40;
+    const cW = W - ML - MR, cH = H - MT - MB;
+
+    const tx = i  => ML + (i / 5) * cW;
+    const ty = v  => MT + cH - ((v - yMin) / yRange) * cH;
+
+    /* Courbe smooth (Catmull-Rom → Cubic Bézier) */
+    function smooth(pts) {
+      if (!pts.length) return '';
+      let d = `M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(i - 1, 0)];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[Math.min(i + 2, pts.length - 1)];
+        const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+        const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+        const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ` C ${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
+    }
+
+    const series = [
+      { id: 'rev', label: 'Revenus',     color: '#059669', data: sRev  },
+      { id: 'dep', label: 'Dépenses',    color: '#DC2626', data: sDep  },
+      { id: 'bal', label: 'Balance',     color: '#F59E0B', data: sBal  },
+      { id: 'tre', label: 'Trésorerie',  color: '#6366F1', data: sTre  },
+    ];
+
+    /* Grille Y */
+    const nGrid = 5;
+    let gridSvg = '';
+    for (let j = 0; j <= nGrid; j++) {
+      const v = yMin + (yRange * j / nGrid);
+      const y = ty(v);
+      const isZero = Math.abs(v) < yRange * 0.04;
+      gridSvg += `<line x1="${ML}" y1="${y.toFixed(1)}" x2="${W - MR}" y2="${y.toFixed(1)}"
+        stroke="${isZero ? 'var(--text-3)' : 'var(--border)'}"
+        stroke-width="${isZero ? 1.5 : 1}"
+        stroke-dasharray="${isZero ? '' : '3 5'}"/>
+        <text x="${ML - 6}" y="${(y + 4).toFixed(1)}" text-anchor="end"
+          font-size="9.5" font-family="var(--font)" fill="var(--text-3)">${fmt(Math.round(v / 100) * 100)}</text>`;
+    }
+
+    /* Labels X */
+    const xSvg = labels.map((lbl, i) =>
+      `<text x="${tx(i).toFixed(1)}" y="${H - 10}" text-anchor="middle"
+        font-size="11" font-family="var(--font)" fill="var(--text-2)">${lbl}</text>`
+    ).join('');
+
+    /* Paths + dots */
+    let pathsSvg = '', dotsSvg = '';
+    series.forEach(s => {
+      const pts = s.data.map((v, i) => [tx(i), ty(v)]);
+      pathsSvg += `<path class="prev-chart-line" data-series="${s.id}" d="${smooth(pts)}"
+        stroke="${s.color}" stroke-width="2.5" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>`;
+      pts.forEach((pt, i) => {
+        dotsSvg += `<circle class="prev-chart-dot" data-series="${s.id}"
+          cx="${pt[0].toFixed(1)}" cy="${pt[1].toFixed(1)}" r="4"
+          fill="${s.color}" stroke="var(--surface)" stroke-width="2">
+          <title>${labels[i]} — ${s.label} : ${fmt(s.data[i])}</title>
+        </circle>`;
+      });
+    });
+
+    /* Légende (cliquable) */
+    const legendHtml = series.map(s =>
+      `<span class="prev-chart-legend-item" data-series="${s.id}">
+        <span class="prev-chart-legend-dot" style="background:${s.color}"></span>${s.label}
+      </span>`
+    ).join('');
+
+    el.innerHTML = `
+      <div class="prev-chart-wrap">
+        <svg class="prev-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+          ${gridSvg}${xSvg}${pathsSvg}${dotsSvg}
+        </svg>
+        <div class="prev-chart-legend">${legendHtml}</div>
+      </div>`;
+
+    /* Animation draw */
+    el.querySelectorAll('.prev-chart-line').forEach((p, i) => {
+      const len = p.getTotalLength ? p.getTotalLength() : 600;
+      p.style.strokeDasharray  = len;
+      p.style.strokeDashoffset = len;
+      p.style.transition = `stroke-dashoffset .9s cubic-bezier(.4,0,.2,1) ${i * .12}s`;
+      requestAnimationFrame(() => requestAnimationFrame(() => { p.style.strokeDashoffset = 0; }));
+    });
+
+    /* Légende cliquable (masquer/afficher courbe) */
+    el.querySelectorAll('.prev-chart-legend-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = item.dataset.series;
+        const hidden = item.classList.toggle('hidden');
+        el.querySelectorAll(`[data-series="${id}"]`).forEach(n => n.classList.toggle('hidden', hidden));
+      });
+    });
   }
 
   /* ── Forecast table ───────────────────────────────────────────── */

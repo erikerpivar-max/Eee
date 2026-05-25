@@ -4301,3 +4301,435 @@ html.theme-transitioning *::after {
   .so-doc-metabar { gap: 8px; }
   .so-doc-metabar .so-doc-meta-field + .so-doc-meta-field::before { display: none; }
 }
+
+/* ================================================================
+   PROCESS v2 — Timeline groupée par phase
+   ================================================================ */
+
+/* Ligne en-tête (onglets + légende) */
+.proc-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+/* ── Onglets Cas 1 / Cas 2 ───────────────────────────────────── */
+.proc-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+}
+.proc-tab {
+  padding: 6px 16px;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-3);
+  border-radius: 8px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.proc-tab:hover { color: var(--text-2); background: var(--border-light); }
+.proc-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Légende ─────────────────────────────────────────────────── */
+.proc-legend {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.proc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .68rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.proc-legend-item::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.proc-legend-item[data-type="auto"]   { color: #059669; background: #ECFDF5; }
+.proc-legend-item[data-type="semi"]   { color: #8B5CF6; background: #F5F3FF; }
+.proc-legend-item[data-type="manuel"] { color: #3B82F6; background: #EFF6FF; }
+.proc-legend-item[data-type="client"] { color: #C8882A; background: #FDF5E8; }
+[data-theme=dark] .proc-legend-item[data-type="auto"]   { background: rgba(5,150,105,.15); }
+[data-theme=dark] .proc-legend-item[data-type="semi"]   { background: rgba(139,92,246,.15); }
+[data-theme=dark] .proc-legend-item[data-type="manuel"] { background: rgba(59,130,246,.15); }
+[data-theme=dark] .proc-legend-item[data-type="client"] { background: rgba(200,136,42,.15); }
+
+/* ── Timeline ────────────────────────────────────────────────── */
+.proc-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+}
+
+/* Modale édition étape */
+#proc-edit-modal .modal {
+  max-width: 460px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#proc-edit-modal .modal-body {
+  overflow-y: auto;
+  flex: 1;
+}
+.proc-icon-grid { grid-template-columns: repeat(5, 1fr); }
+
+/* ── Phase ───────────────────────────────────────────────────── */
+.proc-phase {
+  animation: procPhaseIn .35s var(--ease) both;
+}
+.proc-phase-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 6px 0;
+}
+.proc-phase-bar {
+  width: 3px;
+  height: 22px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.proc-phase-label {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.proc-phase-count {
+  font-size: .7rem;
+  font-weight: 600;
+  opacity: .6;
+}
+
+/* Conteneur étapes avec ligne colorée à gauche */
+.proc-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 16px;
+  border-left: 2px solid var(--phase-color, var(--border));
+  margin-left: 1px;
+  margin-bottom: 8px;
+}
+.proc-steps-empty {
+  font-size: .78rem;
+  color: var(--text-3);
+  font-style: italic;
+  padding: 6px 0;
+}
+
+/* ── Carte étape ─────────────────────────────────────────────── */
+.proc-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: grab;
+  user-select: none;
+  animation: procStepIn .32s var(--ease) both;
+  transition:
+    transform    .2s var(--ease),
+    box-shadow   .2s var(--ease),
+    opacity      .2s var(--ease),
+    border-color .15s var(--ease);
+  position: relative;
+}
+.proc-step:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow);
+  border-color: color-mix(in srgb, var(--step-color, var(--primary)) 35%, var(--border));
+}
+.proc-step:active { cursor: grabbing; }
+
+.proc-step.proc-dragging { opacity: .3; transform: scale(.97); }
+.proc-step.proc-drag-over {
+  transform: translateY(-3px);
+  box-shadow: 0 -3px 0 var(--step-color, var(--primary)), var(--shadow);
+}
+
+/* Grip */
+.proc-step-grip {
+  color: var(--text-3);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: color .15s;
+}
+.proc-step:hover .proc-step-grip { color: var(--text-2); }
+
+/* Icône ronde */
+.proc-step-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Corps */
+.proc-step-body { flex: 1; min-width: 0; }
+.proc-step-label {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proc-step-desc {
+  font-size: .8rem;
+  color: var(--text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Badge type */
+.proc-step-badge {
+  font-size: .68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Boutons actions (crayon + ×) */
+.proc-step-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .15s;
+  flex-shrink: 0;
+}
+.proc-step:hover .proc-step-actions { opacity: 1; }
+
+.proc-step-edit,
+.proc-step-del {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  transition: background .15s, color .15s;
+}
+.proc-step-edit:hover { background: var(--primary-bg); color: var(--primary); }
+.proc-step-del:hover  { background: var(--danger-bg);  color: var(--danger);  }
+
+/* ── Picker d'icônes (dans la modale) ────────────────────────── */
+.proc-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+@media (max-width: 480px) { .proc-icon-grid { grid-template-columns: repeat(5, 1fr); } }
+
+.proc-icon-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .15s, background .15s, color .15s, transform .1s;
+}
+.proc-icon-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-bg);
+  transform: scale(1.08);
+}
+.proc-icon-btn.selected {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+  color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* ── Bouton Ajouter une étape ────────────────────────────────── */
+.proc-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  margin-left: 15px;
+  margin-bottom: 12px;
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--text-3);
+  border: 1px dashed var(--border);
+  border-radius: 7px;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.proc-add-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+
+/* ── Formulaire d'ajout inline ───────────────────────────────── */
+.proc-add-form {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-left: 15px;
+  margin-bottom: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+.proc-add-form.open {
+  display: flex;
+  animation: procFormIn .22s var(--ease) both;
+}
+.proc-add-fields {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.proc-add-input {
+  flex: 2;
+  min-width: 120px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: .82rem;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.proc-add-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.12);
+}
+.proc-add-desc {
+  flex: 3;
+  min-width: 140px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: .82rem;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.proc-add-desc:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(200,136,42,.12);
+}
+.proc-add-type { min-width: 110px; flex-shrink: 0; }
+.proc-add-actions { display: flex; gap: 8px; }
+
+/* ── Animations ──────────────────────────────────────────────── */
+@keyframes procPhaseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes procStepIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes procFormIn {
+  from { opacity: 0; transform: scaleY(.9); transform-origin: top; }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+
+/* ================================================================
+   PRÉVISION — Graphique linéaire
+   ================================================================ */
+
+.prev-chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 12px 12px;
+  margin-bottom: 4px;
+}
+
+.prev-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* Animation d'apparition des lignes */
+.prev-chart-line {
+  transition: opacity .2s;
+}
+.prev-chart-line.hidden { opacity: .1; }
+
+/* Points */
+.prev-chart-dot {
+  cursor: pointer;
+  transition: r .15s var(--ease);
+}
+.prev-chart-dot:hover { r: 6; }
+
+/* Légende */
+.prev-chart-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  margin-top: 4px;
+}
+.prev-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+  transition: opacity .15s;
+}
+.prev-chart-legend-item.hidden { opacity: .35; }
+.prev-chart-legend-dot {
+  width: 10px; height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Dark mode */
+[data-theme=dark] .prev-chart-wrap { background: var(--surface); }

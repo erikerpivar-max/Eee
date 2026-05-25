@@ -91,6 +91,12 @@
               <span>Publication</span>
             </a>
           </li>
+          <li>
+            <a class="nav-link" data-view="process" href="#">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/><line x1="12" y1="7" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="17"/></svg>
+              <span>Process</span>
+            </a>
+          </li>
         </ul>
       </div>
 
@@ -368,6 +374,26 @@
         <div id="pubcal-container"></div>
       </section>
 
+      <!-- ── VUE : PROCESS ──────────────────────────────────────── -->
+      <section class="view" id="view-process">
+        <div class="view-intro">
+          <h2 class="view-title">Process</h2>
+          <p class="view-subtitle">Vos workflows de production par cas — ajoutez, supprimez ou réorganisez les étapes.</p>
+        </div>
+
+        <div class="proc-header-row">
+          <div class="proc-tabs" id="proc-tabs"></div>
+          <div class="proc-legend">
+            <span class="proc-legend-item" data-type="auto">Auto</span>
+            <span class="proc-legend-item" data-type="semi">Semi-auto</span>
+            <span class="proc-legend-item" data-type="manuel">Manuel</span>
+            <span class="proc-legend-item" data-type="client">Client</span>
+          </div>
+        </div>
+
+        <div class="proc-timeline" id="proc-timeline"></div>
+      </section>
+
     </div>
   </div>
 
@@ -533,9 +559,10 @@
   <script src="js/timetracker.js?v=5"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=5"></script>
-  <script src="js/prevision.js?v=1"></script>
+  <script src="js/prevision.js?v=2"></script>
   <script src="js/ixina-import.js?v=1"></script>
   <script src="js/garden.js?v=1"></script>
+  <script src="js/process.js?v=1"></script>
 
 </body>
 </html>
