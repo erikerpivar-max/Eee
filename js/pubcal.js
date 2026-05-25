@@ -157,12 +157,12 @@ window.PubCal = (() => {
       </div>`;
   }
 
-  /* ── Vue semaine ────────────────────────────────────────────── */
+  /* ── Vue semaine (liste agenda) ─────────────────────────────── */
   function _buildWeekView(entries, pubData) {
     const refMonday = _weekStart(new Date());
     refMonday.setDate(refMonday.getDate() + _weekOffset * 7);
 
-    const dayNames = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     const today    = App.today();
 
     const days = [];
@@ -181,16 +181,54 @@ window.PubCal = (() => {
     const canPrev = _weekOffset > -MONTHS_BACK * 4;
     const canNext = _weekOffset <  MONTHS_FORWARD * 4;
 
-    const cellsHTML = days.map((d, i) => {
+    const rowsHTML = days.map((d, i) => {
       const dateStr = _dateToISO(d);
       const isToday = dateStr === today;
+      const dayEntries = entries.filter(e => e.date === dateStr);
+
+      const checksHTML = App.CLIENTS.map(client => {
+        const checked = !!(pubData[dateStr]?.[client.id]);
+        return `<button
+                  class="pcal-check${checked ? ' checked' : ''}"
+                  style="${checked
+                    ? `background:${client.color};border-color:${client.color}`
+                    : `border-color:${client.color}`}"
+                  title="${escHtml(client.name)}"
+                  data-date="${dateStr}"
+                  data-client="${client.id}"
+                  data-color="${client.color}">
+                  ${checked
+                    ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>'
+                    : ''}
+                </button>`;
+      }).join('');
+
+      const entriesHTML = dayEntries.length === 0
+        ? '<span class="pcal-week-empty">Aucune tâche</span>'
+        : dayEntries.map(entry => {
+            const cat    = _getCategoryInfo(entry.category);
+            const client = App.CLIENTS.find(c => c.id === entry.clientId);
+            const label  = entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label;
+            const statusClass = entry.status === 'termine' ? 'pcal-entry-done' : 'pcal-entry-draft';
+            return `<div class="pcal-entry ${statusClass}" style="--cat-color:${cat.color}"
+                         data-entry-id="${entry.id}" title="${label}${client ? ' — ' + client.name : ''}">
+                      <span class="pcal-entry-dot" style="background:${cat.color}"></span>
+                      <span class="pcal-entry-label">${escHtml(label)}</span>
+                      ${client ? `<span class="pcal-entry-client" style="color:${client.color}">${escHtml(client.initials || client.name.slice(0,2))}</span>` : ''}
+                    </div>`;
+          }).join('');
+
       return `
-        <div class="pcal-week-day">
-          <div class="pcal-week-day-head${isToday ? ' today' : ''}">
-            <span class="pcal-week-day-name">${dayNames[i]}</span>
-            <span class="pcal-week-day-num">${d.getDate()}</span>
+        <div class="pcal-week-row${isToday ? ' today' : ''}" data-date="${dateStr}">
+          <div class="pcal-week-date">
+            <span class="pcal-week-dayname">${dayNames[i]}</span>
+            <span class="pcal-week-daynum">${d.getDate()}</span>
           </div>
-          ${_renderDayCell(dateStr, d.getDate(), entries, pubData, isToday, 'week')}
+          <div class="pcal-week-checks">${checksHTML}</div>
+          <div class="pcal-week-entries">${entriesHTML}</div>
+          <button class="pcal-week-add" data-date="${dateStr}" title="Ajouter une tâche">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
         </div>`;
     }).join('');
 
@@ -205,14 +243,14 @@ window.PubCal = (() => {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
-        <div class="pcal-week-grid">
-          ${cellsHTML}
+        <div class="pcal-week-list">
+          ${rowsHTML}
         </div>
       </div>`;
   }
 
-  /* ── Cellule d'un jour (utilisée par les deux vues) ─────────── */
-  function _renderDayCell(dateStr, dayNum, entries, pubData, isToday, mode = 'month') {
+  /* ── Cellule d'un jour (vue mois) ─────────────────────────── */
+  function _renderDayCell(dateStr, dayNum, entries, pubData, isToday) {
     const dayEntries = entries.filter(e => e.date === dateStr);
 
     const checksHTML = '<div class="pcal-checks">' +
@@ -251,14 +289,6 @@ window.PubCal = (() => {
                   </div>`;
         }).join('') +
       '</div>';
-    }
-
-    if (mode === 'week') {
-      return `
-        <div class="pcal-week-body${isToday ? ' today' : ''}" data-date="${dateStr}">
-          ${checksHTML}
-          ${entriesHTML}
-        </div>`;
     }
 
     return `
@@ -515,8 +545,6 @@ window.PubCal = (() => {
       if (!dayEl) return;
       const dateStr = dayEl.dataset.date;
       if (!dateStr) return;
-      /* Ignore les en-têtes de jour de la vue semaine (non cliquables) */
-      if (dayEl.classList.contains('pcal-week-day-head')) return;
       _showCategoryPopup(dateStr);
     });
 

@@ -2102,68 +2102,113 @@ code {
   box-shadow: 0 1px 3px rgba(0,0,0,.08);
 }
 
-/* ─── Vue semaine ─────────────────────────────────────────────────── */
-.pcal-week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
-}
-.pcal-week-day {
+/* ─── Vue semaine : liste agenda ──────────────────────────────────── */
+.pcal-week-list {
   display: flex;
   flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  min-height: 220px;
+  box-shadow: var(--shadow-sm);
 }
-.pcal-week-day-head {
+.pcal-week-row {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border-light);
-}
-.pcal-week-day-head.today {
-  background: var(--primary-bg, rgba(200,136,42,.12));
-  border-bottom-color: var(--primary);
-}
-.pcal-week-day-name {
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--text-3);
-}
-.pcal-week-day-head.today .pcal-week-day-name { color: var(--primary); }
-.pcal-week-day-num {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text);
-}
-.pcal-week-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 10px 8px 12px;
-  cursor: pointer;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-light);
   transition: background var(--dur);
 }
-.pcal-week-body:hover { background: var(--bg); }
-.pcal-week-body.today { background: rgba(200,136,42,.04); }
-
-@media (max-width: 900px) {
-  .pcal-week-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.pcal-week-row:first-child { border-top: none; }
+.pcal-week-row:hover { background: var(--bg); }
+.pcal-week-row.today {
+  background: rgba(200,136,42,.06);
+  border-left: 3px solid var(--primary);
+  padding-left: 17px;
 }
-@media (max-width: 520px) {
-  .pcal-week-grid {
-    grid-template-columns: 1fr;
+
+.pcal-week-date {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  width: 110px;
+}
+.pcal-week-dayname {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-3);
+  line-height: 1.2;
+}
+.pcal-week-row.today .pcal-week-dayname { color: var(--primary); }
+.pcal-week-daynum {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+.pcal-week-row.today .pcal-week-daynum { color: var(--primary); }
+
+.pcal-week-checks {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.pcal-week-checks .pcal-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.pcal-week-entries {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 28px;
+}
+.pcal-week-empty {
+  font-size: .8rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.pcal-week-add {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur);
+}
+.pcal-week-add:hover {
+  background: var(--primary-bg);
+  border-color: var(--primary);
+  border-style: solid;
+  color: var(--primary);
+}
+
+@media (max-width: 700px) {
+  .pcal-week-row {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 12px 14px;
   }
-  .pcal-week-day { min-height: 140px; }
+  .pcal-week-row.today { padding-left: 11px; }
+  .pcal-week-date { width: auto; flex-direction: row; align-items: baseline; gap: 8px; }
+  .pcal-week-daynum { font-size: 1.1rem; }
+  .pcal-week-entries { width: 100%; flex: unset; }
+  .pcal-week-add { margin-left: auto; }
 }
 
 /* ─── Type legend ─────────────────────────────────────────────────── */
