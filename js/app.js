@@ -168,7 +168,7 @@ window.App = {
     this.currentView = viewId;
 
     if (viewId === 'dashboard')   Dashboard.refresh();
-    if (viewId === 'timetracker') { TimeTracker.renderTable(); TimeTracker.populateClientSelect(); }
+    if (viewId === 'timetracker') { TimeTracker.renderTable(); TimeTracker.populateClientSelect(); if (window.Garden) Garden.render(); }
     if (viewId === 'prevision')   _safeRender('prevision-container', () => Prevision.render());
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
@@ -314,6 +314,7 @@ window.Dashboard = {
     this._contentAdvance();
     if (window.TodoList) TodoList.render();
     this._recentTasks();
+    if (window.Garden) { Garden.render(); Garden.updateActive(); }
   },
 
   _stats() {

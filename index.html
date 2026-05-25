@@ -163,10 +163,17 @@
         <!-- Clients -->
         <div class="section-header">
           <h3 class="section-title">Clients</h3>
-          <button class="btn btn-outline btn-sm" id="manageClientsBtn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nouveau client
-          </button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" id="ixinaImportBtn" title="Importer une session IXINA generee par PREPARER_ENVOI">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Importer session IXINA
+            </button>
+            <input type="file" id="ixinaImportInput" accept=".json" style="display:none">
+            <button class="btn btn-outline btn-sm" id="manageClientsBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nouveau client
+            </button>
+          </div>
         </div>
         <div class="clients-chips" id="dashboardClients"></div>
 
@@ -226,6 +233,8 @@
             <p class="empty-state-sub">Vos tâches terminées apparaîtront ici</p>
           </div>
         </div>
+
+
       </section>
 
       <!-- ── VUE : TIME TRACKER ────────────────────────────────── -->
@@ -235,7 +244,15 @@
           <p class="view-subtitle">Suivez le temps passé sur chaque tâche.</p>
         </div>
 
-        <div class="timer-card">
+        <!-- ── Jardin du mois (au-dessus du timer) ──────────────── -->
+        <div class="gdn-header">
+          <svg class="gdn-header-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M12 12C12 12 8 9 8 6a4 4 0 0 1 8 0c0 3-4 6-4 6z"/><path d="M12 12C12 12 16 9 16 6"/><path d="M5 22h14"/></svg>
+          <h3 class="gdn-header-title">Jardin du mois</h3>
+          <span class="gdn-season" id="garden-season-label"></span>
+        </div>
+        <div class="gdn-grid" id="garden-container"></div>
+
+        <div class="timer-card" style="margin-top:20px">
           <div class="task-input-row">
             <div class="task-input-col">
               <label class="task-input-label">Tâche libre</label>
@@ -276,7 +293,10 @@
           <div class="timer-status-label" id="timerStatusLabel"></div>
         </div>
 
-        <div class="section-header" style="margin-top:36px">
+        <!-- ── Jardin client actif (sous le timer, animé) ────────── -->
+        <div id="gdn-active" style="display:none"></div>
+
+        <div class="section-header" style="margin-top:28px">
           <h3 class="section-title">Tâches du jour</h3>
           <div style="display:flex;gap:8px;align-items:center">
             <button class="btn btn-outline btn-sm" id="addManualTaskBtn">
@@ -317,6 +337,8 @@
           <span class="daily-total-label">↳ Autre</span>
           <span class="daily-total-value" id="autreTotalValue">0h 00min</span>
         </div>
+
+
       </section>
 
       <!-- ── VUE : PRÉVISION ──────────────────────────────────── -->
@@ -512,6 +534,8 @@
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=5"></script>
   <script src="js/prevision.js?v=1"></script>
+  <script src="js/ixina-import.js?v=1"></script>
+  <script src="js/garden.js?v=1"></script>
 
 </body>
 </html>
