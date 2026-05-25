@@ -31,38 +31,6 @@
 </head>
 <body>
 
-  <!-- ░░ LOCK SCREEN ░░ -->
-  <div id="lock-screen">
-    <div class="ls-card">
-      <h1 class="ls-title">The House</h1>
-      <p class="ls-sub">Entrez votre code PIN</p>
-
-      <div class="ls-dots" id="auth-display">
-        <span class="ls-dot" id="auth-pd0"></span>
-        <span class="ls-dot" id="auth-pd1"></span>
-        <span class="ls-dot" id="auth-pd2"></span>
-        <span class="ls-dot" id="auth-pd3"></span>
-      </div>
-
-      <div class="ls-pad">
-        <button class="ls-key" onclick="App.Auth.key('1')">1</button>
-        <button class="ls-key" onclick="App.Auth.key('2')">2</button>
-        <button class="ls-key" onclick="App.Auth.key('3')">3</button>
-        <button class="ls-key" onclick="App.Auth.key('4')">4</button>
-        <button class="ls-key" onclick="App.Auth.key('5')">5</button>
-        <button class="ls-key" onclick="App.Auth.key('6')">6</button>
-        <button class="ls-key" onclick="App.Auth.key('7')">7</button>
-        <button class="ls-key" onclick="App.Auth.key('8')">8</button>
-        <button class="ls-key" onclick="App.Auth.key('9')">9</button>
-        <span class="ls-key-empty"></span>
-        <button class="ls-key" onclick="App.Auth.key('0')">0</button>
-        <button class="ls-key" onclick="App.Auth.key('⌫')">⌫</button>
-      </div>
-
-      <p class="ls-error" id="auth-error" style="display:none">PIN incorrect. Réessayez.</p>
-    </div>
-  </div>
-
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <!-- ░░ SIDEBAR ░░ -->
@@ -126,17 +94,6 @@
         </ul>
       </div>
 
-      <div class="nav-group">
-        <p class="nav-group-label">Organisation</p>
-        <ul>
-          <li>
-            <a class="nav-link" data-view="procedures" href="#">
-              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              <span>Procédures</span>
-            </a>
-          </li>
-        </ul>
-      </div>
       </nav>
 
     <div class="sidebar-footer">
@@ -229,12 +186,7 @@
         <!-- Avance de contenu -->
         <div class="section-header" style="margin-top:28px">
           <h3 class="section-title">Avance de contenu</h3>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span class="section-hint">15j+ = OK · 30j+ = Large</span>
-            <button class="btn btn-ghost btn-sm" id="stockContenuBtn" title="Stock de vidéos non planifiées" style="padding:3px 7px;line-height:1">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            </button>
-          </div>
+          <span class="section-hint">15j+ = OK · 30j+ = Large</span>
         </div>
         <div class="ca-grid" id="content-advance-grid"></div>
 
@@ -389,18 +341,9 @@
       <section class="view" id="view-publication">
         <div class="view-intro">
           <h2 class="view-title">Publication</h2>
-          <p class="view-subtitle">Cliquez sur un jour pour marquer son type. G\u00e9rez vos param\u00e8tres de publication.</p>
+          <p class="view-subtitle">Cliquez sur un jour pour marquer son type ou cocher les clients à publier.</p>
         </div>
         <div id="pubcal-container"></div>
-      </section>
-
-      <!-- ── VUE : PROCÉDURES ──────────────────────────────────── -->
-      <section class="view" id="view-procedures">
-        <div class="view-intro">
-          <h2 class="view-title">Procédures</h2>
-          <p class="view-subtitle">Structurez vos process, suivez votre maîtrise.</p>
-        </div>
-        <div id="procedures-container"></div>
       </section>
 
     </div>
@@ -497,26 +440,6 @@
   </div>
 
 
-  <!-- Modal stock de vidéos par magasin -->
-  <div class="modal-backdrop" id="modal-stockContenu" style="display:none">
-    <div class="modal modal-sm">
-      <div class="modal-head">
-        <h3>Stock de vidéos</h3>
-        <button class="modal-close-btn" data-close="modal-stockContenu">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size:.82rem;color:var(--text-3);margin-bottom:16px">Vidéos tournées non encore planifiées, par magasin.</p>
-        <div id="stock-contenu-body"></div>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-ghost" data-close="modal-stockContenu">Annuler</button>
-        <button class="btn btn-primary" id="confirmStockContenuBtn">Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Ajouter une tâche manuellement -->
   <div class="modal-backdrop" id="modal-addManualTask" style="display:none">
     <div class="modal">
@@ -584,12 +507,11 @@
     </div>
   </div>
   <script src="js/todo.js?v=1"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="js/app.js?v=8"></script>
   <script src="js/timetracker.js?v=5"></script>
   <script src="js/kanban.js?v=3"></script>
-  <script src="js/pubcal.js?v=3"></script>
+  <script src="js/pubcal.js?v=4"></script>
   <script src="js/prevision.js?v=1"></script>
-  <script src="js/procedures.js?v=1"></script>
 
 </body>
 </html>

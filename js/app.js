@@ -48,7 +48,6 @@ window.App = {
     PROJECTS: 'th_projects',
     PUBCAL:   'th_pubcal',
     CLIENTS:  'th_clients',
-    STOCK:    'th_stock_contenu',
   },
 
   /* ── Gestion clients dynamiques ──────────────────────────────── */
@@ -151,7 +150,6 @@ window.App = {
     'prevision':   'Prévision',
     'kanban':      'Kanban',
     'publication': 'Publication',
-    'procedures':  'Procédures',
   },
 
   navigateTo(viewId) {
@@ -174,7 +172,6 @@ window.App = {
     if (viewId === 'prevision')   _safeRender('prevision-container', () => Prevision.render());
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
-    if (viewId === 'procedures') _safeRender('procedures-container', () => Procedures.renderView());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');
@@ -235,66 +232,6 @@ window.App = {
     backdrop.querySelector('#_conf-cancel').addEventListener('click', close);
     backdrop.querySelector('#_conf-ok').addEventListener('click', () => { close(); onConfirm(); });
     backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
-  },
-};
-
-/* ─── Auth globale ───────────────────────────────────────────────── */
-App.Auth = {
-  _entered: '',
-
-  check() {
-    // PIN désactivé
-    document.getElementById('lock-screen').style.display = 'none';
-    App.navigateTo('dashboard');
-  },
-
-  lock() {
-    document.body.classList.remove('is-client');
-    this._entered = '';
-    this._updateDots();
-    document.getElementById('auth-error').style.display = 'none';
-    document.getElementById('lock-screen').style.display = 'flex';
-  },
-
-  _unlock() {
-    document.getElementById('lock-screen').style.display = 'none';
-    document.body.classList.remove('is-client');
-    App.navigateTo('dashboard');
-  },
-
-  _updateDots() {
-    for (let i = 0; i < 4; i++) {
-      document.getElementById('auth-pd' + i)
-        .classList.toggle('ls-dot--filled', i < this._entered.length);
-    }
-  },
-
-  key(k) {
-    if (k === '⌫') {
-      this._entered = this._entered.slice(0, -1);
-    } else if (this._entered.length < 4) {
-      this._entered += k;
-    }
-    this._updateDots();
-
-    if (this._entered.length === 4) {
-      /* PIN simple — admin uniquement */
-      const ADMIN_PIN = '9186';
-      if (this._entered === ADMIN_PIN) {
-        this._unlock();
-      } else {
-        const disp = document.getElementById('auth-display');
-        const err  = document.getElementById('auth-error');
-        disp.classList.add('ls-shake');
-        err.style.display = 'block';
-        setTimeout(() => {
-          this._entered = '';
-          this._updateDots();
-          disp.classList.remove('ls-shake');
-          err.style.display = 'none';
-        }, 900);
-      }
-    }
   },
 };
 
@@ -500,12 +437,6 @@ window.Dashboard = {
       const badge = status === 'none' ? '' :
         `<span class="ca-badge ca-${status}">${badgeLabel}</span>`;
 
-      /* Badge stock */
-      const stock = StockContenu.get(client.id);
-      const stockBadge = stock !== null
-        ? `<span class="ca-stock">${stock} en stock</span>`
-        : '';
-
       return `
         <div class="ca-card" style="--cc:${client.color}">
           <div class="ca-header">
@@ -513,7 +444,6 @@ window.Dashboard = {
               <div class="ca-avatar" style="background:${client.color}22;color:${client.color}">${escHtml(client.initials)}</div>
               <span class="ca-name">${escHtml(client.name)}</span>
             </div>
-            ${stockBadge}
           </div>
           <div class="ca-bar-wrap">
             <div class="ca-bar-fill" style="width:${pct}%;background:${color}"></div>
@@ -575,40 +505,6 @@ function escHtml(str) {
 window.escHtml = escHtml;
 
 /* ─── Init ───────────────────────────────────────────────────────── */
-/* ─── Stock de vidéos par magasin ───────────────────────────────── */
-window.StockContenu = {
-  getAll() { return App.load(App.KEYS.STOCK, {}); },
-  get(clientId) { return this.getAll()[clientId] ?? null; },
-
-  openModal() {
-    const stocks = this.getAll();
-    const body   = document.getElementById('stock-contenu-body');
-    if (!body) return;
-    body.innerHTML = App.CLIENTS.map(c => `
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></span>
-        <span style="flex:1;font-size:.88rem;font-weight:500">${escHtml(c.name)}</span>
-        <input type="number" min="0" class="form-input stock-input" data-id="${c.id}"
-               value="${stocks[c.id] ?? ''}" placeholder="–"
-               style="width:72px;text-align:center;padding:5px 8px" />
-        <span style="font-size:.78rem;color:var(--text-3);white-space:nowrap">vidéo(s)</span>
-      </div>`).join('');
-    App.openModal('modal-stockContenu');
-  },
-
-  save() {
-    const stocks = {};
-    document.querySelectorAll('.stock-input').forEach(inp => {
-      const val = parseInt(inp.value, 10);
-      if (!isNaN(val) && val >= 0) stocks[inp.dataset.id] = val;
-    });
-    App.save(App.KEYS.STOCK, stocks);
-    App.closeModal('modal-stockContenu');
-    Dashboard._contentAdvance();
-    App.toast('Stock mis à jour !', 'success');
-  },
-};
-
 document.addEventListener('DOMContentLoaded', () => {
 
   /* Dates supprimées de l'UI */
@@ -667,21 +563,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('newClientName')
     ?.addEventListener('keydown', e => { if (e.key === 'Enter') ClientManager.confirmAdd(); });
 
-  /* Bouton engrenage stock de contenu */
-  document.getElementById('stockContenuBtn')
-    ?.addEventListener('click', () => StockContenu.openModal());
-  document.getElementById('confirmStockContenuBtn')
-    ?.addEventListener('click', () => StockContenu.save());
-
   /* Données démo (première visite) */
   _initDemoData();
 
   /* To Do List */
   if (window.TodoList) TodoList.init();
 
-
-  /* Auth — vérifie session ou affiche l'overlay */
-  App.Auth.check();
+  /* Navigation initiale */
+  App.navigateTo('dashboard');
 });
 
 /* ─── Données démo ───────────────────────────────────────────────── */
