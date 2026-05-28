@@ -36,8 +36,9 @@ window.App = {
     { id: 'brouillon',     label: 'Brouillon',                 color: '#F97316', group: 'brouillon'   },
     { id: 'verif-draft',   label: 'Vérif brouillon',           color: '#F97316', group: 'brouillon'   },
     { id: 'corrections',   label: 'Sous-titres + corrections', color: '#EF4444', group: 'finition'    },
-    { id: 'montage-final', label: 'Montage final',             color: '#EF4444', group: 'finition'    },
-    { id: 'verif-final',   label: 'Vérif final',               color: '#22C55E', group: 'publication' },
+    { id: 'montage-final',        label: 'Montage final',             color: '#EF4444', group: 'finition'    },
+    { id: 'attente-validation',  label: 'En attente de validation',  color: '#EF4444', group: 'finition'    },
+    { id: 'verif-final',         label: 'Vérif final',               color: '#22C55E', group: 'publication' },
     { id: 'publie',        label: 'Programmé / Publié',        color: '#22C55E', group: 'publication' },
   ],
 
