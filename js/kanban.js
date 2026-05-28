@@ -133,7 +133,10 @@ window.Kanban = (() => {
           <div class="project-card-actions">
             ${prevStage ? `<button class="project-move-btn" title="← ${prevStage.label}" onclick="Kanban.moveProject('${client.id}','${project.id}','${prevStage.id}')">← ${prevStage.label.slice(0,4)}.</button>` : ''}
             ${nextStage ? `<button class="project-move-btn" title="${nextStage.label} →" onclick="Kanban.requestMove('${client.id}','${project.id}','${project.stage}','${nextStage.id}')">${nextStage.label.slice(0,4)}. →</button>` : ''}
-            <button class="btn btn-icon" style="margin-left:auto" title="Supprimer" onclick="Kanban.deleteProject('${client.id}','${project.id}')">
+            <button class="btn btn-icon" style="margin-left:auto" title="Modifier" onclick="Kanban.editProject('${client.id}','${project.id}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button class="btn btn-icon" title="Supprimer" onclick="Kanban.deleteProject('${client.id}','${project.id}')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           </div>
@@ -369,6 +372,82 @@ window.Kanban = (() => {
     Dashboard.refresh();
   }
 
+  /* ── Modifier un projet ──────────────────────────────────────── */
+  function editProject(clientId, projectId) {
+    const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
+    const project  = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const clientOptions = App.CLIENTS.map(c =>
+      `<option value="${c.id}"${c.id === clientId ? ' selected' : ''}>${escHtml(c.name)}</option>`
+    ).join('');
+    const stageOptions = App.STAGES.map(s =>
+      `<option value="${s.id}"${s.id === project.stage ? ' selected' : ''}>${escHtml(s.label)}</option>`
+    ).join('');
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.style.display = 'flex';
+    backdrop.innerHTML = `
+      <div class="modal">
+        <div class="modal-head">
+          <h3>Modifier le projet</h3>
+          <button class="modal-close-btn" id="_ep-close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Nom du projet</label>
+          <input type="text" id="_ep-name" class="form-input" value="${escHtml(project.name)}" />
+          <label class="form-label" style="margin-top:14px">Client</label>
+          <select id="_ep-client" class="form-select">${clientOptions}</select>
+          <label class="form-label" style="margin-top:14px">Étiquette de tournage <span style="color:var(--text-3);font-weight:400">(optionnel)</span></label>
+          <input type="text" id="_ep-shooting" class="form-input" value="${escHtml(project.shooting || '')}" placeholder="Ex : Livraison 25/06…" />
+          <label class="form-label" style="margin-top:14px">Étape</label>
+          <select id="_ep-stage" class="form-select">${stageOptions}</select>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" id="_ep-cancel">Annuler</button>
+          <button class="btn btn-primary" id="_ep-confirm">Enregistrer</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(backdrop);
+    requestAnimationFrame(() => requestAnimationFrame(() => backdrop.classList.add('visible')));
+
+    const close = () => {
+      backdrop.classList.remove('visible');
+      setTimeout(() => backdrop.remove(), 200);
+    };
+
+    backdrop.querySelector('#_ep-close').addEventListener('click', close);
+    backdrop.querySelector('#_ep-cancel').addEventListener('click', close);
+    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+    setTimeout(() => backdrop.querySelector('#_ep-name').focus(), 120);
+
+    backdrop.querySelector('#_ep-confirm').addEventListener('click', () => {
+      const newName     = backdrop.querySelector('#_ep-name').value.trim();
+      const newClientId = backdrop.querySelector('#_ep-client').value;
+      const newShooting = backdrop.querySelector('#_ep-shooting').value.trim();
+      const newStage    = backdrop.querySelector('#_ep-stage').value;
+      if (!newName) { backdrop.querySelector('#_ep-name').focus(); return; }
+
+      let oldProjects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
+      oldProjects = oldProjects.filter(p => p.id !== projectId);
+      App.save(`${App.KEYS.PROJECTS}_${clientId}`, oldProjects);
+
+      const newProjects = App.load(`${App.KEYS.PROJECTS}_${newClientId}`, []);
+      const updated = { ...project, name: newName, stage: newStage };
+      if (newShooting) updated.shooting = newShooting; else delete updated.shooting;
+      newProjects.push(updated);
+      App.save(`${App.KEYS.PROJECTS}_${newClientId}`, newProjects);
+
+      close();
+      renderView();
+      Dashboard.refresh();
+    });
+  }
+
   /* ── Supprimer un projet ─────────────────────────────────────── */
   function deleteProject(clientId, projectId) {
     App.confirm('Supprimer ce projet ?', () => {
@@ -398,7 +477,10 @@ window.Kanban = (() => {
 
   function drop(stageId) {
     if (!_dragProjectId || !_dragClientId) return;
-    moveProject(_dragClientId, _dragProjectId, stageId);
+    const projects = App.load(`${App.KEYS.PROJECTS}_${_dragClientId}`, []);
+    const project  = projects.find(p => p.id === _dragProjectId);
+    if (!project || project.stage === stageId) return;
+    requestMove(_dragClientId, _dragProjectId, project.stage, stageId);
   }
 
   /* ── Wiring global (modale) ─────────────────────────────────── */
@@ -410,6 +492,6 @@ window.Kanban = (() => {
   });
 
   /* ── API publique ───────────────────────────────────────────── */
-  return { renderView, moveProject, requestMove, deleteProject, dragStart, dragEnd, drop };
+  return { renderView, moveProject, requestMove, editProject, deleteProject, dragStart, dragEnd, drop };
 
 })();
