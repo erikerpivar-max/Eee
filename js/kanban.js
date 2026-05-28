@@ -115,6 +115,10 @@ window.Kanban = (() => {
     const prevStage = stageIdx > 0 ? App.STAGES[stageIdx - 1] : null;
     const nextStage = stageIdx < App.STAGES.length - 1 ? App.STAGES[stageIdx + 1] : null;
 
+    const shootingBadge = project.shooting
+      ? `<div class="kanban-shooting-badge" title="Tournage : ${escHtml(project.shooting)}">🎬 ${escHtml(project.shooting)}</div>`
+      : '';
+
     return `
       <div class="project-card kanban-card"
            id="card-${project.id}"
@@ -125,6 +129,7 @@ window.Kanban = (() => {
         <div class="kanban-card-body">
           <div class="kanban-client-label" style="color:${client.color}">${escHtml(client.name)}</div>
           <div class="project-card-name">${escHtml(project.name)}</div>
+          ${shootingBadge}
           <div class="project-card-actions">
             ${prevStage ? `<button class="project-move-btn" title="← ${prevStage.label}" onclick="Kanban.moveProject('${client.id}','${project.id}','${prevStage.id}')">← ${prevStage.label.slice(0,4)}.</button>` : ''}
             ${nextStage ? `<button class="project-move-btn" title="${nextStage.label} →" onclick="Kanban.requestMove('${client.id}','${project.id}','${project.stage}','${nextStage.id}')">${nextStage.label.slice(0,4)}. →</button>` : ''}
@@ -149,9 +154,11 @@ window.Kanban = (() => {
   /* ── Modale ajout projet ─────────────────────────────────────── */
   function _openAddProject(stageId) {
     _currentAddStage = stageId;
-    document.getElementById('newProjectName').value  = '';
-    document.getElementById('newProjectStage').value = stageId;
-    document.getElementById('newProjectClient').value = App.CLIENTS[0].id;
+    document.getElementById('newProjectName').value     = '';
+    const shootingEl = document.getElementById('newProjectShooting');
+    if (shootingEl) shootingEl.value = '';
+    document.getElementById('newProjectStage').value    = stageId;
+    document.getElementById('newProjectClient').value   = App.CLIENTS[0].id;
     App.openModal('modal-addProject');
     setTimeout(() => document.getElementById('newProjectName').focus(), 120);
   }
@@ -160,10 +167,13 @@ window.Kanban = (() => {
     const name     = document.getElementById('newProjectName').value.trim();
     const stage    = document.getElementById('newProjectStage').value;
     const clientId = document.getElementById('newProjectClient').value;
+    const shooting = (document.getElementById('newProjectShooting')?.value || '').trim();
     if (!name) { document.getElementById('newProjectName').focus(); return; }
 
     const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
-    projects.push({ id: App.uid(), name, stage, createdAt: App.today() });
+    const project  = { id: App.uid(), name, stage, createdAt: App.today() };
+    if (shooting) project.shooting = shooting;
+    projects.push(project);
     App.save(`${App.KEYS.PROJECTS}_${clientId}`, projects);
 
     App.closeModal('modal-addProject');
