@@ -119,6 +119,10 @@ window.Kanban = (() => {
       ? `<div class="kanban-shooting-badge" title="Tournage : ${escHtml(project.shooting)}">🎬 ${escHtml(project.shooting)}</div>`
       : '';
 
+    const countBadge = (project.videoCount && project.videoCount > 0)
+      ? `<span class="kanban-count-badge" title="${project.videoCount} vidéo(s) — lettre ${escHtml(project.letter || '?')}" style="display:inline-block;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:5px;border:1.5px solid ${client.color};color:${client.color};background:${client.color}15;margin-top:4px">${project.videoCount}V</span>`
+      : '';
+
     return `
       <div class="project-card kanban-card"
            id="card-${project.id}"
@@ -129,6 +133,7 @@ window.Kanban = (() => {
         <div class="kanban-card-body">
           <div class="kanban-client-label" style="color:${client.color}">${escHtml(client.name)}</div>
           <div class="project-card-name">${escHtml(project.name)}</div>
+          ${countBadge}
           ${shootingBadge}
           <div class="project-card-actions">
             ${prevStage ? `<button class="project-move-btn" title="← ${prevStage.label}" onclick="Kanban.moveProject('${client.id}','${project.id}','${prevStage.id}')">← ${prevStage.label.slice(0,4)}.</button>` : ''}
@@ -171,11 +176,16 @@ window.Kanban = (() => {
     const stage    = document.getElementById('newProjectStage').value;
     const clientId = document.getElementById('newProjectClient').value;
     const shooting = (document.getElementById('newProjectShooting')?.value || '').trim();
+    const letter   = (document.getElementById('newProjectLetter')?.value || '').trim().toUpperCase();
+    const countRaw = document.getElementById('newProjectCount')?.value;
+    const count    = countRaw ? parseInt(countRaw, 10) : 0;
     if (!name) { document.getElementById('newProjectName').focus(); return; }
 
     const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
     const project  = { id: App.uid(), name, stage, createdAt: App.today() };
-    if (shooting) project.shooting = shooting;
+    if (shooting)               project.shooting   = shooting;
+    if (letter)                 project.letter     = letter;
+    if (count && count > 0)     project.videoCount = count;
     projects.push(project);
     App.save(`${App.KEYS.PROJECTS}_${clientId}`, projects);
 
@@ -366,6 +376,19 @@ window.Kanban = (() => {
     const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
     const project  = projects.find(p => p.id === projectId);
     if (!project) return;
+
+    /* Passage en "Programmé / Publié" → ouvre le flow Programmation */
+    if (newStage === 'publie' && project.stage !== 'publie' && window.Programmation) {
+      Programmation.openForProject(clientId, projectId, () => {
+        const ps = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
+        const p  = ps.find(x => x.id === projectId);
+        if (p) { p.stage = newStage; App.save(`${App.KEYS.PROJECTS}_${clientId}`, ps); }
+        renderView();
+        Dashboard.refresh();
+      });
+      return;
+    }
+
     project.stage = newStage;
     App.save(`${App.KEYS.PROJECTS}_${clientId}`, projects);
     renderView();
@@ -403,6 +426,16 @@ window.Kanban = (() => {
           <select id="_ep-client" class="form-select">${clientOptions}</select>
           <label class="form-label" style="margin-top:14px">Étiquette de tournage <span style="color:var(--text-3);font-weight:400">(optionnel)</span></label>
           <input type="text" id="_ep-shooting" class="form-input" value="${escHtml(project.shooting || '')}" placeholder="Ex : Livraison 25/06…" />
+          <div style="display:flex;gap:12px;margin-top:14px">
+            <div style="flex:1">
+              <label class="form-label">Lettre du lot</label>
+              <input type="text" id="_ep-letter" class="form-input" value="${escHtml(project.letter || '')}" maxlength="2" style="text-transform:uppercase" />
+            </div>
+            <div style="flex:1">
+              <label class="form-label">Nombre de vidéos</label>
+              <input type="number" id="_ep-count" class="form-input" min="0" max="99" value="${project.videoCount || ''}" />
+            </div>
+          </div>
           <label class="form-label" style="margin-top:14px">Étape</label>
           <select id="_ep-stage" class="form-select">${stageOptions}</select>
         </div>
@@ -429,6 +462,9 @@ window.Kanban = (() => {
       const newName     = backdrop.querySelector('#_ep-name').value.trim();
       const newClientId = backdrop.querySelector('#_ep-client').value;
       const newShooting = backdrop.querySelector('#_ep-shooting').value.trim();
+      const newLetter   = backdrop.querySelector('#_ep-letter').value.trim().toUpperCase();
+      const newCountRaw = backdrop.querySelector('#_ep-count').value;
+      const newCount    = newCountRaw ? parseInt(newCountRaw, 10) : 0;
       const newStage    = backdrop.querySelector('#_ep-stage').value;
       if (!newName) { backdrop.querySelector('#_ep-name').focus(); return; }
 
@@ -438,7 +474,9 @@ window.Kanban = (() => {
 
       const newProjects = App.load(`${App.KEYS.PROJECTS}_${newClientId}`, []);
       const updated = { ...project, name: newName, stage: newStage };
-      if (newShooting) updated.shooting = newShooting; else delete updated.shooting;
+      if (newShooting)            updated.shooting   = newShooting; else delete updated.shooting;
+      if (newLetter)              updated.letter     = newLetter;   else delete updated.letter;
+      if (newCount && newCount>0) updated.videoCount = newCount;    else delete updated.videoCount;
       newProjects.push(updated);
       App.save(`${App.KEYS.PROJECTS}_${newClientId}`, newProjects);
 

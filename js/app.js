@@ -21,18 +21,15 @@ window.App = {
 
   /* ── Groupes de phases ─────────────────────────────────────────── */
   STAGE_GROUPS: [
-    { id: 'pre-prod',    label: 'Pré-Production',      color: '#3B82F6' },
-    { id: 'tournage',    label: 'Tournage & Rushs',    color: '#8B5CF6' },
+    { id: 'derush',      label: 'Derush',              color: '#8B5CF6' },
     { id: 'brouillon',   label: 'Brouillon & Vérif',   color: '#F97316' },
     { id: 'finition',    label: 'Finition',            color: '#EF4444' },
     { id: 'publication', label: 'Validation & Publi',  color: '#22C55E' },
   ],
 
-  /* ── Étapes de production (9) — workflow projet par projet ──── */
+  /* ── Étapes de production — workflow projet par projet ──── */
   STAGES: [
-    { id: 'planifie',      label: 'Planifié',                  color: '#3B82F6', group: 'pre-prod'    },
-    { id: 'tournage',      label: 'Tournage',                  color: '#8B5CF6', group: 'tournage'    },
-    { id: 'rushs',         label: 'Rushs à trier',             color: '#8B5CF6', group: 'tournage'    },
+    { id: 'rushs',         label: 'Rushs à trier',             color: '#8B5CF6', group: 'derush'      },
     { id: 'brouillon',     label: 'Brouillon',                 color: '#F97316', group: 'brouillon'   },
     { id: 'verif-draft',   label: 'Vérif brouillon',           color: '#F97316', group: 'brouillon'   },
     { id: 'corrections',   label: 'Sous-titres + corrections', color: '#EF4444', group: 'finition'    },
@@ -79,7 +76,9 @@ window.App = {
   migrateStages() {
     const MAP = {
       verification: 'verif-final',
-      ecrire:       'planifie',
+      ecrire:       'rushs',
+      planifie:     'rushs',
+      tournage:     'rushs',
       draft:        'brouillon',
       'sous-titre': 'corrections',
       montage:      'montage-final',
@@ -95,7 +94,7 @@ window.App = {
       let changed    = false;
       projects.forEach(p => {
         if (MAP[p.stage])                { p.stage = MAP[p.stage]; changed = true; }
-        else if (!validIds.has(p.stage)) { p.stage = 'planifie';   changed = true; }
+        else if (!validIds.has(p.stage)) { p.stage = 'rushs';      changed = true; }
       });
       if (changed) this.save(key, projects);
     });

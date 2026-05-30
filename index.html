@@ -496,10 +496,19 @@
         </select>
         <label class="form-label" style="margin-top:14px">Étiquette de tournage <span style="color:var(--text-3);font-weight:400">(optionnel)</span></label>
         <input type="text" id="newProjectShooting" class="form-input" placeholder="Ex : Livraison 25/06, Pose Dupont, Tournage 12/07…" />
+        <div style="display:flex;gap:12px;margin-top:14px">
+          <div style="flex:1">
+            <label class="form-label">Lettre du lot</label>
+            <input type="text" id="newProjectLetter" class="form-input" placeholder="A" maxlength="2" style="text-transform:uppercase" />
+          </div>
+          <div style="flex:1">
+            <label class="form-label">Nombre de vidéos</label>
+            <input type="number" id="newProjectCount" class="form-input" min="1" max="99" placeholder="5" />
+          </div>
+        </div>
+        <p style="font-size:.75rem;color:var(--text-3);margin-top:6px">Les vidéos seront nommées A1, A2, A3… selon la lettre choisie.</p>
         <label class="form-label" style="margin-top:14px">Étape initiale</label>
         <select id="newProjectStage" class="form-select">
-          <option value="planifie">Planifié</option>
-          <option value="tournage">Tournage</option>
           <option value="rushs">Rushs à trier</option>
           <option value="brouillon">Brouillon</option>
           <option value="verif-draft">Vérif brouillon</option>
@@ -610,9 +619,10 @@
     </div>
   </div>
   <script src="js/todo.js?v=1"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/app.js?v=9"></script>
   <script src="js/timetracker.js?v=7"></script>
-  <script src="js/kanban.js?v=3"></script>
+  <script src="js/programmation.js?v=1"></script>
+  <script src="js/kanban.js?v=4"></script>
   <script src="js/pubcal.js?v=5"></script>
   <script src="js/prevision.js?v=2"></script>
   <script src="js/ixina-import.js?v=1"></script>
