@@ -1,11 +1,18 @@
 /* ================================================================
    THE HOUSE — timetracker.js
-   Timer, gestion des tâches (avec client), export Fin de journée
+   Timer, gestion des tâches (avec client), export Fin de journée,
+   Vue Journée style Google Calendar
    ================================================================ */
 
 'use strict';
 
 window.TimeTracker = (() => {
+
+  /* ── Constantes calendrier ──────────────────────────────────── */
+  const CAL_START    = 7;   // 7h
+  const CAL_END      = 22;  // 22h
+  const PX_PER_HOUR  = 80;  // hauteur en px pour 1 heure
+  const PX_PER_MIN   = PX_PER_HOUR / 60;
 
   /* ── État du timer ──────────────────────────────────────────── */
   let _interval    = null;
@@ -216,6 +223,7 @@ window.TimeTracker = (() => {
       if (totBar) totBar.style.display = 'none';
       const _ab = document.getElementById('autreTotalBar');
       if (_ab) _ab.style.display = 'none';
+      renderCalendar();
       return;
     }
 
@@ -260,6 +268,112 @@ window.TimeTracker = (() => {
       autreBar.style.display = totalAutre > 0 ? 'flex' : 'none';
       if (autreVal) autreVal.textContent = App.fmtDur(totalAutre);
     }
+
+    renderCalendar();
+  }
+
+  /* ── Vue Journée (calendrier style Google Calendar) ─────────── */
+  function renderCalendar() {
+    const calEl    = document.getElementById('tt-day-calendar');
+    if (!calEl) return;
+
+    const today    = App.today();
+    const tasks    = App.load(App.KEYS.TASKS, []).filter(t => t.date === today);
+    const totalMin = (CAL_END - CAL_START) * 60;
+    const totalPx  = totalMin * PX_PER_MIN;
+
+    /* Lignes d'heure */
+    let hourLines = '';
+    for (let h = CAL_START; h <= CAL_END; h++) {
+      const top = (h - CAL_START) * PX_PER_HOUR;
+      hourLines += `<div class="tt-cal-hour-row" style="top:${top}px">
+        <span class="tt-cal-hlabel">${String(h).padStart(2,'0')}h</span>
+        <div class="tt-cal-hline"></div>
+      </div>`;
+    }
+
+    /* Créneaux vides cliquables (un par heure) */
+    let slots = '';
+    for (let h = CAL_START; h < CAL_END; h++) {
+      const top = (h - CAL_START) * PX_PER_HOUR;
+      slots += `<div class="tt-cal-slot" style="top:${top}px;height:${PX_PER_HOUR}px"
+                    onclick="TimeTracker.openSlot(${h})"
+                    title="${String(h).padStart(2,'0')}h00 — cliquer pour ajouter"></div>`;
+    }
+
+    /* Blocs de tâches */
+    let blocks = tasks.map(t => {
+      const start    = new Date(t.startedAt);
+      const startMin = (start.getHours() - CAL_START) * 60 + start.getMinutes();
+      const durMin   = Math.round((t.totalDuration || 0) / 60);
+      if (startMin + Math.max(durMin, 1) <= 0 || startMin >= totalMin) return '';
+
+      const clampStart = Math.max(0, startMin);
+      const clampEnd   = Math.min(totalMin, startMin + Math.max(durMin, 1));
+      const top        = clampStart * PX_PER_MIN;
+      const height     = Math.max((clampEnd - clampStart) * PX_PER_MIN, 26);
+
+      const c     = t.clientId ? App.getClient(t.clientId) : null;
+      const color = c ? c.color : '#6B7280';
+      const isAct = t.id === _currentId;
+
+      return `<div class="tt-cal-task${isAct ? ' tt-cal-task--active' : ''}"
+                   style="top:${top}px;height:${height}px;border-left-color:${color};background:${color}1a">
+        <div class="tt-cal-task-name">${escHtml(t.name)}</div>
+        ${c ? `<div class="tt-cal-task-meta" style="color:${color}">${escHtml(c.name)}</div>` : ''}
+        <div class="tt-cal-task-dur">${App.fmtDur(t.totalDuration || 0)}</div>
+        ${isAct ? '<div class="tt-cal-task-live">● En cours</div>' : ''}
+      </div>`;
+    }).join('');
+
+    calEl.innerHTML = `<div class="tt-cal-inner" style="height:${totalPx + PX_PER_HOUR}px">
+      ${hourLines}
+      <div class="tt-cal-events" style="height:${totalPx}px">${slots}${blocks}</div>
+    </div>`;
+
+    /* Scroll automatique vers l'heure actuelle */
+    const scroll = document.getElementById('tt-cal-scroll');
+    if (scroll) {
+      const now     = new Date();
+      const nowMin  = (now.getHours() - CAL_START) * 60 + now.getMinutes();
+      const target  = Math.max(0, nowMin * PX_PER_MIN - 160);
+      scroll.scrollTop = target;
+    }
+  }
+
+  /* ── Ouvrir la modale depuis un créneau du calendrier ────────── */
+  function openSlot(h) {
+    _openAddManual();
+    const timeEl = document.getElementById('manualTaskStart');
+    if (timeEl) timeEl.value = `${String(h).padStart(2,'0')}:00`;
+  }
+
+  /* ── Chips de présélection dans la modale d'ajout manuel ─────── */
+  function _populatePresetChips() {
+    const el = document.getElementById('manualPresetChips');
+    if (!el) return;
+
+    el.innerHTML = App.STAGES.map(s =>
+      `<button type="button" class="tt-preset-chip"
+               style="border-color:${s.color};color:${s.color}"
+               data-label="${escHtml(s.label)}">${escHtml(s.label)}</button>`
+    ).join('');
+
+    el.querySelectorAll('.tt-preset-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const nameEl = document.getElementById('manualTaskName');
+        if (nameEl) nameEl.value = btn.dataset.label;
+        /* Marquer visuellement le chip sélectionné */
+        el.querySelectorAll('.tt-preset-chip').forEach(b => {
+          b.classList.remove('selected');
+          b.style.background = 'transparent';
+          b.style.color = b.style.borderColor;
+        });
+        btn.classList.add('selected');
+        btn.style.background = btn.style.borderColor;
+        btn.style.color = '#fff';
+      });
+    });
   }
 
   /* ── Édition d'une tâche ────────────────────────────────────── */
@@ -271,7 +385,6 @@ window.TimeTracker = (() => {
     document.getElementById('editTaskName').value = task.name;
     document.getElementById('editTaskId').value   = id;
 
-    /* Peupler et pré-sélectionner le client */
     const sel = document.getElementById('editTaskClient');
     if (sel) {
       sel.innerHTML = '<option value="">— Aucun client —</option>' +
@@ -346,6 +459,7 @@ window.TimeTracker = (() => {
     const minsEl = document.getElementById('manualTaskMinutes');
     if (minsEl) minsEl.value = '0';
 
+    _populatePresetChips();
     App.openModal('modal-addManualTask');
   }
 
@@ -418,13 +532,11 @@ window.TimeTracker = (() => {
     const totalAutre     = tasks.filter(t => t.clientId === App.AUTRE_CLIENT_ID).reduce((s, t) => s + (t.totalDuration || 0), 0);
     const dateFmt        = App.fmtDateLong(new Date());
 
-    /* Lignes tâches */
     const taskRows = tasks.map(t => {
       const c = t.clientId ? App.getClient(t.clientId) : null;
       return `| ${t.name} | ${c ? c.name : '—'} | ${App.fmtDur(t.totalDuration || 0)} |`;
     }).join('\n');
 
-    /* Répartition par client (hors Autre) */
     const byClient = {};
     tasks.forEach(t => {
       if (t.clientId === App.AUTRE_CLIENT_ID) return;
@@ -494,7 +606,6 @@ ${clientRows}
       if (e.key === 'Enter') start();
     });
 
-    /* Sync : sélection Kanban → remplit le champ texte + pré-sélectionne le client */
     const kanbanSel = document.getElementById('taskKanbanSelect');
     kanbanSel?.addEventListener('change', () => {
       const opt = kanbanSel.selectedOptions[0];
@@ -505,7 +616,6 @@ ${clientRows}
       kanbanSel.dataset.selectedProjectId = opt.dataset.projectId || '';
     });
 
-    /* Sync inverse : saisie manuelle réinitialise le select Kanban */
     dom.nameInput?.addEventListener('input', () => {
       if (kanbanSel?.value) {
         kanbanSel.value = '';
@@ -514,9 +624,10 @@ ${clientRows}
     });
 
     populateKanbanSelect();
+    renderCalendar();
   });
 
   /* ── API publique ───────────────────────────────────────────── */
-  return { renderTable, openEdit, deleteTask, populateClientSelect, populateKanbanSelect };
+  return { renderTable, renderCalendar, openEdit, deleteTask, openSlot, populateClientSelect, populateKanbanSelect };
 
 })();

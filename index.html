@@ -27,6 +27,31 @@
       .task-input-row { flex-direction:column; }
       .task-input-sep { padding-top:0; text-align:center; }
     }
+
+    /* ── Vue Journée (calendrier) ── */
+    .tt-cal-wrap { margin-top:28px; border:1px solid var(--border,#e5e7eb); border-radius:10px; overflow:hidden; }
+    .tt-cal-header { padding:10px 16px; font-size:.8rem; font-weight:600; color:var(--text-2,#374151); background:var(--surface-2,#f9fafb); border-bottom:1px solid var(--border,#e5e7eb); display:flex; align-items:center; gap:8px; }
+    .tt-cal-scroll { overflow-y:auto; max-height:560px; background:var(--surface,#fff); }
+    .tt-cal-inner { position:relative; padding-left:52px; }
+    .tt-cal-hour-row { position:absolute; left:0; right:0; display:flex; align-items:flex-start; pointer-events:none; }
+    .tt-cal-hlabel { position:absolute; left:0; width:46px; text-align:right; font-size:.62rem; color:var(--text-3,#9ca3af); transform:translateY(-50%); padding-right:8px; }
+    .tt-cal-hline { position:absolute; left:52px; right:0; height:1px; background:var(--border,#e5e7eb); }
+    .tt-cal-events { position:absolute; left:52px; right:0; top:0; }
+    .tt-cal-slot { position:absolute; left:0; right:0; cursor:pointer; border-radius:2px; transition:background .12s; }
+    .tt-cal-slot:hover { background:rgba(59,130,246,.07); }
+    .tt-cal-slot:hover::after { content:'＋ Ajouter'; position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:.62rem; color:var(--primary,#3B82F6); font-weight:600; pointer-events:none; }
+    .tt-cal-task { position:absolute; left:3px; right:3px; border-left:3px solid; border-radius:0 5px 5px 0; padding:3px 8px; overflow:hidden; z-index:1; pointer-events:none; }
+    .tt-cal-task--active { outline:2px solid var(--primary,#3B82F6); outline-offset:1px; }
+    .tt-cal-task-name { font-size:.72rem; font-weight:600; color:var(--text-1,#111827); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .tt-cal-task-meta { font-size:.62rem; font-weight:500; }
+    .tt-cal-task-dur { font-size:.62rem; color:var(--text-3,#9ca3af); }
+    .tt-cal-task-live { font-size:.62rem; color:var(--primary,#3B82F6); font-weight:700; }
+
+    /* Preset chips dans la modale */
+    .tt-preset-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+    .tt-preset-chip { padding:4px 11px; border-radius:20px; font-size:.7rem; font-weight:500; cursor:pointer; border:1.5px solid; background:transparent; transition:background .12s, color .12s; line-height:1.4; }
+    .tt-preset-chip:hover { filter:brightness(.92); }
+    .tt-preset-chip.selected { color:#fff !important; }
   </style>
 </head>
 <body>
@@ -344,6 +369,16 @@
           <span class="daily-total-value" id="autreTotalValue">0h 00min</span>
         </div>
 
+        <!-- ── Vue Journée (calendrier) ──────────────────────────── -->
+        <div class="tt-cal-wrap">
+          <div class="tt-cal-header">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Vue journée — cliquez sur un créneau vide pour noter ce que vous y avez fait
+          </div>
+          <div class="tt-cal-scroll" id="tt-cal-scroll">
+            <div id="tt-day-calendar"></div>
+          </div>
+        </div>
 
       </section>
 
@@ -499,7 +534,9 @@
         </button>
       </div>
       <div class="modal-body">
-        <label class="form-label">Nom de la tâche</label>
+        <label class="form-label">Étape prédéfinie</label>
+        <div id="manualPresetChips" class="tt-preset-chips"></div>
+        <label class="form-label" style="margin-top:12px">Nom de la tâche</label>
         <input type="text" id="manualTaskName" class="form-input" placeholder="Description de la tâche…" autocomplete="off" />
         <label class="form-label" style="margin-top:14px">Client</label>
         <select id="manualTaskClient" class="form-select">
@@ -557,7 +594,7 @@
   </div>
   <script src="js/todo.js?v=1"></script>
   <script src="js/app.js?v=8"></script>
-  <script src="js/timetracker.js?v=5"></script>
+  <script src="js/timetracker.js?v=6"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=5"></script>
   <script src="js/prevision.js?v=2"></script>
