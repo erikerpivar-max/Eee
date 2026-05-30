@@ -596,7 +596,19 @@ window.PubCal = (() => {
     return Math.round((lastChecked - today) / 86_400_000);
   }
 
+  /* ── API publique : cocher/décocher un jour pour un client ─────── */
+  function setCheck(dateStr, clientId, value) {
+    const data = App.load(KEY, {});
+    if (!data[dateStr]) data[dateStr] = {};
+    if (value) data[dateStr][clientId] = true;
+    else       delete data[dateStr][clientId];
+    if (!Object.values(data[dateStr] || {}).some(Boolean)) delete data[dateStr];
+    App.save(KEY, data);
+    if (App.currentView === 'publication') renderView();
+    if (typeof Dashboard !== 'undefined') Dashboard.refresh();
+  }
+
   /* ── API publique ───────────────────────────────────────────── */
-  return { renderView, getDaysAdvance };
+  return { renderView, getDaysAdvance, setCheck };
 
 })();

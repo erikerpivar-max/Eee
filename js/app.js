@@ -417,6 +417,19 @@ window.Dashboard = {
     el.innerHTML = App.CLIENTS.map(client => {
       const days = PubCal.getDaysAdvance(client.id);
 
+      /* Compteurs : en cours (projets non publiés) + planifié (cases PubCal futures) */
+      const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
+      const inProgress = projects
+        .filter(p => p.stage !== 'publie')
+        .reduce((s, p) => s + (p.videoCount || 1), 0);
+
+      const pubData = App.load(App.KEYS.PUBCAL, {}) || {};
+      const todayISO = App.today();
+      let planned = 0;
+      Object.entries(pubData).forEach(([dateStr, clients]) => {
+        if (clients && clients[client.id] && dateStr >= todayISO) planned++;
+      });
+
       let color, label, status;
       if (days === null) {
         color  = 'var(--text-3)';
@@ -462,6 +475,16 @@ window.Dashboard = {
           <div class="ca-footer">
             <span class="ca-value" style="color:${color}">${label}</span>
             ${badge}
+          </div>
+          <div class="ca-stats" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border,#e5e7eb);font-size:.78rem">
+            <span class="ca-stat" style="display:inline-flex;align-items:center;gap:5px;color:#F97316;font-weight:600" title="${inProgress} vidéo(s) en cours">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              ${inProgress} en cours
+            </span>
+            <span class="ca-stat" style="display:inline-flex;align-items:center;gap:5px;color:#22C55E;font-weight:600" title="${planned} vidéo(s) planifiée(s)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              ${planned} planifié(s)
+            </span>
           </div>
         </div>`;
     }).join('');

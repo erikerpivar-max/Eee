@@ -15,6 +15,13 @@ window.Programmation = (() => {
   const IDB_STORE = 'handles';
   const HANDLE_KEY = 'arrivalDir';
 
+  /* Mapping prefixe fichier → client dashboard */
+  const CLIENT_PREFIX = {
+    'AT': 'ixina-ath',
+    'XL': 'ixina-ixelles',
+    'TT': 'ixina-tours',
+  };
+
   /* ── IndexedDB minimal pour persister les FileSystemDirectoryHandle ── */
   function _idb() {
     return new Promise((resolve, reject) => {
@@ -77,8 +84,8 @@ window.Programmation = (() => {
     return out;
   }
 
-  /* ── Renomme A{n}.ext → date.ext dans le dossier ARRIVAL ──────── */
-  async function _renameFiles(dirHandle, letter, count, dates) {
+  /* ── Renomme A{n}.ext OU XX_A{n}.ext → date.ext dans ARRIVAL ──── */
+  async function _renameFiles(dirHandle, letter, count, dates, defaultClientId) {
     const results = [];
     /* Liste tous les fichiers existants pour trouver les extensions */
     const filesByName = new Map();
@@ -88,19 +95,29 @@ window.Programmation = (() => {
 
     for (let i = 0; i < count; i++) {
       const idx     = i + 1;
-      const baseOld = `${letter}${idx}`;
+      const baseOld = `${letter}${idx}`;            /* ex: A1 */
       const dateNew = dates[i];
 
-      /* Cherche un fichier qui commence par baseOld + "." */
-      let foundName = null;
-      let ext       = null;
+      /* Cherche un fichier qui matche soit "A1.ext" soit "AT_A1.ext" */
+      let foundName  = null;
+      let ext        = null;
+      let clientId   = defaultClientId;
       for (const name of filesByName.keys()) {
         const dot = name.lastIndexOf('.');
         if (dot < 1) continue;
-        const stem = name.slice(0, dot);
-        if (stem.toUpperCase() === baseOld) {
+        const stem    = name.slice(0, dot);
+        const stemUp  = stem.toUpperCase();
+        if (stemUp === baseOld) {
           foundName = name;
-          ext       = name.slice(dot); /* ".mp4" */
+          ext       = name.slice(dot);
+          break;
+        }
+        /* Vérifie format préfixé : XX_A1 */
+        const m = stemUp.match(/^([A-Z]{2})_(.+)$/);
+        if (m && m[2] === baseOld && CLIENT_PREFIX[m[1]]) {
+          foundName = name;
+          ext       = name.slice(dot);
+          clientId  = CLIENT_PREFIX[m[1]];
           break;
         }
       }
@@ -112,14 +129,14 @@ window.Programmation = (() => {
 
       const newName = `${dateNew}${ext}`;
       try {
-        /* Copie via getFile + write puis suppression de l'ancien (seule façon fiable cross-navigateur) */
+        /* Copie via getFile + write puis suppression de l'ancien */
         const src      = await filesByName.get(foundName).getFile();
         const newHand  = await dirHandle.getFileHandle(newName, { create: true });
         const writable = await newHand.createWritable();
         await writable.write(src);
         await writable.close();
         await dirHandle.removeEntry(foundName);
-        results.push({ ok: true, old: foundName, new: newName });
+        results.push({ ok: true, old: foundName, new: newName, date: dateNew, clientId });
       } catch(e) {
         results.push({ ok: false, old: foundName, msg: e.message });
       }
@@ -218,7 +235,7 @@ window.Programmation = (() => {
       if (!dirHandle) dirHandle = await _pickArrival();
       if (!dirHandle) { App.toast('Dossier ARRIVAL non choisi.', 'error'); return; }
 
-      const results = await _renameFiles(dirHandle, project.letter, project.videoCount, dates);
+      const results = await _renameFiles(dirHandle, project.letter, project.videoCount, dates, clientId);
       const okCount  = results.filter(r => r.ok).length;
       const koCount  = results.length - okCount;
 
@@ -230,8 +247,15 @@ window.Programmation = (() => {
         App.save(`${App.KEYS.PROJECTS}_${clientId}`, ps);
       }
 
+      /* Coche la case dans Publication pour chaque vidéo renommée */
+      if (window.PubCal && typeof PubCal.setCheck === 'function') {
+        results.forEach(r => {
+          if (r.ok && r.date && r.clientId) PubCal.setCheck(r.date, r.clientId, true);
+        });
+      }
+
       if (koCount === 0) {
-        App.toast(`✓ ${okCount} vidéo(s) renommée(s) dans ARRIVAL.`, 'success');
+        App.toast(`✓ ${okCount} vidéo(s) renommée(s) et cochée(s) dans Publication.`, 'success');
         close();
         if (onConfirmed) onConfirmed();
       } else {
