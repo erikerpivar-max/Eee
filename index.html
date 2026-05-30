@@ -28,24 +28,28 @@
       .task-input-sep { padding-top:0; text-align:center; }
     }
 
-    /* ── Vue Journée (calendrier) ── */
+    /* ── Calendrier Time Tracking ── */
     .tt-cal-wrap { margin-top:28px; border:1px solid var(--border,#e5e7eb); border-radius:10px; overflow:hidden; }
-    .tt-cal-header { padding:10px 16px; font-size:.8rem; font-weight:600; color:var(--text-2,#374151); background:var(--surface-2,#f9fafb); border-bottom:1px solid var(--border,#e5e7eb); display:flex; align-items:center; gap:8px; }
-    .tt-cal-scroll { overflow-y:auto; max-height:560px; background:var(--surface,#fff); }
-    .tt-cal-inner { position:relative; padding-left:52px; }
-    .tt-cal-hour-row { position:absolute; left:0; right:0; display:flex; align-items:flex-start; pointer-events:none; }
-    .tt-cal-hlabel { position:absolute; left:0; width:46px; text-align:right; font-size:.62rem; color:var(--text-3,#9ca3af); transform:translateY(-50%); padding-right:8px; }
-    .tt-cal-hline { position:absolute; left:52px; right:0; height:1px; background:var(--border,#e5e7eb); }
-    .tt-cal-events { position:absolute; left:52px; right:0; top:0; }
-    .tt-cal-slot { position:absolute; left:0; right:0; cursor:pointer; border-radius:2px; transition:background .12s; }
+    .tt-cal-topbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:8px 14px; background:var(--surface-2,#f9fafb); border-bottom:1px solid var(--border,#e5e7eb); }
+    .tt-cal-nav { display:flex; align-items:center; gap:6px; }
+    .tt-cal-nav-title { font-size:.85rem; font-weight:600; color:var(--text-1,#111827); min-width:170px; text-align:center; }
+    .tt-cal-viewtoggle { display:flex; border:1px solid var(--border,#e5e7eb); border-radius:6px; overflow:hidden; }
+    .tt-cal-viewtoggle button { padding:5px 14px; font-size:.75rem; font-weight:500; border:none; background:transparent; cursor:pointer; color:var(--text-2,#374151); transition:background .12s,color .12s; }
+    .tt-cal-viewtoggle button.tt-active { background:var(--primary,#3B82F6); color:#fff; }
+    .tt-cal-colheader { display:flex; border-bottom:1px solid var(--border,#e5e7eb); background:var(--surface-2,#f9fafb); }
+    .tt-cal-colheader-spacer { width:52px; flex-shrink:0; }
+    .tt-cal-colheader-day { flex:1; padding:6px 4px 8px; text-align:center; border-left:1px solid var(--border,#e5e7eb); }
+    .tt-cal-colheader-day-name { font-size:.62rem; font-weight:700; color:var(--text-3,#9ca3af); text-transform:uppercase; letter-spacing:.06em; }
+    .tt-cal-colheader-day-num { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; font-size:.9rem; font-weight:700; color:var(--text-1,#111827); margin-top:3px; }
+    .tt-cal-colheader-day.tt-today .tt-cal-colheader-day-name { color:var(--primary,#3B82F6); }
+    .tt-cal-colheader-day.tt-today .tt-cal-colheader-day-num { background:var(--primary,#3B82F6); color:#fff; }
+    .tt-cal-scroll { overflow-y:auto; max-height:520px; background:var(--surface,#fff); }
+    .tt-cal-slot { cursor:pointer; }
     .tt-cal-slot:hover { background:rgba(59,130,246,.07); }
-    .tt-cal-slot:hover::after { content:'＋ Ajouter'; position:absolute; right:10px; top:50%; transform:translateY(-50%); font-size:.62rem; color:var(--primary,#3B82F6); font-weight:600; pointer-events:none; }
-    .tt-cal-task { position:absolute; left:3px; right:3px; border-left:3px solid; border-radius:0 5px 5px 0; padding:3px 8px; overflow:hidden; z-index:1; pointer-events:none; }
+    .tt-cal-slot:hover::after { content:'＋'; position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:.75rem; color:var(--primary,#3B82F6); font-weight:700; pointer-events:none; }
     .tt-cal-task--active { outline:2px solid var(--primary,#3B82F6); outline-offset:1px; }
-    .tt-cal-task-name { font-size:.72rem; font-weight:600; color:var(--text-1,#111827); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .tt-cal-task-meta { font-size:.62rem; font-weight:500; }
-    .tt-cal-task-dur { font-size:.62rem; color:var(--text-3,#9ca3af); }
-    .tt-cal-task-live { font-size:.62rem; color:var(--primary,#3B82F6); font-weight:700; }
+    .tt-cal-nowline { position:absolute; left:0; right:0; height:2px; background:#EF4444; z-index:4; pointer-events:none; }
+    .tt-cal-nowline::before { content:''; position:absolute; left:-5px; top:-4px; width:10px; height:10px; background:#EF4444; border-radius:50%; }
 
     /* Preset chips dans la modale */
     .tt-preset-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
@@ -369,12 +373,25 @@
           <span class="daily-total-value" id="autreTotalValue">0h 00min</span>
         </div>
 
-        <!-- ── Vue Journée (calendrier) ──────────────────────────── -->
+        <!-- ── Calendrier (Jour / Semaine) ───────────────────────── -->
         <div class="tt-cal-wrap">
-          <div class="tt-cal-header">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Vue journée — cliquez sur un créneau vide pour noter ce que vous y avez fait
+          <div class="tt-cal-topbar">
+            <div class="tt-cal-nav">
+              <button class="btn btn-icon btn-sm" id="tt-cal-prev" title="Précédent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="tt-cal-nav-title" id="tt-cal-title">—</span>
+              <button class="btn btn-icon btn-sm" id="tt-cal-next" title="Suivant">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+              <button class="btn btn-outline btn-sm" id="tt-cal-today">Aujourd'hui</button>
+            </div>
+            <div class="tt-cal-viewtoggle">
+              <button id="tt-view-day" class="tt-active">Jour</button>
+              <button id="tt-view-week">Semaine</button>
+            </div>
           </div>
+          <div class="tt-cal-colheader" id="tt-cal-colheader"></div>
           <div class="tt-cal-scroll" id="tt-cal-scroll">
             <div id="tt-day-calendar"></div>
           </div>
@@ -594,7 +611,7 @@
   </div>
   <script src="js/todo.js?v=1"></script>
   <script src="js/app.js?v=8"></script>
-  <script src="js/timetracker.js?v=6"></script>
+  <script src="js/timetracker.js?v=7"></script>
   <script src="js/kanban.js?v=3"></script>
   <script src="js/pubcal.js?v=5"></script>
   <script src="js/prevision.js?v=2"></script>
