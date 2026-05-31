@@ -155,6 +155,7 @@ window.App = {
   PAGE_TITLES: {
     'dashboard':   'Dashboard',
     'timetracker': 'Time Tracking',
+    'agenda':      'Agenda',
     'prevision':   'Prévision',
     'kanban':      'Kanban',
     'publication': 'Publication',
@@ -182,6 +183,7 @@ window.App = {
     if (viewId === 'kanban')      _safeRender('kanban-board',     () => Kanban.renderView());
     if (viewId === 'publication') _safeRender('pubcal-container', () => PubCal.renderView());
     if (viewId === 'process')     _safeRender('proc-timeline', () => Process.init());
+    if (viewId === 'agenda')      _safeRender('agendaGrid',    () => Agenda.init());
 
     if (window.innerWidth < 1024) {
       document.getElementById('sidebar').classList.remove('open');

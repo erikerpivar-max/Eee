@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
   <script>
     /* ── Dark mode : init immédiat avant le rendu (anti-FOUC) ── */
     (function() {
@@ -86,6 +86,12 @@
             <a class="nav-link" data-view="timetracker" href="#">
               <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               <span>Time Tracking</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" data-view="agenda" href="#">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Agenda</span>
             </a>
           </li>
         </ul>
@@ -472,30 +478,56 @@
           <span class="daily-total-value" id="autreTotalValue">0h 00min</span>
         </div>
 
-        <!-- ── Calendrier (Jour / Semaine) ───────────────────────── -->
-        <div class="tt-cal-wrap">
-          <div class="tt-cal-topbar">
-            <div class="tt-cal-nav">
-              <button class="btn btn-icon btn-sm" id="tt-cal-prev" title="Précédent">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-              </button>
-              <span class="tt-cal-nav-title" id="tt-cal-title">—</span>
-              <button class="btn btn-icon btn-sm" id="tt-cal-next" title="Suivant">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-              <button class="btn btn-outline btn-sm" id="tt-cal-today">Aujourd'hui</button>
-            </div>
-            <div class="tt-cal-viewtoggle">
-              <button id="tt-view-day" class="tt-active">Jour</button>
-              <button id="tt-view-week">Semaine</button>
-            </div>
-          </div>
-          <div class="tt-cal-colheader" id="tt-cal-colheader"></div>
-          <div class="tt-cal-scroll" id="tt-cal-scroll">
-            <div id="tt-day-calendar"></div>
-          </div>
+      </section>
+
+      <!-- ── VUE : AGENDA ──────────────────────────────────────── -->
+      <section class="view" id="view-agenda">
+        <div class="view-intro">
+          <h2 class="view-title">Agenda</h2>
+          <p class="view-subtitle">Vos activités passées et votre planification, comme dans Google Agenda.</p>
         </div>
 
+        <div class="agenda-app">
+          <!-- Sidebar gauche : mes calendriers -->
+          <aside class="agenda-sidebar">
+            <button class="btn btn-primary agenda-create" id="agendaCreateBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Créer un évènement
+            </button>
+
+            <div class="agenda-mini" id="agendaMini"></div>
+
+            <div class="agenda-section">
+              <p class="agenda-section-label">Mes calendriers</p>
+              <div class="agenda-cal-list" id="agendaCalList"></div>
+            </div>
+          </aside>
+
+          <!-- Zone principale -->
+          <div class="agenda-main">
+            <div class="agenda-toolbar">
+              <div class="agenda-toolbar-left">
+                <button class="btn btn-outline btn-sm" id="agendaTodayBtn">Aujourd'hui</button>
+                <button class="agenda-nav-btn" id="agendaPrevBtn" aria-label="Précédent">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button class="agenda-nav-btn" id="agendaNextBtn" aria-label="Suivant">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+                <h3 class="agenda-title" id="agendaTitle"></h3>
+              </div>
+              <div class="agenda-toolbar-right">
+                <div class="agenda-viewtoggle">
+                  <button data-view="day"   class="agenda-view-btn">Jour</button>
+                  <button data-view="week"  class="agenda-view-btn">Semaine</button>
+                  <button data-view="month" class="agenda-view-btn active">Mois</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="agenda-grid" id="agendaGrid"></div>
+          </div>
+        </div>
       </section>
 
       <!-- ── VUE : PRÉVISION ──────────────────────────────────── -->
@@ -727,6 +759,7 @@
   <script src="js/ixina-import.js?v=1"></script>
   <script src="js/garden.js?v=1"></script>
   <script src="js/process.js?v=1"></script>
+  <script src="js/agenda.js?v=1"></script>
 
 </body>
 </html>
