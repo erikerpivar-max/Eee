@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=9" />
+  <link rel="stylesheet" href="css/style.css?v=10" />
   <script>
     /* ── Dark mode : init immédiat avant le rendu (anti-FOUC) ── */
     (function() {
@@ -481,15 +481,13 @@
           <p class="view-subtitle">Vos activités passées et votre planification, comme dans Google Agenda.</p>
         </div>
 
-        <div class="agenda-app">
+        <div class="agenda-app" id="agendaApp">
           <!-- Sidebar gauche : mes calendriers -->
-          <aside class="agenda-sidebar">
+          <aside class="agenda-sidebar" id="agendaSidebar">
             <button class="btn btn-primary agenda-create" id="agendaCreateBtn">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Créer un évènement
             </button>
-
-            <div class="agenda-mini" id="agendaMini"></div>
 
             <div class="agenda-section">
               <p class="agenda-section-label">Mes calendriers</p>
@@ -501,6 +499,9 @@
           <div class="agenda-main">
             <div class="agenda-toolbar">
               <div class="agenda-toolbar-left">
+                <button class="agenda-sidebar-toggle" id="agendaSidebarToggle" title="Afficher / masquer le panneau" aria-label="Afficher ou masquer le panneau">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
                 <button class="btn btn-outline btn-sm" id="agendaTodayBtn">Aujourd'hui</button>
                 <button class="agenda-nav-btn" id="agendaPrevBtn" aria-label="Précédent">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
@@ -753,7 +754,7 @@
   <script src="js/ixina-import.js?v=1"></script>
   <script src="js/garden.js?v=1"></script>
   <script src="js/process.js?v=1"></script>
-  <script src="js/agenda.js?v=4"></script>
+  <script src="js/agenda.js?v=5"></script>
 
 </body>
 </html>

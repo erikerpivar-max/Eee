@@ -4230,6 +4230,34 @@ code {
   gap: 18px;
   height: calc(100vh - 220px);
   min-height: 560px;
+  transition: grid-template-columns .25s var(--ease);
+}
+.agenda-app.is-sidebar-closed {
+  grid-template-columns: 0 1fr;
+  gap: 0;
+}
+.agenda-app.is-sidebar-closed .agenda-sidebar {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Bouton hamburger pour replier la sidebar */
+.agenda-sidebar-toggle {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  margin-right: 4px;
+  transition: background var(--dur), color var(--dur), border-color var(--dur);
+}
+.agenda-sidebar-toggle:hover {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 /* ── Sidebar gauche ───────────────────────────────────────────── */
@@ -4250,71 +4278,6 @@ code {
   font-weight: 600;
   box-shadow: var(--shadow-sm);
 }
-
-/* Mini-calendrier */
-.agenda-mini {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-}
-.agenda-mini-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.agenda-mini-title {
-  font-size: .8rem;
-  font-weight: 600;
-  color: var(--text);
-  text-transform: capitalize;
-}
-.agenda-mini-nav {
-  background: transparent; border: none; cursor: pointer;
-  color: var(--text-3); padding: 4px;
-  border-radius: 4px;
-  transition: color var(--dur), background var(--dur);
-}
-.agenda-mini-nav:hover { color: var(--text); background: var(--bg); }
-
-.agenda-mini-dow {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  text-align: center;
-  font-size: .65rem;
-  font-weight: 600;
-  color: var(--text-3);
-  text-transform: uppercase;
-  margin-bottom: 2px;
-}
-.agenda-mini-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.agenda-mini-row {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-}
-.agenda-mini-day {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: .72rem;
-  color: var(--text);
-  padding: 4px 0;
-  border-radius: 50%;
-  width: 26px; height: 26px;
-  margin: 0 auto;
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--dur), color var(--dur);
-}
-.agenda-mini-day:hover { background: var(--bg); }
-.agenda-mini-day.out   { color: var(--text-3); opacity: .5; }
-.agenda-mini-day.today { background: var(--primary-bg); color: var(--primary); font-weight: 700; }
-.agenda-mini-day.sel   { background: var(--primary); color: #fff; font-weight: 700; }
 
 /* Section "Mes calendriers" */
 .agenda-section {

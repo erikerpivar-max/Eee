@@ -37,10 +37,10 @@ window.Agenda = {
   KEY_PUB_FILTER: 'th_agenda_pub_clients',  /* clients visibles dans Publications */
 
   /* ── État ────────────────────────────────────────────────────── */
-  _view:     'month',           // day | week | month
-  _date:     null,              // référence courante
-  _editId:   null,
-  _miniDate: null,
+  _view:        'month',
+  _date:        null,
+  _editId:      null,
+  _sidebarOpen: true,
 
   /* ── Storage ─────────────────────────────────────────────────── */
   loadCals() {
@@ -73,8 +73,8 @@ window.Agenda = {
   loadPrefs() {
     try {
       const v = localStorage.getItem(this.KEY_PREFS);
-      return v !== null ? JSON.parse(v) : { view: 'month' };
-    } catch { return { view: 'month' }; }
+      return v !== null ? JSON.parse(v) : { view: 'month', sidebarOpen: true };
+    } catch { return { view: 'month', sidebarOpen: true }; }
   },
   savePrefs(p) {
     try { localStorage.setItem(this.KEY_PREFS, JSON.stringify(p)); } catch(e) {}
@@ -294,7 +294,9 @@ window.Agenda = {
   render() {
     this._renderSidebar();
     this._renderToolbar();
-    this._renderMini();
+    /* applique l'état sidebar (open/closed) */
+    const app = document.getElementById('agendaApp');
+    if (app) app.classList.toggle('is-sidebar-closed', !this._sidebarOpen);
     if (this._view === 'month') this._renderMonth();
     else if (this._view === 'week')  this._renderWeek();
     else                              this._renderDay();
@@ -341,46 +343,6 @@ window.Agenda = {
     el.textContent = el.textContent.charAt(0).toUpperCase() + el.textContent.slice(1);
   },
 
-  /* ── Mini-calendrier dans la sidebar ──────────────────────────── */
-  _renderMini() {
-    const wrap = document.getElementById('agendaMini');
-    if (!wrap) return;
-    const ref = this._miniDate || this._date;
-    const first = this._startOfMonth(ref);
-    const last  = this._endOfMonth(ref);
-    const startGrid = this._startOfWeek(first);
-    const endGrid = new Date(this._endOfWeek(last)); endGrid.setHours(0,0,0,0);
-
-    const today = this._today();
-    const cur = new Date(startGrid);
-    let weeks = '';
-    while (cur <= endGrid) {
-      let row = '';
-      for (let i = 0; i < 7; i++) {
-        const inMonth = cur.getMonth() === ref.getMonth();
-        const isToday = this._sameDay(cur, today);
-        const isSel   = this._sameDay(cur, this._date);
-        const cls = ['agenda-mini-day'];
-        if (!inMonth) cls.push('out');
-        if (isToday)  cls.push('today');
-        if (isSel)    cls.push('sel');
-        row += `<button class="${cls.join(' ')}" data-date="${this._fmtDateInput(cur)}">${cur.getDate()}</button>`;
-        cur.setDate(cur.getDate() + 1);
-      }
-      weeks += `<div class="agenda-mini-row">${row}</div>`;
-    }
-
-    wrap.innerHTML = `
-      <div class="agenda-mini-head">
-        <button class="agenda-mini-nav" data-mini="-1" aria-label="Mois précédent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg></button>
-        <span class="agenda-mini-title">${ref.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</span>
-        <button class="agenda-mini-nav" data-mini="1" aria-label="Mois suivant"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg></button>
-      </div>
-      <div class="agenda-mini-dow">
-        <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
-      </div>
-      <div class="agenda-mini-grid">${weeks}</div>`;
-  },
 
   /* ── Vue MOIS ────────────────────────────────────────────────── */
   _renderMonth() {
@@ -615,12 +577,10 @@ window.Agenda = {
     if (this._view === 'week') d.setDate(d.getDate() + 7 * dir);
     if (this._view === 'month') d.setMonth(d.getMonth() + dir);
     this._date = d;
-    if (this._view !== 'day') this._miniDate = d;
     this.render();
   },
   goToday() {
     this._date = this._today();
-    this._miniDate = this._today();
     this.render();
   },
   setView(v) {
@@ -632,13 +592,6 @@ window.Agenda = {
     this._date = new Date(dateStr + 'T00:00:00');
     this.render();
   },
-  miniNav(dir) {
-    const d = new Date(this._miniDate || this._date);
-    d.setMonth(d.getMonth() + dir);
-    this._miniDate = d;
-    this._renderMini();
-  },
-
   toggleCalendar(id) {
     const cals = this.loadCals();
     const c = cals.find(x => x.id === id);
@@ -915,8 +868,8 @@ window.Agenda = {
   init() {
     const prefs = this.loadPrefs();
     this._view = prefs.view || 'month';
+    this._sidebarOpen = prefs.sidebarOpen !== false;
     this._date = this._today();
-    this._miniDate = this._today();
     this.loadCals(); /* ensure defaults */
     this.render();
 
@@ -926,6 +879,13 @@ window.Agenda = {
     $('agendaPrevBtn')?.addEventListener('click',  () => this.nav(-1));
     $('agendaNextBtn')?.addEventListener('click',  () => this.nav(1));
     $('agendaCreateBtn')?.addEventListener('click',() => this.openEditor(null, { date: this._fmtDateInput(this._date), hour: 9 }));
+    $('agendaSidebarToggle')?.addEventListener('click', () => {
+      this._sidebarOpen = !this._sidebarOpen;
+      const prefs = this.loadPrefs();
+      prefs.sidebarOpen = this._sidebarOpen;
+      this.savePrefs(prefs);
+      this.render();
+    });
 
     document.querySelectorAll('.agenda-view-btn').forEach(b => {
       b.addEventListener('click', () => this.setView(b.dataset.view));
@@ -935,18 +895,6 @@ window.Agenda = {
     document.getElementById('agendaCalList')?.addEventListener('change', e => {
       const cb = e.target.closest('input[type="checkbox"]');
       if (cb && cb.dataset.id) this.toggleCalendar(cb.dataset.id);
-    });
-
-    /* Mini-calendrier */
-    document.getElementById('agendaMini')?.addEventListener('click', e => {
-      const navBtn = e.target.closest('.agenda-mini-nav');
-      if (navBtn) { this.miniNav(parseInt(navBtn.dataset.mini, 10)); return; }
-      const day = e.target.closest('.agenda-mini-day');
-      if (day) {
-        this.setDate(day.dataset.date);
-        if (this._view === 'month') this.setView('day');
-        else this.render();
-      }
     });
 
     /* Raccourcis clavier (style Google Agenda) — uniquement si la vue est active */
