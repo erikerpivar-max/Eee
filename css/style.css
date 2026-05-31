@@ -4380,102 +4380,79 @@ code {
   border-radius: 999px;
   border: 1px solid var(--border);
 }
-.agenda-cal-count {
-  font-size: .68rem;
-  font-weight: 700;
-  color: var(--text-2);
-  background: var(--bg);
-  padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  letter-spacing: 0;
+/* ── Tracker Publications : cases à cocher par magasin/jour ───── */
+.agenda-pub-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  margin: 2px 0;
+  border-radius: 6px;
+  background: color-mix(in srgb, #F59E0B 8%, transparent);
+  border: 1px dashed color-mix(in srgb, #F59E0B 35%, var(--border));
 }
-
-/* Sous-liste des magasins pour Publications */
-.agenda-cal-sublist {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 4px 0 8px 18px;
-  margin-left: 8px;
-  border-left: 2px dashed color-mix(in srgb, #F59E0B 45%, var(--border));
-  animation: agenda-sublist-in .18s var(--ease);
+.agenda-pub-row.is-compact {
+  gap: 3px;
+  padding: 2px 4px;
+  margin: 4px 0 0;
 }
-@keyframes agenda-sublist-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.agenda-cal-sub-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 8px 4px;
-}
-.agenda-cal-sub-action {
+.agenda-pub-cell {
+  --size: 18px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 5px;
+  border: 2px solid var(--c);
   background: transparent;
-  border: none;
   cursor: pointer;
-  font-size: .7rem;
-  color: var(--primary);
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background var(--dur);
-}
-.agenda-cal-sub-action:hover { background: var(--primary-bg); }
-
-.agenda-cal-sub-item {
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: .8rem;
-  color: var(--text);
-  transition: background var(--dur);
+  justify-content: center;
+  position: relative;
+  transition: background var(--dur), transform var(--dur), box-shadow var(--dur);
 }
-.agenda-cal-sub-item:hover { background: var(--bg); }
-.agenda-cal-sub-item input { display: none; }
-.agenda-cal-sub-item .agenda-cal-tick {
-  width: 13px; height: 13px;
-  border-radius: 3px;
-  border: 1.5px solid var(--c);
+.agenda-pub-row.is-compact .agenda-pub-cell { --size: 14px; border-width: 1.5px; border-radius: 4px; }
+.agenda-pub-cell:hover {
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  transform: scale(1.1);
 }
-.agenda-cal-sub-item .agenda-cal-tick::after {
+.agenda-pub-cell.is-on {
+  background: var(--c);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--c) 50%, transparent);
+}
+.agenda-pub-cell.is-on .agenda-pub-cell-mark {
+  display: block;
+  width: 8px; height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(0, -1px);
+}
+.agenda-pub-row.is-compact .agenda-pub-cell.is-on .agenda-pub-cell-mark {
   width: 6px; height: 4px;
   border-left-width: 1.5px;
   border-bottom-width: 1.5px;
 }
-.agenda-cal-sub-name { flex: 1; }
-
-/* Petit badge catégorie pour les publications */
-.agenda-pub-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px; height: 14px;
-  padding: 0 4px;
-  border-radius: 3px;
-  font-size: .6rem;
-  font-weight: 800;
-  letter-spacing: .03em;
+.agenda-pub-cell-mark { display: none; }
+.agenda-pub-cell.is-important {
+  outline: 2px solid #EAB308;
+  outline-offset: 1px;
+}
+.agenda-pub-cell.is-important::after {
+  content: '!';
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 12px; height: 12px;
+  font-size: .58rem;
+  font-weight: 900;
+  background: #EAB308;
   color: #fff;
-  text-transform: uppercase;
-  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
 }
-.agenda-pub-tag--solid {
-  border: 1px solid rgba(255,255,255,.4);
-}
-.agenda-month-evt.is-pub {
-  background: color-mix(in srgb, var(--c) 22%, transparent);
-  border-left-color: var(--c);
-}
-.agenda-tg-allday-evt.is-pub {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 8px 3px 4px;
-}
+.agenda-pub-row.is-compact .agenda-pub-cell.is-important::after { top: -5px; right: -5px; width: 9px; height: 9px; font-size: .5rem; }
+
 .agenda-tg-allday-evt-text {
   overflow: hidden;
   text-overflow: ellipsis;

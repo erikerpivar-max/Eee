@@ -177,40 +177,94 @@ window.Agenda = {
     this.render();
   },
 
-  /* ── Source PubCal : convertit les entries publications ───────── */
-  _eventsFromPubCal() {
-    try {
-      const entries = (window.App && App.load) ? App.load('th_pubcal_entries', []) : [];
-      return entries
-        .filter(e => !e.clientId || this.isPubClientVisible(e.clientId))
-        .map(e => {
-          const cat = this.PUB_CATEGORIES[e.category] || { label: e.category, short: '·', color: '#6B7280' };
-          const label = e.category === 'autre' ? (e.customLabel || 'Autre') : cat.label;
-          const client = (e.clientId && window.App && App.CLIENTS)
-            ? App.CLIENTS.find(c => c.id === e.clientId) : null;
-          const title = client ? `${label} — ${client.name}` : label;
-          const start = new Date(e.date + 'T00:00:00');
-          const end   = new Date(e.date + 'T23:59:59');
-          /* Couleur = couleur du client (sinon couleur catégorie) */
-          const color = client ? client.color : cat.color;
-          return {
-            id:         'p_' + e.id,
-            calendarId: 'pub',
-            title,
-            start:      start.toISOString(),
-            end:        end.toISOString(),
-            allDay:     true,
-            color,
-            clientId:   e.clientId,
-            readonly:   true,
-            source:     'pubcal',
-            pubCategory: cat,
-            pubLabel:    label,
-            clientName:  client ? client.name : '',
-            description: e.status === 'termine' ? '✓ Terminée' : 'À publier',
-          };
-        });
-    } catch { return []; }
+  /* Publications n'est plus une source d'évènements : on affiche
+     à la place une rangée de cases à cocher par magasin/jour. */
+  _isPubVisible() {
+    return !!this.loadCals().find(c => c.id === 'pub' && c.visible);
+  },
+  _pubEntries() {
+    if (!window.App || !App.load) return [];
+    return App.load('th_pubcal_entries', []);
+  },
+  _pubsForCell(clientId, dateStr) {
+    return this._pubEntries().filter(e => e.clientId === clientId && e.date === dateStr);
+  },
+  /* Une publication est "importante" si elle a un customLabel ou un statut termine */
+  _pubIsImportant(entries) {
+    return entries.some(e => (e.customLabel && e.customLabel.trim()) || e.status === 'termine');
+  },
+  /* Toggle case publication pour un client/date.
+     - Si pas d'entry : crée une entry "programmation" brouillon
+     - Si entry(ies) existent : supprime toutes les entries pour ce client/date */
+  togglePubCell(clientId, dateStr) {
+    if (!window.App || !App.load || !App.save) return;
+    const entries = App.load('th_pubcal_entries', []);
+    const existing = entries.filter(e => e.clientId === clientId && e.date === dateStr);
+    if (existing.length > 0) {
+      const keep = entries.filter(e => !(e.clientId === clientId && e.date === dateStr));
+      App.save('th_pubcal_entries', keep);
+    } else {
+      entries.push({
+        id: this._uid(),
+        date: dateStr,
+        category: 'programmation',
+        customLabel: null,
+        clientId,
+        status: 'brouillon',
+      });
+      App.save('th_pubcal_entries', entries);
+    }
+    this.render();
+  },
+  /* Bouton "Tout" / "Rien" pour une journée donnée */
+  togglePubDayAll(dateStr) {
+    if (!window.App || !App.CLIENTS) return;
+    const clients = App.CLIENTS;
+    const entries = App.load('th_pubcal_entries', []);
+    const dayEntries = entries.filter(e => e.date === dateStr);
+    const allHave = clients.every(cl => dayEntries.some(e => e.clientId === cl.id));
+    if (allHave) {
+      const keep = entries.filter(e => e.date !== dateStr);
+      App.save('th_pubcal_entries', keep);
+    } else {
+      clients.forEach(cl => {
+        if (!dayEntries.some(e => e.clientId === cl.id)) {
+          entries.push({
+            id: this._uid(),
+            date: dateStr,
+            category: 'programmation',
+            customLabel: null,
+            clientId: cl.id,
+            status: 'brouillon',
+          });
+        }
+      });
+      App.save('th_pubcal_entries', entries);
+    }
+    this.render();
+  },
+
+  /* Builder HTML d'une rangée de cases pour un jour donné */
+  _renderPubRow(dateStr, opts) {
+    if (!this._isPubVisible()) return '';
+    const clients = (window.App && App.CLIENTS) ? App.CLIENTS : [];
+    if (clients.length === 0) return '';
+    const compact = opts && opts.compact;
+    const cells = clients.map(cl => {
+      const entries = this._pubsForCell(cl.id, dateStr);
+      const has = entries.length > 0;
+      const important = has && this._pubIsImportant(entries);
+      const title = has
+        ? `${cl.name} — ${entries.length} publication(s)${important ? ' (importante)' : ''}`
+        : `${cl.name} — non programmé`;
+      return `<button class="agenda-pub-cell${has ? ' is-on' : ''}${important ? ' is-important' : ''}"
+                style="--c:${cl.color}"
+                data-pub-toggle data-client="${cl.id}" data-date="${dateStr}"
+                title="${this._esc(title)}">
+        <span class="agenda-pub-cell-mark"></span>
+      </button>`;
+    }).join('');
+    return `<div class="agenda-pub-row${compact ? ' is-compact' : ''}" data-date="${dateStr}">${cells}</div>`;
   },
 
   /* ── Tous les évènements visibles dans une fenêtre ────────────── */
@@ -219,7 +273,6 @@ window.Agenda = {
     const visibleIds = new Set(cals.filter(c => c.visible).map(c => c.id));
     const all = [
       ...this._eventsFromTT(),
-      ...this._eventsFromPubCal(),
       ...this.loadEvents(),
     ];
     return all
@@ -255,35 +308,16 @@ window.Agenda = {
     const wrap = document.getElementById('agendaCalList');
     if (!wrap) return;
     const cals = this.loadCals();
-    const clients = (window.App && App.CLIENTS) ? App.CLIENTS : [];
-
     wrap.innerHTML = cals.map(c => {
-      let html = `<label class="agenda-cal-item" style="--c:${c.color}">
+      const tag = c.id === 'pub'
+        ? '<span class="agenda-cal-tag" style="background:#FEF3C7;color:#B45309;border-color:#FDE68A">tracker</span>'
+        : (c.readonly ? '<span class="agenda-cal-tag">auto</span>' : '');
+      return `<label class="agenda-cal-item" style="--c:${c.color}">
         <input type="checkbox" data-id="${c.id}" ${c.visible ? 'checked' : ''} />
         <span class="agenda-cal-tick"></span>
         <span class="agenda-cal-name">${this._esc(c.name)}</span>
-        ${c.id === 'pub' && c.visible ? `<span class="agenda-cal-count" title="Magasins visibles">${clients.filter(cl => this.isPubClientVisible(cl.id)).length}/${clients.length}</span>` : ''}
-        ${c.readonly && c.id !== 'pub' ? '<span class="agenda-cal-tag">auto</span>' : ''}
+        ${tag}
       </label>`;
-
-      /* Sub-list des clients/magasins pour le calendrier Publications */
-      if (c.id === 'pub' && c.visible && clients.length > 0) {
-        const allOn = clients.every(cl => this.isPubClientVisible(cl.id));
-        html += `<div class="agenda-cal-sublist">
-          <div class="agenda-cal-sub-actions">
-            <button class="agenda-cal-sub-action" data-pub-action="${allOn ? 'none' : 'all'}">
-              ${allOn ? 'Tout décocher' : 'Tout cocher'}
-            </button>
-          </div>` +
-          clients.map(cl => `
-            <label class="agenda-cal-sub-item" style="--c:${cl.color}">
-              <input type="checkbox" data-pub-client="${cl.id}" ${this.isPubClientVisible(cl.id) ? 'checked' : ''} />
-              <span class="agenda-cal-tick"></span>
-              <span class="agenda-cal-sub-name">${this._esc(cl.name)}</span>
-            </label>`).join('')
-          + '</div>';
-      }
-      return html;
     }).join('');
   },
 
@@ -388,17 +422,12 @@ window.Agenda = {
       if (isToday)  cls.push('today');
 
       const MAX = 3;
-      let evHtml = items.slice(0, MAX).map(e => {
-        const isPub = e.source === 'pubcal';
-        const pubBadge = isPub && e.pubCategory
-          ? `<span class="agenda-pub-tag" style="background:${e.pubCategory.color}" title="${this._esc(e.pubCategory.label)}">${e.pubCategory.short}</span>`
-          : '<span class="agenda-month-evt-dot"></span>';
-        return `<div class="agenda-month-evt${isPub ? ' is-pub' : ''}" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}">
-          ${pubBadge}
-          ${e.allDay || isPub ? '' : `<span class="agenda-month-evt-time">${this._fmtTime(new Date(e.start))}</span>`}
-          <span class="agenda-month-evt-title">${this._esc(isPub ? (e.clientName || e.title) : e.title)}</span>
-        </div>`;
-      }).join('');
+      let evHtml = items.slice(0, MAX).map(e => `
+        <div class="agenda-month-evt" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}">
+          <span class="agenda-month-evt-dot"></span>
+          ${e.allDay ? '' : `<span class="agenda-month-evt-time">${this._fmtTime(new Date(e.start))}</span>`}
+          <span class="agenda-month-evt-title">${this._esc(e.title)}</span>
+        </div>`).join('');
       if (items.length > MAX) {
         evHtml += `<div class="agenda-month-more" data-more="${k}">+ ${items.length - MAX} de plus</div>`;
       }
@@ -406,6 +435,7 @@ window.Agenda = {
       html += `<div class="${cls.join(' ')}" data-date="${k}">
         <div class="agenda-month-num">${cur.getDate()}</div>
         <div class="agenda-month-evts">${evHtml}</div>
+        ${this._renderPubRow(k, { compact: true })}
       </div>`;
       cur.setDate(cur.getDate() + 1);
     }
@@ -451,7 +481,7 @@ window.Agenda = {
     });
     headHtml += '</div>';
 
-    /* Ligne "toute la journée" */
+    /* Ligne "toute la journée" + rangée Publications par jour */
     let allDayHtml = `<div class="agenda-tg-allday">
       <div class="agenda-tg-allday-label">Toute la<br>journée</div>`;
     days.forEach(d => {
@@ -462,14 +492,8 @@ window.Agenda = {
             && ee >= new Date(d.getFullYear(), d.getMonth(), d.getDate());
       });
       allDayHtml += `<div class="agenda-tg-allday-col" data-date="${k}">
-        ${items.map(e => {
-          const isPub = e.source === 'pubcal';
-          const pubBadge = isPub && e.pubCategory
-            ? `<span class="agenda-pub-tag agenda-pub-tag--solid" style="background:${e.pubCategory.color}" title="${this._esc(e.pubCategory.label)}">${e.pubCategory.short}</span>`
-            : '';
-          const label = isPub ? (e.clientName || e.title) : e.title;
-          return `<div class="agenda-tg-allday-evt${isPub ? ' is-pub' : ''}" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}">${pubBadge}<span class="agenda-tg-allday-evt-text">${this._esc(label)}</span></div>`;
-        }).join('')}
+        ${this._renderPubRow(k)}
+        ${items.map(e => `<div class="agenda-tg-allday-evt" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}"><span class="agenda-tg-allday-evt-text">${this._esc(e.title)}</span></div>`).join('')}
       </div>`;
     });
     allDayHtml += '</div>';
@@ -907,19 +931,10 @@ window.Agenda = {
       b.addEventListener('click', () => this.setView(b.dataset.view));
     });
 
-    /* Cases à cocher des calendriers et sous-filtres clients */
-    const calListEl = document.getElementById('agendaCalList');
-    calListEl?.addEventListener('change', e => {
+    /* Cases à cocher des calendriers */
+    document.getElementById('agendaCalList')?.addEventListener('change', e => {
       const cb = e.target.closest('input[type="checkbox"]');
-      if (!cb) return;
-      if (cb.dataset.pubClient) this.togglePubClient(cb.dataset.pubClient);
-      else if (cb.dataset.id)   this.toggleCalendar(cb.dataset.id);
-    });
-    calListEl?.addEventListener('click', e => {
-      const btn = e.target.closest('[data-pub-action]');
-      if (!btn) return;
-      e.preventDefault();
-      this.setAllPubClients(btn.dataset.pubAction === 'all');
+      if (cb && cb.dataset.id) this.toggleCalendar(cb.dataset.id);
     });
 
     /* Mini-calendrier */
@@ -947,8 +962,15 @@ window.Agenda = {
       else if (k === 'n')              { this.openEditor(null, { date: this._fmtDateInput(this._date), hour: 9 }); e.preventDefault(); }
     });
 
-    /* Délégation sur la grille (slots, cellules mois, évènements) */
+    /* Délégation sur la grille (slots, cellules mois, évènements, pub) */
     document.getElementById('agendaGrid')?.addEventListener('click', e => {
+      /* Case Publication */
+      const pubCell = e.target.closest('[data-pub-toggle]');
+      if (pubCell) {
+        e.stopPropagation();
+        this.togglePubCell(pubCell.dataset.client, pubCell.dataset.date);
+        return;
+      }
       const evt = e.target.closest('[data-evt]');
       if (evt) { this.openEditor(evt.dataset.evt); return; }
       const more = e.target.closest('[data-more]');
@@ -959,7 +981,7 @@ window.Agenda = {
         return;
       }
       const cell = e.target.closest('.agenda-month-cell');
-      if (cell && !e.target.closest('.agenda-month-evt')) {
+      if (cell && !e.target.closest('.agenda-month-evt') && !e.target.closest('.agenda-pub-row')) {
         this.openEditor(null, { date: cell.dataset.date, hour: 9 });
         return;
       }
