@@ -1,43 +1,38 @@
 /* ================================================================
-   THE HOUSE — todo.js  (v3 : inspiré Google Tasks)
-   - Dates d'échéance + filtres (Tout/Aujourd'hui/Semaine/En retard)
-   - Sous-tâches
-   - Panneau détails (slide-in)
-   - Récurrence (daily/weekly/monthly/yearly)
-   - Drag & drop pour ordre manuel
-   - Section "Terminées" repliable
-   - Lien tâche ↔ projet Kanban
-   - Raccourcis clavier
-   - Toggle densité (compact / confortable)
+   THE HOUSE — todo.js  (v4 : refonte intégrale)
+
+   Inspirée Google Tasks. Système de classes propre, sans héritage
+   de l'ancien design. Voir style.css pour la nomenclature.
    ================================================================ */
 
 'use strict';
 
 window.TodoList = {
 
-  KEY:        'th_todos',
-  KEY_CATS:   'th_todo_cats',
-  KEY_PREFS:  'th_todo_prefs',
+  /* ── Storage keys ────────────────────────────────────────────── */
+  KEY:       'th_todos',
+  KEY_CATS:  'th_todo_cats',
+  KEY_PREFS: 'th_todo_prefs',
 
+  /* ── Palette ─────────────────────────────────────────────────── */
   CAT_COLORS: [
     '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#3B82F6',
     '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#84CC16',
   ],
-  PRIORITY_COLOR: '#EAB308',
-  UNCAT_COLOR:    '#94A3B8',
+  PRIO_COLOR:  '#EAB308',
+  UNCAT_COLOR: '#94A3B8',
 
-  /* ── État UI (non persisté entre sessions sauf prefs) ────────── */
-  _filter:        'all',        // all | today | week | late
-  _detailOpenId:  null,
-  _doneExpanded:  false,
-  _dragId:        null,
+  /* ── État UI ─────────────────────────────────────────────────── */
+  _filter:       'all',
+  _doneOpen:     false,
+  _detailId:     null,
+  _dragId:       null,
 
   /* ── Persistance ─────────────────────────────────────────────── */
   load() {
     try {
       const v = localStorage.getItem(this.KEY);
-      const arr = v !== null ? JSON.parse(v) : [];
-      return this._migrate(arr);
+      return this._migrate(v !== null ? JSON.parse(v) : []);
     } catch { return []; }
   },
   save(todos) {
@@ -62,311 +57,283 @@ window.TodoList = {
     try { localStorage.setItem(this.KEY_PREFS, JSON.stringify(p)); } catch(e) {}
   },
 
+  /* Migration silencieuse pour les anciennes versions */
   _migrate(arr) {
-    let changed = false;
+    let dirty = false;
     arr.forEach((t, i) => {
-      if (t.notes        === undefined) { t.notes = '';        changed = true; }
-      if (t.dueDate      === undefined) { t.dueDate = '';      changed = true; }
-      if (t.recurrence   === undefined) { t.recurrence = 'none'; changed = true; }
-      if (t.parentId     === undefined) { t.parentId = '';     changed = true; }
-      if (t.order        === undefined) { t.order = i;         changed = true; }
-      if (t.projectRef   === undefined) { t.projectRef = '';   changed = true; }
-      if (t.doneAt       === undefined) { t.doneAt = '';       changed = true; }
+      if (t.notes      === undefined) { t.notes = '';        dirty = true; }
+      if (t.dueDate    === undefined) { t.dueDate = '';      dirty = true; }
+      if (t.recurrence === undefined) { t.recurrence = 'none'; dirty = true; }
+      if (t.parentId   === undefined) { t.parentId = '';     dirty = true; }
+      if (t.order      === undefined) { t.order = i;         dirty = true; }
+      if (t.projectRef === undefined) { t.projectRef = '';   dirty = true; }
+      if (t.doneAt     === undefined) { t.doneAt = '';       dirty = true; }
     });
-    if (changed) this.save(arr);
+    if (dirty) this.save(arr);
     return arr;
   },
 
   /* ── Helpers date ────────────────────────────────────────────── */
-  _today() {
-    const d = new Date(); d.setHours(0,0,0,0); return d;
+  _today() { const d = new Date(); d.setHours(0,0,0,0); return d; },
+  _parse(s) { if (!s) return null; const d = new Date(s + 'T00:00:00'); return isNaN(d) ? null : d; },
+  _isToday(s) { const d = this._parse(s); return d && d.getTime() === this._today().getTime(); },
+  _isLate(s)  { const d = this._parse(s); return d && d.getTime() <  this._today().getTime(); },
+  _isWeek(s)  {
+    const d = this._parse(s); if (!d) return false;
+    const t = this._today(); const e = new Date(t); e.setDate(e.getDate() + 7);
+    return d >= t && d <= e;
   },
-  _parseDate(s) {
-    if (!s) return null;
-    const d = new Date(s + 'T00:00:00');
-    return isNaN(d) ? null : d;
-  },
-  _isToday(s)    { const d = this._parseDate(s); if (!d) return false; return d.getTime() === this._today().getTime(); },
-  _isLate(s)     { const d = this._parseDate(s); if (!d) return false; return d.getTime() <  this._today().getTime(); },
-  _isThisWeek(s) {
-    const d = this._parseDate(s); if (!d) return false;
-    const today = this._today();
-    const end = new Date(today); end.setDate(end.getDate() + 7);
-    return d.getTime() >= today.getTime() && d.getTime() <= end.getTime();
-  },
-  _formatDateBadge(s) {
-    const d = this._parseDate(s); if (!d) return '';
-    const today = this._today();
-    const diff  = Math.round((d - today) / 86400000);
-    if (diff === 0)  return "Aujourd'hui";
-    if (diff === 1)  return 'Demain';
-    if (diff === -1) return 'Hier';
-    if (diff > 0 && diff < 7)   return d.toLocaleDateString('fr-FR', { weekday: 'long' });
-    if (diff < 0 && diff > -7)  return `Il y a ${-diff}j`;
+  _fmtBadge(s) {
+    const d = this._parse(s); if (!d) return '';
+    const diff = Math.round((d - this._today()) / 86400000);
+    if (diff === 0)   return "Aujourd'hui";
+    if (diff === 1)   return 'Demain';
+    if (diff === -1)  return 'Hier';
+    if (diff > 1  && diff < 7)  return d.toLocaleDateString('fr-FR', { weekday: 'long' });
+    if (diff < -1 && diff > -7) return `Il y a ${-diff}j`;
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   },
-  _nextRecurrence(dateStr, recurrence) {
-    if (!dateStr || recurrence === 'none') return '';
-    const d = this._parseDate(dateStr); if (!d) return '';
-    if (recurrence === 'daily')   d.setDate(d.getDate() + 1);
-    if (recurrence === 'weekly')  d.setDate(d.getDate() + 7);
-    if (recurrence === 'monthly') d.setMonth(d.getMonth() + 1);
-    if (recurrence === 'yearly')  d.setFullYear(d.getFullYear() + 1);
+  _nextDate(dateStr, recur) {
+    const d = this._parse(dateStr); if (!d || recur === 'none') return '';
+    if (recur === 'daily')   d.setDate(d.getDate() + 1);
+    if (recur === 'weekly')  d.setDate(d.getDate() + 7);
+    if (recur === 'monthly') d.setMonth(d.getMonth() + 1);
+    if (recur === 'yearly')  d.setFullYear(d.getFullYear() + 1);
     return d.toISOString().slice(0, 10);
   },
 
-  /* ── Helpers projets Kanban ──────────────────────────────────── */
-  _allProjects() {
+  /* ── Projets Kanban ──────────────────────────────────────────── */
+  _projects() {
     if (!window.App || !App.CLIENTS) return [];
     const out = [];
     App.CLIENTS.forEach(c => {
-      const projects = App.load(`${App.KEYS.PROJECTS}_${c.id}`, []);
-      projects.forEach(p => out.push({
+      const arr = App.load(`${App.KEYS.PROJECTS}_${c.id}`, []);
+      arr.forEach(p => out.push({
         id: p.id, name: p.name || p.title || '(sans nom)',
-        clientId: c.id, clientName: c.name, clientColor: c.color,
+        clientName: c.name, clientColor: c.color,
       }));
     });
     return out;
   },
   _projectById(refId) {
     if (!refId) return null;
-    return this._allProjects().find(p => p.id === refId) || null;
+    return this._projects().find(p => p.id === refId) || null;
   },
 
-  /* ── Filtre + tri ────────────────────────────────────────────── */
-  _applyFilter(todos) {
-    const f = this._filter;
-    if (f === 'all')   return todos;
-    if (f === 'today') return todos.filter(t => this._isToday(t.dueDate));
-    if (f === 'week')  return todos.filter(t => this._isThisWeek(t.dueDate));
-    if (f === 'late')  return todos.filter(t => this._isLate(t.dueDate) && !t.done);
-    return todos;
+  /* ── Échappement HTML ────────────────────────────────────────── */
+  _esc(s) {
+    return window.escHtml ? escHtml(s)
+      : String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   },
 
-  _sortRoots(roots) {
-    return roots.slice().sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority ? -1 : 1;
-      return (a.order ?? 0) - (b.order ?? 0);
-    });
-  },
-
-  _counts(todos) {
-    return {
-      all:   todos.filter(t => !t.parentId && !t.done).length,
-      today: todos.filter(t => !t.parentId && !t.done && this._isToday(t.dueDate)).length,
-      week:  todos.filter(t => !t.parentId && !t.done && this._isThisWeek(t.dueDate)).length,
-      late:  todos.filter(t => !t.parentId && !t.done && this._isLate(t.dueDate)).length,
-    };
-  },
+  /* ── ID unique ───────────────────────────────────────────────── */
+  _uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); },
 
   /* ── Rendu principal ─────────────────────────────────────────── */
   render() {
-    const todos   = this.load();
-    const cats    = this.loadCats();
-    const prefs   = this.loadPrefs();
-    const list    = document.getElementById('todoList');
-    const counter = document.getElementById('todo-counter');
-    const footer  = document.getElementById('todoFooter');
-    const hero    = document.getElementById('todo-hero');
-    if (!list) return;
+    const todos = this.load();
+    const cats  = this.loadCats();
+    const prefs = this.loadPrefs();
+    const $list = document.getElementById('todoList');
+    if (!$list) return;
 
     /* Densité */
-    if (hero) hero.dataset.density = prefs.density || 'comfort';
+    const hero = document.getElementById('todoHero');
+    if (hero) hero.dataset.density = prefs.density;
 
-    /* Compteur global (non terminées, hors sous-tâches) */
-    const remaining = todos.filter(t => !t.done && !t.parentId).length;
-    if (counter) counter.textContent = `${remaining} restante(s)`;
-
-    /* Compteurs des filtres */
-    const counts = this._counts(todos);
+    /* Compteurs */
+    const counts = {
+      all:   todos.filter(t => !t.parentId && !t.done).length,
+      today: todos.filter(t => !t.parentId && !t.done && this._isToday(t.dueDate)).length,
+      week:  todos.filter(t => !t.parentId && !t.done && this._isWeek(t.dueDate)).length,
+      late:  todos.filter(t => !t.parentId && !t.done && this._isLate(t.dueDate)).length,
+    };
+    const $counter = document.getElementById('todoCounter');
+    if ($counter) $counter.textContent = `${counts.all} restante(s)`;
     document.querySelectorAll('.todo-filter-count').forEach(el => {
-      const k = el.dataset.count;
-      el.textContent = counts[k] || 0;
+      el.textContent = counts[el.dataset.count] || 0;
     });
-
-    /* Select catégories (champ d'ajout) */
-    const catSelect = document.getElementById('todoCatSelect');
-    if (catSelect) {
-      const currentVal = catSelect.value || '';
-      catSelect.innerHTML = '<option value="">Sans étiquette</option>' +
-        cats.map(c => `<option value="${c.id}" ${c.id === currentVal ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('');
-    }
-
-    /* Index */
-    const catById = {}; cats.forEach(c => { catById[c.id] = c; });
-
-    /* Séparer racines / sous-tâches, en cours / terminées */
-    const filtered = this._applyFilter(todos);
-    const rootsActive = filtered.filter(t => !t.parentId && !t.done);
-    const rootsDone   = todos.filter(t => !t.parentId && t.done);
-    const subsByParent = {};
-    todos.forEach(t => {
-      if (t.parentId) {
-        (subsByParent[t.parentId] = subsByParent[t.parentId] || []).push(t);
-      }
-    });
-    Object.values(subsByParent).forEach(arr => arr.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
-
-    /* Liste active */
-    const sortedRoots = this._sortRoots(rootsActive);
-    if (sortedRoots.length === 0) {
-      const empties = {
-        all:   { t: 'Aucune tâche pour le moment',   s: 'Ajoutez une tâche ci-dessus pour commencer.' },
-        today: { t: "Rien à faire aujourd'hui",      s: 'Profitez-en !' },
-        week:  { t: 'Aucune tâche cette semaine',    s: 'Pensez à planifier vos prochaines actions.' },
-        late:  { t: 'Aucune tâche en retard',        s: 'Bravo, tout est sous contrôle.' },
-      };
-      const e = empties[this._filter] || empties.all;
-      list.innerHTML = `<div class="todo-empty-state">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        <p>${e.t}</p><p class="todo-empty-sub">${e.s}</p>
-      </div>`;
-    } else {
-      list.innerHTML = sortedRoots.map(t => this._renderItem(t, catById, subsByParent[t.id] || [])).join('');
-    }
-
-    /* Section terminées repliable */
-    const doneSection = document.getElementById('todoDoneSection');
-    const doneListEl  = document.getElementById('todoDoneList');
-    const doneCountEl = document.getElementById('todoDoneCount');
-    const doneChevron = document.querySelector('.todo-done-chevron');
-    if (doneSection) {
-      if (rootsDone.length === 0) {
-        doneSection.style.display = 'none';
-      } else {
-        doneSection.style.display = 'block';
-        doneCountEl.textContent = rootsDone.length;
-        doneListEl.style.display = this._doneExpanded ? 'flex' : 'none';
-        if (doneChevron) doneChevron.style.transform = this._doneExpanded ? 'rotate(90deg)' : 'rotate(0deg)';
-        const doneSorted = rootsDone.slice().sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''));
-        doneListEl.innerHTML = doneSorted.map(t => this._renderItem(t, catById, subsByParent[t.id] || [])).join('');
-      }
-    }
-
-    /* Footer "Supprimer terminées" */
-    if (footer) footer.style.display = rootsDone.length > 0 ? 'flex' : 'none';
-
-    /* Mettre à jour les filtres actifs */
     document.querySelectorAll('.todo-filter').forEach(b => {
       b.classList.toggle('active', b.dataset.filter === this._filter);
     });
 
-    /* Rafraîchir le panneau s'il est ouvert */
-    if (this._detailOpenId) {
-      const open = todos.find(t => t.id === this._detailOpenId);
+    /* Sélecteur catégorie du champ d'ajout */
+    const $catSel = document.getElementById('todoCatSelect');
+    if ($catSel) {
+      const cur = $catSel.value || '';
+      $catSel.innerHTML = '<option value="">Sans étiquette</option>' +
+        cats.map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('');
+    }
+
+    /* Index */
+    const catById = {}; cats.forEach(c => { catById[c.id] = c; });
+    const subsByParent = {};
+    todos.forEach(t => {
+      if (t.parentId) (subsByParent[t.parentId] = subsByParent[t.parentId] || []).push(t);
+    });
+    Object.values(subsByParent).forEach(a => a.sort((x, y) => (x.order ?? 0) - (y.order ?? 0)));
+
+    /* Filtre + tri actives */
+    const filtered = this._applyFilter(todos);
+    const active = filtered.filter(t => !t.parentId && !t.done)
+                           .sort((a, b) => {
+                             if (a.priority !== b.priority) return a.priority ? -1 : 1;
+                             return (a.order ?? 0) - (b.order ?? 0);
+                           });
+    const done = todos.filter(t => !t.parentId && t.done)
+                      .sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''));
+
+    /* Liste active */
+    if (active.length === 0) {
+      $list.innerHTML = this._renderEmpty();
+    } else {
+      $list.innerHTML = active.map(t => this._renderItem(t, catById, subsByParent[t.id] || [])).join('');
+    }
+
+    /* Section terminées */
+    const $block   = document.getElementById('todoDoneBlock');
+    const $doneList = document.getElementById('todoDoneList');
+    const $doneCount = document.getElementById('todoDoneCount');
+    const $tog       = document.getElementById('todoDoneToggle');
+    const $clearRow  = document.getElementById('todoClearDoneRow');
+    if ($block) {
+      if (done.length === 0) {
+        $block.style.display = 'none';
+      } else {
+        $block.style.display = 'block';
+        if ($doneCount) $doneCount.textContent = done.length;
+        if ($tog) $tog.setAttribute('aria-expanded', this._doneOpen ? 'true' : 'false');
+        if ($doneList) {
+          $doneList.style.display = this._doneOpen ? 'flex' : 'none';
+          $doneList.innerHTML = done.map(t => this._renderItem(t, catById, subsByParent[t.id] || [])).join('');
+        }
+        if ($clearRow) $clearRow.style.display = this._doneOpen ? 'flex' : 'none';
+      }
+    }
+
+    /* Refresh panneau */
+    if (this._detailId) {
+      const open = todos.find(t => t.id === this._detailId);
       if (!open) this.closeDetail();
       else this._fillDetail(open);
     }
   },
 
-  _renderItem(t, catById, subs) {
-    const cat = t.catId ? catById[t.catId] : null;
-    const color = t.priority ? this.PRIORITY_COLOR : (cat ? cat.color : this.UNCAT_COLOR);
-    const labelText = t.priority ? 'Priorité ultime' : (cat ? cat.name : 'Sans étiquette');
-    const subTotal = subs.length;
-    const subDone  = subs.filter(s => s.done).length;
-    const project  = t.projectRef ? this._projectById(t.projectRef) : null;
+  _applyFilter(todos) {
+    if (this._filter === 'all')   return todos;
+    if (this._filter === 'today') return todos.filter(t => this._isToday(t.dueDate));
+    if (this._filter === 'week')  return todos.filter(t => this._isWeek(t.dueDate));
+    if (this._filter === 'late')  return todos.filter(t => this._isLate(t.dueDate) && !t.done);
+    return todos;
+  },
 
-    /* Badge date */
-    let dateBadge = '';
+  _renderEmpty() {
+    const msg = {
+      all:   { t: 'Aucune tâche pour le moment',  s: 'Ajoutez une tâche ci-dessus pour commencer.' },
+      today: { t: "Rien à faire aujourd'hui",     s: 'Profitez-en !' },
+      week:  { t: 'Aucune tâche cette semaine',   s: 'Pensez à planifier vos prochaines actions.' },
+      late:  { t: 'Aucune tâche en retard',       s: 'Bravo, tout est sous contrôle.' },
+    }[this._filter] || { t: 'Aucune tâche', s: '' };
+    return `<div class="todo-empty">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <p>${msg.t}</p><p class="sub">${msg.s}</p>
+    </div>`;
+  },
+
+  _renderItem(t, catById, subs) {
+    const cat   = t.catId ? catById[t.catId] : null;
+    const color = t.priority ? this.PRIO_COLOR : (cat ? cat.color : this.UNCAT_COLOR);
+    const tagText = t.priority ? 'Priorité ultime' : (cat ? cat.name : 'Sans étiquette');
+    const project = t.projectRef ? this._projectById(t.projectRef) : null;
+
+    /* Badges meta */
+    let badges = '';
     if (t.dueDate) {
-      const isLate  = this._isLate(t.dueDate)  && !t.done;
-      const isToday = this._isToday(t.dueDate) && !t.done;
-      const cls = isLate ? 'todo-date-badge late' : isToday ? 'todo-date-badge today' : 'todo-date-badge';
-      dateBadge = `<span class="${cls}" title="Échéance">
+      const late = this._isLate(t.dueDate) && !t.done;
+      const today = this._isToday(t.dueDate) && !t.done;
+      const mod = late ? ' todo-badge--late' : (today ? ' todo-badge--today' : '');
+      badges += `<span class="todo-badge${mod}" title="Échéance">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        ${this._formatDateBadge(t.dueDate)}
+        ${this._fmtBadge(t.dueDate)}
       </span>`;
     }
+    if (t.recurrence && t.recurrence !== 'none') {
+      badges += `<span class="todo-badge todo-badge--icon" title="Tâche récurrente"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>`;
+    }
+    if (subs.length > 0) {
+      const done = subs.filter(s => s.done).length;
+      badges += `<span class="todo-badge" title="${done}/${subs.length} sous-tâches">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        ${done}/${subs.length}
+      </span>`;
+    }
+    if (t.notes) {
+      badges += `<span class="todo-badge todo-badge--icon" title="Cette tâche a des notes"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg></span>`;
+    }
 
-    /* Récurrence */
-    const recurBadge = (t.recurrence && t.recurrence !== 'none')
-      ? `<span class="todo-recur-badge" title="Tâche récurrente"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>`
-      : '';
-
-    /* Sous-tâches counter */
-    const subBadge = subTotal > 0
-      ? `<span class="todo-sub-badge" title="${subDone}/${subTotal} sous-tâches">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          ${subDone}/${subTotal}
-        </span>`
-      : '';
-
-    /* Projet lié */
     const projectChip = project
-      ? `<span class="todo-project-chip" style="--c:${project.clientColor || '#64748b'}" title="${this._esc(project.clientName)} · ${this._esc(project.name)}">
+      ? `<span class="todo-project" style="--pc:${project.clientColor || '#64748b'}" title="${this._esc(project.clientName)} · ${this._esc(project.name)}">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
           ${this._esc(project.name)}
         </span>`
       : '';
 
-    const notesIcon = t.notes
-      ? `<span class="todo-notes-icon" title="Cette tâche a des notes"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="14" y2="18"/></svg></span>`
-      : '';
-
-    const subItems = subs.map(s => `
-      <div class="todo-sub-item${s.done ? ' todo-done' : ''}" data-id="${s.id}">
-        <button class="todo-check todo-sub-check" data-id="${s.id}" aria-label="Cocher">
+    const subRows = subs.map(s => `
+      <div class="todo-sub${s.done ? ' is-done' : ''}" data-id="${s.id}">
+        <button class="todo-sub-check" data-action="toggle" data-id="${s.id}" aria-label="Cocher">
           ${s.done
-            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="5" fill="currentColor"/><polyline points="7 13 10 16 17 9" stroke="#fff" stroke-width="2.5"/></svg>'
+            ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><polyline points="7 13 10 16 17 9" stroke="#fff" stroke-width="2.5" fill="none"/></svg>'
             : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>'
           }
         </button>
-        <span class="todo-sub-text">${this._esc(s.text)}</span>
-        <button class="todo-del todo-sub-del" data-id="${s.id}" aria-label="Supprimer">
+        <span class="todo-sub-title">${this._esc(s.text)}</span>
+        <button class="todo-sub-del" data-action="del" data-id="${s.id}" aria-label="Supprimer">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`).join('');
 
     return `
-      <div class="todo-item${t.done ? ' todo-done' : ''}${t.priority ? ' todo-item-priority' : ''}"
+      <div class="todo-item${t.done ? ' is-done' : ''}${t.priority ? ' is-priority' : ''}"
            data-id="${t.id}" draggable="true" style="--cat-color:${color}">
-        <div class="todo-item-main">
-          <span class="todo-drag-handle" title="Glisser pour réordonner">
+        <div class="todo-row">
+          <span class="todo-grip" title="Glisser pour réordonner">
             <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2" cy="2" r="1.3"/><circle cx="2" cy="7" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="8" cy="2" r="1.3"/><circle cx="8" cy="7" r="1.3"/><circle cx="8" cy="12" r="1.3"/></svg>
           </span>
-          <button class="todo-check" data-id="${t.id}" aria-label="Cocher">
+          <button class="todo-check" data-action="toggle" data-id="${t.id}" aria-label="Cocher">
             ${t.done
-              ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="5" fill="var(--cat-color)" stroke="var(--cat-color)"/><polyline points="7 13 10 16 17 9" stroke="#fff" stroke-width="2.5"/></svg>'
+              ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="5"/><polyline points="7 13 10 16 17 9" stroke="#fff" stroke-width="2.5" fill="none"/></svg>'
               : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>'
             }
           </button>
-          <span class="todo-text" data-detail="${t.id}">${this._esc(t.text)}</span>
-          <div class="todo-meta-badges">
-            ${dateBadge}
-            ${recurBadge}
-            ${subBadge}
-            ${notesIcon}
-          </div>
+          <span class="todo-title" data-action="open" data-id="${t.id}">${this._esc(t.text)}</span>
+          <div class="todo-meta">${badges}</div>
           ${projectChip}
-          <span class="todo-tag" title="${this._esc(labelText)}">
+          <span class="todo-tag">
             ${t.priority ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="margin-right:4px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' : ''}
-            ${this._esc(labelText)}
+            ${this._esc(tagText)}
           </span>
-          <button class="todo-prio-btn${t.priority ? ' active' : ''}" data-id="${t.id}" title="${t.priority ? 'Retirer de la priorité' : 'Priorité ultime'}">
+          <button class="todo-action todo-action--prio${t.priority ? ' is-active' : ''}"
+                  data-action="prio" data-id="${t.id}" title="${t.priority ? 'Retirer de la priorité' : 'Priorité ultime'}">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="${t.priority ? '#EAB308' : 'none'}" stroke="${t.priority ? '#EAB308' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </button>
-          <button class="todo-add-sub" data-parent="${t.id}" title="Ajouter une sous-tâche">
+          <button class="todo-action todo-action--sub" data-action="addsub" data-id="${t.id}" title="Ajouter une sous-tâche">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><line x1="16" y1="3" x2="22" y2="3" stroke-width="2.5"/><line x1="19" y1="0" x2="19" y2="6" stroke-width="2.5"/></svg>
           </button>
-          <button class="todo-del" data-id="${t.id}" aria-label="Supprimer">
+          <button class="todo-action todo-action--del" data-action="del" data-id="${t.id}" aria-label="Supprimer">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        ${subTotal > 0 ? `<div class="todo-subs">${subItems}</div>` : ''}
+        ${subs.length > 0 ? `<div class="todo-subs">${subRows}</div>` : ''}
       </div>`;
   },
 
-  _esc(s) { return window.escHtml ? escHtml(s) : String(s == null ? '' : s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); },
-
-  /* ── CRUD tâches ─────────────────────────────────────────────── */
+  /* ── CRUD ────────────────────────────────────────────────────── */
   add(text, catId, parentId) {
     if (!text.trim()) return null;
     const todos = this.load();
-    const order = parentId
-      ? Math.max(-1, ...todos.filter(t => t.parentId === parentId).map(t => t.order ?? 0)) + 1
-      : Math.max(-1, ...todos.filter(t => !t.parentId).map(t => t.order ?? 0)) + 1;
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const sibs = todos.filter(t => (parentId ? t.parentId === parentId : !t.parentId));
+    const order = Math.max(-1, ...sibs.map(t => t.order ?? 0)) + 1;
+    const id = this._uid();
     todos.push({
       id, text: text.trim(), notes: '',
       done: false, doneAt: '',
@@ -388,23 +355,21 @@ window.TodoList = {
     item.done = !item.done;
     item.doneAt = item.done ? new Date().toISOString() : '';
 
-    /* Récurrence : à la complétion, recréer une instance à la prochaine date */
-    if (item.done && item.recurrence && item.recurrence !== 'none' && item.dueDate && !item.parentId) {
-      const nextDate = this._nextRecurrence(item.dueDate, item.recurrence);
-      if (nextDate) {
-        const newId = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    /* Récurrence : duplique à la prochaine date */
+    if (item.done && item.recurrence !== 'none' && item.dueDate && !item.parentId) {
+      const next = this._nextDate(item.dueDate, item.recurrence);
+      if (next) {
+        const rootOrder = Math.max(-1, ...todos.filter(t => !t.parentId).map(t => t.order ?? 0)) + 1;
         todos.push({
-          ...item,
-          id: newId,
+          ...item, id: this._uid(),
           done: false, doneAt: '',
-          dueDate: nextDate,
-          order: Math.max(-1, ...todos.filter(t => !t.parentId).map(t => t.order ?? 0)) + 1,
+          dueDate: next, order: rootOrder,
           createdAt: new Date().toISOString(),
         });
       }
     }
 
-    /* Si parent coché : cocher toutes les sous-tâches */
+    /* Propagation parent → sous-tâches */
     if (!item.parentId) {
       todos.forEach(s => {
         if (s.parentId === id) { s.done = item.done; s.doneAt = item.done ? new Date().toISOString() : ''; }
@@ -413,11 +378,10 @@ window.TodoList = {
       /* Si toutes les sous-tâches d'un parent sont done → cocher le parent */
       const subs = todos.filter(s => s.parentId === item.parentId);
       const parent = todos.find(t => t.id === item.parentId);
-      if (parent && subs.length > 0 && subs.every(s => s.done) && !parent.done) {
-        parent.done = true; parent.doneAt = new Date().toISOString();
-      }
-      if (parent && parent.done && subs.some(s => !s.done)) {
-        parent.done = false; parent.doneAt = '';
+      if (parent && subs.length > 0) {
+        const all = subs.every(s => s.done);
+        if (all && !parent.done) { parent.done = true;  parent.doneAt = new Date().toISOString(); }
+        if (!all && parent.done) { parent.done = false; parent.doneAt = ''; }
       }
     }
 
@@ -425,7 +389,7 @@ window.TodoList = {
     this.render();
   },
 
-  togglePriority(id) {
+  togglePrio(id) {
     const todos = this.load();
     const item = todos.find(t => t.id === id);
     if (!item || item.parentId) return;
@@ -442,41 +406,41 @@ window.TodoList = {
   remove(id) {
     const todos = this.load().filter(t => t.id !== id && t.parentId !== id);
     this.save(todos);
-    if (this._detailOpenId === id) this.closeDetail();
+    if (this._detailId === id) this.closeDetail();
     this.render();
   },
 
   clearDone() {
-    const doneIds = this.load().filter(t => t.done && !t.parentId).map(t => t.id);
-    const todos = this.load().filter(t => !doneIds.includes(t.id) && !doneIds.includes(t.parentId) && !(t.done && t.parentId));
+    const doneRootIds = this.load().filter(t => t.done && !t.parentId).map(t => t.id);
+    const todos = this.load().filter(t =>
+      !doneRootIds.includes(t.id) && !doneRootIds.includes(t.parentId) && !(t.done && t.parentId)
+    );
     this.save(todos);
     this.render();
   },
 
-  updateField(id, patch) {
+  patch(id, fields) {
     const todos = this.load();
     const item = todos.find(t => t.id === id);
     if (!item) return;
-    Object.assign(item, patch);
+    Object.assign(item, fields);
     this.save(todos);
     this.render();
   },
 
-  /* ── Ordre manuel (drag & drop) ──────────────────────────────── */
   reorder(dragId, targetId) {
     if (!dragId || dragId === targetId) return;
     const todos = this.load();
     const drag = todos.find(t => t.id === dragId);
     const target = todos.find(t => t.id === targetId);
-    if (!drag || !target) return;
-    if (drag.parentId !== target.parentId) return; // pas d'inter-niveau
-    const siblings = todos.filter(t => t.parentId === drag.parentId && !t.done && !t.priority)
-                          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const idsWithoutDrag = siblings.filter(t => t.id !== dragId).map(t => t.id);
-    const targetIdx = idsWithoutDrag.indexOf(targetId);
-    if (targetIdx < 0) return;
-    idsWithoutDrag.splice(targetIdx, 0, dragId);
-    idsWithoutDrag.forEach((id, i) => {
+    if (!drag || !target || drag.parentId !== target.parentId) return;
+    const sibs = todos.filter(t => t.parentId === drag.parentId && !t.done && !t.priority)
+                      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const ids = sibs.filter(t => t.id !== dragId).map(t => t.id);
+    const idx = ids.indexOf(targetId);
+    if (idx < 0) return;
+    ids.splice(idx, 0, dragId);
+    ids.forEach((id, i) => {
       const t = todos.find(x => x.id === id);
       if (t) t.order = i;
     });
@@ -488,126 +452,115 @@ window.TodoList = {
   addCategory(name, color) {
     if (!name.trim()) return;
     const cats = this.loadCats();
-    const c = color || this.CAT_COLORS[cats.length % this.CAT_COLORS.length];
     cats.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-      name: name.trim(), color: c,
+      id: this._uid(), name: name.trim(),
+      color: color || this.CAT_COLORS[cats.length % this.CAT_COLORS.length],
     });
     this.saveCats(cats);
     this.render();
   },
-  renameCategory(catId, newName) {
+  renameCategory(id, name) {
     const cats = this.loadCats();
-    const c = cats.find(x => x.id === catId);
-    if (!c || !newName.trim()) return;
-    c.name = newName.trim();
+    const c = cats.find(x => x.id === id);
+    if (!c || !name.trim()) return;
+    c.name = name.trim();
     this.saveCats(cats);
     this.render();
   },
-  recolorCategory(catId, newColor) {
+  recolorCategory(id, color) {
     const cats = this.loadCats();
-    const c = cats.find(x => x.id === catId);
+    const c = cats.find(x => x.id === id);
     if (!c) return;
-    c.color = newColor;
+    c.color = color;
     this.saveCats(cats);
     this.render();
   },
-  deleteCategory(catId) {
-    const cats = this.loadCats().filter(c => c.id !== catId);
+  deleteCategory(id) {
+    const cats = this.loadCats().filter(c => c.id !== id);
     this.saveCats(cats);
     const todos = this.load();
-    todos.forEach(t => { if (t.catId === catId) t.catId = ''; });
+    todos.forEach(t => { if (t.catId === id) t.catId = ''; });
     this.save(todos);
     this.render();
   },
 
   /* ── Panneau détails ─────────────────────────────────────────── */
   openDetail(id) {
-    const todos = this.load();
-    const item = todos.find(t => t.id === id);
+    const item = this.load().find(t => t.id === id);
     if (!item) return;
-    this._detailOpenId = id;
-    const panel = document.getElementById('todoDetailPanel');
-    const overlay = document.getElementById('todoDetailOverlay');
-    if (panel)   { panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); }
-    if (overlay) { overlay.classList.add('open'); }
+    this._detailId = id;
+    const panel = document.getElementById('todoPanel');
+    const ov = document.getElementById('todoPanelOverlay');
+    if (panel) { panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); }
+    if (ov)    ov.classList.add('open');
     this._fillDetail(item);
-    setTimeout(() => {
-      const txt = document.getElementById('todoDetailText');
-      if (txt) txt.focus();
-    }, 50);
+    setTimeout(() => { const e = document.getElementById('todoPanelText'); if (e) e.focus(); }, 50);
   },
   closeDetail() {
-    this._detailOpenId = null;
-    const panel = document.getElementById('todoDetailPanel');
-    const overlay = document.getElementById('todoDetailOverlay');
-    if (panel)   { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
-    if (overlay) { overlay.classList.remove('open'); }
+    this._detailId = null;
+    const panel = document.getElementById('todoPanel');
+    const ov = document.getElementById('todoPanelOverlay');
+    if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
+    if (ov)    ov.classList.remove('open');
   },
-
   _fillDetail(item) {
     const cats = this.loadCats();
-    const projects = this._allProjects();
+    const projects = this._projects();
     const $ = id => document.getElementById(id);
 
-    $('todoDetailText').value       = item.text || '';
-    $('todoDetailNotes').value      = item.notes || '';
-    $('todoDetailDate').value       = item.dueDate || '';
-    $('todoDetailRecurrence').value = item.recurrence || 'none';
+    $('todoPanelText').value       = item.text || '';
+    $('todoPanelNotes').value      = item.notes || '';
+    $('todoPanelDate').value       = item.dueDate || '';
+    $('todoPanelRecurrence').value = item.recurrence || 'none';
 
-    const catSel = $('todoDetailCat');
-    catSel.innerHTML = '<option value="">Sans étiquette</option>' +
+    $('todoPanelCat').innerHTML = '<option value="">Sans étiquette</option>' +
       cats.map(c => `<option value="${c.id}" ${c.id === item.catId ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('');
 
-    const prSel = $('todoDetailProject');
-    prSel.innerHTML = '<option value="">Aucun</option>' +
+    $('todoPanelProject').innerHTML = '<option value="">Aucun</option>' +
       projects.map(p => `<option value="${p.id}" ${p.id === item.projectRef ? 'selected' : ''}>${this._esc(p.clientName)} · ${this._esc(p.name)}</option>`).join('');
 
-    /* Sous-tâches */
-    const todos = this.load();
-    const subs = todos.filter(t => t.parentId === item.id)
-                      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const subsEl = $('todoDetailSubs');
+    const subs = this.load().filter(t => t.parentId === item.id)
+                            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const $subs = $('todoPanelSubs');
     if (subs.length === 0) {
-      subsEl.innerHTML = '<p class="todo-detail-no-subs">Aucune sous-tâche</p>';
+      $subs.innerHTML = '<p class="todo-panel-no-subs">Aucune sous-tâche</p>';
     } else {
-      subsEl.innerHTML = subs.map(s => `
-        <div class="todo-detail-sub-row${s.done ? ' done' : ''}">
-          <button class="todo-detail-sub-check" data-id="${s.id}" aria-label="Cocher">
+      $subs.innerHTML = subs.map(s => `
+        <div class="todo-panel-sub${s.done ? ' is-done' : ''}">
+          <button class="todo-panel-sub-check" data-id="${s.id}" aria-label="Cocher">
             ${s.done
               ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><polyline points="7 13 10 16 17 9" stroke="#fff" stroke-width="2.5" fill="none"/></svg>'
               : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>'
             }
           </button>
-          <span class="todo-detail-sub-text">${this._esc(s.text)}</span>
-          <button class="todo-detail-sub-del" data-id="${s.id}" aria-label="Supprimer">
+          <span class="todo-panel-sub-title">${this._esc(s.text)}</span>
+          <button class="todo-panel-sub-del" data-id="${s.id}" aria-label="Supprimer">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>`).join('');
     }
-    $('todoDetailSubCount').textContent = subs.length > 0 ? `${subs.filter(s => s.done).length}/${subs.length}` : '';
+    const sc = $('todoPanelSubCount');
+    if (sc) sc.textContent = subs.length > 0 ? `${subs.filter(s => s.done).length}/${subs.length}` : '';
 
-    /* Méta */
     const meta = [];
     if (item.createdAt) meta.push(`Créée le ${new Date(item.createdAt).toLocaleDateString('fr-FR')}`);
     if (item.done && item.doneAt) meta.push(`Terminée le ${new Date(item.doneAt).toLocaleDateString('fr-FR')}`);
-    $('todoDetailMeta').textContent = meta.join(' · ');
+    $('todoPanelMeta').textContent = meta.join(' · ');
   },
-
   _commitDetail() {
-    if (!this._detailOpenId) return;
+    if (!this._detailId) return;
     const $ = id => document.getElementById(id);
-    this.updateField(this._detailOpenId, {
-      text:       $('todoDetailText').value,
-      notes:      $('todoDetailNotes').value,
-      dueDate:    $('todoDetailDate').value,
-      recurrence: $('todoDetailRecurrence').value,
-      catId:      $('todoDetailCat').value,
-      projectRef: $('todoDetailProject').value,
+    this.patch(this._detailId, {
+      text:       $('todoPanelText').value,
+      notes:      $('todoPanelNotes').value,
+      dueDate:    $('todoPanelDate').value,
+      recurrence: $('todoPanelRecurrence').value,
+      catId:      $('todoPanelCat').value,
+      projectRef: $('todoPanelProject').value,
     });
   },
 
-  /* ── Modale étiquettes (inchangée fonctionnellement) ─────────── */
+  /* ── Modale étiquettes ───────────────────────────────────────── */
   openCatsModal() {
     let modal = document.getElementById('todoCatsModal');
     if (!modal) {
@@ -621,9 +574,9 @@ window.TodoList = {
             <button class="modal-close" id="todoCatsModalClose">&times;</button>
           </div>
           <div class="modal-body">
-            <div class="todo-cats-add-row">
+            <div class="todo-cats-add">
               <input type="text" id="todoNewCatName" class="form-input" placeholder="Nom de l'étiquette…" />
-              <input type="color" id="todoNewCatColor" class="todo-color-input" value="#6366F1" title="Couleur" />
+              <input type="color" id="todoNewCatColor" class="todo-color" value="#6366F1" title="Couleur" />
               <button class="btn btn-primary btn-sm" id="todoNewCatAdd">Ajouter</button>
             </div>
             <div id="todoCatsList" class="todo-cats-list"></div>
@@ -634,11 +587,11 @@ window.TodoList = {
       modal.addEventListener('click', e => { if (e.target === modal) this.closeCatsModal(); });
       modal.querySelector('#todoCatsModalClose').addEventListener('click', () => this.closeCatsModal());
       modal.querySelector('#todoNewCatAdd').addEventListener('click', () => {
-        const nameEl  = modal.querySelector('#todoNewCatName');
-        const colorEl = modal.querySelector('#todoNewCatColor');
-        if (nameEl.value.trim()) {
-          this.addCategory(nameEl.value, colorEl.value);
-          nameEl.value = '';
+        const n = modal.querySelector('#todoNewCatName');
+        const c = modal.querySelector('#todoNewCatColor');
+        if (n.value.trim()) {
+          this.addCategory(n.value, c.value);
+          n.value = '';
           this._renderCatsList();
         }
       });
@@ -646,15 +599,14 @@ window.TodoList = {
         if (e.key === 'Enter') modal.querySelector('#todoNewCatAdd').click();
       });
       modal.querySelector('#todoCatsList').addEventListener('click', e => {
-        const delBtn = e.target.closest('.todo-cats-row-del');
-        if (delBtn && confirm('Supprimer cette étiquette ?')) {
-          this.deleteCategory(delBtn.dataset.id);
+        const d = e.target.closest('.todo-cats-row-del');
+        if (d && confirm('Supprimer cette étiquette ?')) {
+          this.deleteCategory(d.dataset.id);
           this._renderCatsList();
         }
       });
       modal.querySelector('#todoCatsList').addEventListener('input', e => {
-        const id = e.target.dataset.id;
-        if (!id) return;
+        const id = e.target.dataset.id; if (!id) return;
         if (e.target.classList.contains('todo-cats-row-name'))  this.renameCategory(id, e.target.value);
         if (e.target.classList.contains('todo-cats-row-color')) this.recolorCategory(id, e.target.value);
       });
@@ -663,8 +615,8 @@ window.TodoList = {
     this._renderCatsList();
   },
   closeCatsModal() {
-    const modal = document.getElementById('todoCatsModal');
-    if (modal) modal.style.display = 'none';
+    const m = document.getElementById('todoCatsModal');
+    if (m) m.style.display = 'none';
   },
   _renderCatsList() {
     const wrap = document.getElementById('todoCatsList');
@@ -676,144 +628,134 @@ window.TodoList = {
     }
     wrap.innerHTML = cats.map(c => `
       <div class="todo-cats-row" style="--cat-color:${c.color}">
-        <input type="color" class="todo-cats-row-color todo-color-input" data-id="${c.id}" value="${c.color}" title="Couleur" />
-        <input type="text"  class="todo-cats-row-name form-input"        data-id="${c.id}" value="${this._esc(c.name)}" />
+        <input type="color" class="todo-cats-row-color todo-color" data-id="${c.id}" value="${c.color}" title="Couleur" />
+        <input type="text"  class="todo-cats-row-name form-input"   data-id="${c.id}" value="${this._esc(c.name)}" />
         <button class="todo-cats-row-del" data-id="${c.id}" title="Supprimer">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>`).join('');
   },
 
-  /* ── Init ────────────────────────────────────────────────────── */
+  /* ── Init : bindings ─────────────────────────────────────────── */
   init() {
     this.render();
 
-    const input    = document.getElementById('todoInput');
-    const addBtn   = document.getElementById('todoAddBtn');
-    const list     = document.getElementById('todoList');
-    const doneList = document.getElementById('todoDoneList');
-    const clearBtn = document.getElementById('todoClearDone');
-    const catsBtn  = document.getElementById('todoManageCatsBtn');
-    const densBtn  = document.getElementById('todoDensityBtn');
-    const filters  = document.getElementById('todoFilters');
-    const doneTog  = document.getElementById('todoDoneToggle');
+    const $ = id => document.getElementById(id);
+    const input    = $('todoInput');
+    const addBtn   = $('todoAddBtn');
+    const catSel   = $('todoCatSelect');
+    const list     = $('todoList');
+    const doneList = $('todoDoneList');
+    const clearBtn = $('todoClearDone');
+    const catsBtn  = $('todoCatsBtn');
+    const densBtn  = $('todoDensityBtn');
+    const filters  = $('todoFilters');
+    const doneTog  = $('todoDoneToggle');
 
     /* Ajout */
     const doAdd = () => {
-      const catSel = document.getElementById('todoCatSelect');
       this.add(input.value, catSel ? catSel.value : '');
       input.value = '';
       input.focus();
     };
-    if (addBtn) addBtn.addEventListener('click', doAdd);
-    if (input)  input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
+    addBtn && addBtn.addEventListener('click', doAdd);
+    input  && input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
 
-    /* Délégation clics sur liste */
-    const handleListClick = e => {
-      const checkBtn   = e.target.closest('.todo-check');
-      if (checkBtn) { this.toggle(checkBtn.dataset.id); return; }
-      const prioBtn    = e.target.closest('.todo-prio-btn');
-      if (prioBtn)  { this.togglePriority(prioBtn.dataset.id); return; }
-      const delBtn     = e.target.closest('.todo-del');
-      if (delBtn)   { this.remove(delBtn.dataset.id); return; }
-      const addSubBtn  = e.target.closest('.todo-add-sub');
-      if (addSubBtn) {
-        const text = prompt('Sous-tâche :');
-        if (text) this.add(text, '', addSubBtn.dataset.parent);
-        return;
+    /* Délégation : actions sur items */
+    const onItemClick = e => {
+      const el = e.target.closest('[data-action]');
+      if (!el) return;
+      const id = el.dataset.id;
+      const a  = el.dataset.action;
+      if (a === 'toggle') this.toggle(id);
+      else if (a === 'prio')   this.togglePrio(id);
+      else if (a === 'del')    this.remove(id);
+      else if (a === 'open')   this.openDetail(id);
+      else if (a === 'addsub') {
+        const txt = prompt('Sous-tâche :');
+        if (txt) this.add(txt, '', id);
       }
-      const titleEl = e.target.closest('[data-detail]');
-      if (titleEl)  { this.openDetail(titleEl.dataset.detail); return; }
     };
-    if (list)     list.addEventListener('click', handleListClick);
-    if (doneList) doneList.addEventListener('click', handleListClick);
+    list     && list.addEventListener('click', onItemClick);
+    doneList && doneList.addEventListener('click', onItemClick);
 
-    /* Drag & drop */
-    const setupDnD = container => {
-      if (!container) return;
-      container.addEventListener('dragstart', e => {
+    /* Drag & drop sur liste active */
+    if (list) {
+      list.addEventListener('dragstart', e => {
         const item = e.target.closest('.todo-item');
         if (!item) return;
         this._dragId = item.dataset.id;
         item.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
       });
-      container.addEventListener('dragend', e => {
+      list.addEventListener('dragend', e => {
         const item = e.target.closest('.todo-item');
         if (item) item.classList.remove('dragging');
         this._dragId = null;
-        container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        list.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
       });
-      container.addEventListener('dragover', e => {
+      list.addEventListener('dragover', e => {
         const item = e.target.closest('.todo-item');
         if (!item || item.dataset.id === this._dragId) return;
         e.preventDefault();
-        container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+        list.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
         item.classList.add('drag-over');
       });
-      container.addEventListener('drop', e => {
+      list.addEventListener('drop', e => {
         const item = e.target.closest('.todo-item');
         if (!item || !this._dragId) return;
         e.preventDefault();
         this.reorder(this._dragId, item.dataset.id);
       });
-    };
-    setupDnD(list);
+    }
 
     /* Filtres */
-    if (filters) {
-      filters.addEventListener('click', e => {
-        const btn = e.target.closest('.todo-filter');
-        if (!btn) return;
-        this._filter = btn.dataset.filter;
-        this.render();
-      });
-    }
+    filters && filters.addEventListener('click', e => {
+      const b = e.target.closest('.todo-filter');
+      if (!b) return;
+      this._filter = b.dataset.filter;
+      this.render();
+    });
 
-    /* Section terminées repliable */
-    if (doneTog) {
-      doneTog.addEventListener('click', () => {
-        this._doneExpanded = !this._doneExpanded;
-        doneTog.setAttribute('aria-expanded', this._doneExpanded ? 'true' : 'false');
-        this.render();
-      });
-    }
+    /* Terminées repliable */
+    doneTog && doneTog.addEventListener('click', () => {
+      this._doneOpen = !this._doneOpen;
+      this.render();
+    });
 
-    /* Footer */
-    if (clearBtn) clearBtn.addEventListener('click', () => {
+    /* Clear done */
+    clearBtn && clearBtn.addEventListener('click', () => {
       if (confirm('Supprimer toutes les tâches terminées ?')) this.clearDone();
     });
 
-    /* Boutons globaux */
-    if (catsBtn) catsBtn.addEventListener('click', () => this.openCatsModal());
-    if (densBtn) densBtn.addEventListener('click', () => {
+    /* Étiquettes / densité */
+    catsBtn && catsBtn.addEventListener('click', () => this.openCatsModal());
+    densBtn && densBtn.addEventListener('click', () => {
       const p = this.loadPrefs();
-      p.density = (p.density === 'compact') ? 'comfort' : 'compact';
+      p.density = p.density === 'compact' ? 'comfort' : 'compact';
       this.savePrefs(p);
       this.render();
     });
 
-    /* ── Panneau détails : événements ──────────────────────────── */
-    const $ = id => document.getElementById(id);
-    const closeBtn = $('todoDetailClose');
-    const overlay  = $('todoDetailOverlay');
-    const delBtn   = $('todoDetailDel');
-    const panel    = $('todoDetailPanel');
-    const subAdd   = $('todoDetailSubAddBtn');
-    const subInput = $('todoDetailSubInput');
-    const subsEl   = $('todoDetailSubs');
+    /* ── Panneau détails ───────────────────────────────────────── */
+    const panel = $('todoPanel');
+    const closeBtn = $('todoPanelClose');
+    const delBtn   = $('todoPanelDel');
+    const overlay  = $('todoPanelOverlay');
+    const subAdd   = $('todoPanelSubAddBtn');
+    const subIn    = $('todoPanelSubInput');
+    const subsEl   = $('todoPanelSubs');
 
-    if (closeBtn) closeBtn.addEventListener('click', () => { this._commitDetail(); this.closeDetail(); });
-    if (overlay)  overlay.addEventListener('click', () => { this._commitDetail(); this.closeDetail(); });
-    if (delBtn)   delBtn.addEventListener('click', () => {
-      if (this._detailOpenId && confirm('Supprimer cette tâche ?')) this.remove(this._detailOpenId);
+    closeBtn && closeBtn.addEventListener('click', () => { this._commitDetail(); this.closeDetail(); });
+    overlay  && overlay.addEventListener('click',  () => { this._commitDetail(); this.closeDetail(); });
+    delBtn   && delBtn.addEventListener('click',   () => {
+      if (this._detailId && confirm('Supprimer cette tâche ?')) this.remove(this._detailId);
     });
 
-    /* Auto-save sur blur des champs */
-    ['todoDetailText','todoDetailNotes','todoDetailDate','todoDetailRecurrence','todoDetailCat','todoDetailProject']
+    /* Auto-save sur change/blur */
+    ['todoPanelText','todoPanelNotes','todoPanelDate','todoPanelRecurrence','todoPanelCat','todoPanelProject']
       .forEach(id => {
-        const el = $(id);
-        if (!el) return;
+        const el = $(id); if (!el) return;
         el.addEventListener('change', () => this._commitDetail());
         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
           el.addEventListener('blur', () => this._commitDetail());
@@ -821,29 +763,27 @@ window.TodoList = {
       });
 
     /* Ajout sous-tâche depuis panneau */
-    const addSubFromPanel = () => {
-      if (!this._detailOpenId || !subInput.value.trim()) return;
-      this.add(subInput.value, '', this._detailOpenId);
-      subInput.value = '';
-      subInput.focus();
+    const doAddSub = () => {
+      if (!this._detailId || !subIn.value.trim()) return;
+      this.add(subIn.value, '', this._detailId);
+      subIn.value = '';
+      subIn.focus();
     };
-    if (subAdd)   subAdd.addEventListener('click', addSubFromPanel);
-    if (subInput) subInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSubFromPanel(); } });
+    subAdd && subAdd.addEventListener('click', doAddSub);
+    subIn  && subIn.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAddSub(); } });
 
-    /* Sous-tâches : check / del depuis panneau */
-    if (subsEl) {
-      subsEl.addEventListener('click', e => {
-        const chk = e.target.closest('.todo-detail-sub-check');
-        if (chk) { this.toggle(chk.dataset.id); return; }
-        const dl = e.target.closest('.todo-detail-sub-del');
-        if (dl) { this.remove(dl.dataset.id); return; }
-      });
-    }
+    /* Sous-tâches du panneau */
+    subsEl && subsEl.addEventListener('click', e => {
+      const c = e.target.closest('.todo-panel-sub-check');
+      if (c) { this.toggle(c.dataset.id); return; }
+      const d = e.target.closest('.todo-panel-sub-del');
+      if (d) { this.remove(d.dataset.id); return; }
+    });
 
-    /* Raccourcis clavier globaux */
+    /* Raccourcis clavier (panneau ouvert) */
     document.addEventListener('keydown', e => {
       if (!panel || !panel.classList.contains('open')) return;
-      if (e.key === 'Escape') { this.closeDetail(); }
+      if (e.key === 'Escape') this.closeDetail();
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         this._commitDetail();
         this.closeDetail();
