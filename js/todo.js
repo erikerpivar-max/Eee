@@ -19,7 +19,7 @@ window.TodoList = {
     '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#3B82F6',
     '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#84CC16',
   ],
-  PRIO_COLOR:  '#EAB308',
+  PRIO_COLOR:  '#EF4444',
   UNCAT_COLOR: '#94A3B8',
 
   /* ── État UI ─────────────────────────────────────────────────── */
@@ -317,7 +317,7 @@ window.TodoList = {
           </span>
           <button class="todo-action todo-action--prio${t.priority ? ' is-active' : ''}"
                   data-action="prio" data-id="${t.id}" title="${t.priority ? 'Retirer de la priorité' : 'Priorité ultime'}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="${t.priority ? '#EAB308' : 'none'}" stroke="${t.priority ? '#EAB308' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="${t.priority ? '#EF4444' : 'none'}" stroke="${t.priority ? '#EF4444' : 'currentColor'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </button>
           <button class="todo-action todo-action--sub" data-action="addsub" data-id="${t.id}" title="Ajouter une sous-tâche">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><line x1="16" y1="3" x2="22" y2="3" stroke-width="2.5"/><line x1="19" y1="0" x2="19" y2="6" stroke-width="2.5"/></svg>

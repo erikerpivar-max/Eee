@@ -4160,6 +4160,25 @@ code {
   text-align: center;
 }
 
+/* Priorité ultime — animation alarme */
+@keyframes todo-alarm-pulse {
+  0%, 100% {
+    border-color: #DC2626;
+    background: #FEE2E2;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5), 0 0 8px rgba(220, 38, 38, 0.25);
+  }
+  50% {
+    border-color: #991B1B;
+    background: #FECACA;
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0), 0 0 14px rgba(220, 38, 38, 0.45);
+  }
+}
+.todo-item.is-priority {
+  border: 2px solid #DC2626 !important;
+  background: #FEE2E2 !important;
+  animation: todo-alarm-pulse 0.9s ease-in-out infinite;
+}
+
 @media (max-width: 600px) {
   .todo-panel { width: 100vw; }
   .todo-panel-grid2 { grid-template-columns: 1fr; }
@@ -5053,9 +5072,22 @@ html.theme-transitioning *::after {
 }
 [data-theme="dark"] .todo-panel-sub,
 [data-theme="dark"] .todo-cats-row { background: rgba(255,255,255,.03); }
+@keyframes todo-alarm-pulse-dark {
+  0%, 100% {
+    border-color: #EF4444;
+    background: #2A0E0E;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55), 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    border-color: #F87171;
+    background: #3D1414;
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0), 0 0 18px rgba(239, 68, 68, 0.5);
+  }
+}
 [data-theme="dark"] .todo-item.is-priority {
-  background: color-mix(in srgb, #EAB308 10%, #1A1610);
-  box-shadow: 0 2px 12px rgba(234, 179, 8, .22);
+  border-color: #EF4444 !important;
+  background: #2A0E0E !important;
+  animation: todo-alarm-pulse-dark 0.9s ease-in-out infinite;
 }
 
 /* ── Script editor textarea ──────────────────────────────────────── */
