@@ -3560,8 +3560,40 @@ code {
 /* prev responsive moved to main responsive section */
 
 /* ================================================================
-   TO DO LIST WIDGET
+   TO DO LIST — Hero (en tête du dashboard)
    ================================================================ */
+.todo-hero {
+  margin: 8px 0 32px;
+}
+.todo-hero-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.todo-hero-titles {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.todo-hero-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -.01em;
+}
+.todo-hero-counter {
+  font-size: .82rem;
+  color: var(--text-2);
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+.todo-hero-actions { display: flex; gap: 8px; }
+
 .todo-widget {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -3575,16 +3607,15 @@ code {
   gap: 10px;
   align-items: center;
 }
-
 .todo-input {
   flex: 1;
-  padding: 9px 14px;
+  padding: 11px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: .88rem;
+  font-size: .95rem;
   color: var(--text);
   background: var(--bg);
-  transition: border-color var(--dur) var(--ease);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 .todo-input:focus {
   border-color: var(--primary);
@@ -3592,30 +3623,49 @@ code {
 }
 .todo-input::placeholder { color: var(--text-3); }
 
+.todo-cat-select {
+  width: auto;
+  min-width: 150px;
+  font-size: .85rem;
+  padding: 8px 10px;
+}
+
 .todo-list {
-  margin-top: 12px;
+  margin-top: 14px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 8px;
 }
 
-.todo-empty {
+.todo-empty-state {
   text-align: center;
-  padding: 20px 0;
+  padding: 32px 16px;
   color: var(--text-3);
-  font-size: .85rem;
 }
+.todo-empty-state svg { color: var(--text-3); opacity: .5; margin-bottom: 8px; }
+.todo-empty-state p { margin: 4px 0; font-size: .9rem; color: var(--text-2); }
+.todo-empty-state .todo-empty-sub { font-size: .8rem; color: var(--text-3); }
 
+/* ── Tâche en card avec cadre couleur ─────────────────────────── */
 .todo-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 8px;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--cat-color, var(--border));
+  border-left-width: 5px;
   border-radius: var(--radius-sm);
-  transition: background var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              transform var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease);
+  position: relative;
 }
 .todo-item:hover {
-  background: var(--bg);
+  background: color-mix(in srgb, var(--cat-color, var(--border)) 6%, var(--surface));
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--cat-color, #000) 12%, transparent);
 }
 
 .todo-check {
@@ -3623,15 +3673,14 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-3);
+  color: var(--cat-color, var(--text-3));
   transition: color var(--dur) var(--ease);
   padding: 0;
 }
-.todo-check:hover { color: var(--primary); }
 
 .todo-text {
   flex: 1;
-  font-size: .88rem;
+  font-size: .95rem;
   color: var(--text);
   line-height: 1.4;
   transition: color var(--dur) var(--ease), opacity var(--dur) var(--ease);
@@ -3640,10 +3689,29 @@ code {
 .todo-done .todo-text {
   text-decoration: line-through;
   color: var(--text-3);
-  opacity: .6;
+  opacity: .55;
+}
+.todo-done { opacity: .75; }
+
+/* Étiquette à droite (chip coloré) */
+.todo-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--cat-color, var(--text-2));
+  background: color-mix(in srgb, var(--cat-color, var(--text-3)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cat-color, var(--text-3)) 35%, transparent);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.todo-del {
+.todo-del,
+.todo-prio-btn {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -3651,16 +3719,30 @@ code {
   color: var(--text-3);
   opacity: 0;
   transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
-  padding: 2px;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
-.todo-item:hover .todo-del { opacity: 1; }
-.todo-del:hover { color: var(--danger); }
+.todo-item:hover .todo-del,
+.todo-item:hover .todo-prio-btn { opacity: .7; }
+.todo-del:hover  { color: var(--danger); opacity: 1; }
+.todo-prio-btn:hover { color: #EAB308; opacity: 1; }
+.todo-prio-btn.active { opacity: 1; color: #EAB308; }
+
+/* Priorité ultime — accentuée */
+.todo-item-priority {
+  background: color-mix(in srgb, #EAB308 8%, var(--surface));
+  border-width: 2px;
+  border-left-width: 6px;
+  box-shadow: 0 2px 12px rgba(234, 179, 8, .15);
+}
 
 .todo-footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px dashed var(--border);
 }
 
@@ -3669,72 +3751,60 @@ code {
   padding: 4px 10px;
 }
 
-/* ── To Do : Catégories ────────────────────────────────────────── */
-.todo-cat-section {
-  margin-top: 10px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+/* ── Modale gestion des étiquettes ─────────────────────────────── */
+.todo-cats-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed var(--border);
 }
-.todo-cat-section:first-child { margin-top: 0; }
+.todo-cats-add-row .form-input { flex: 1; }
 
-.todo-cat-header {
+.todo-color-input {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 2px;
+  background: var(--surface);
+}
+
+.todo-cats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.todo-cats-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--cat-color, var(--border));
+  background: var(--bg);
 }
-.todo-cat-label {
-  font-size: .78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-.todo-cat-del-btn {
+.todo-cats-row .form-input { flex: 1; }
+.todo-cats-row-del {
   color: var(--text-3);
-  padding: 2px;
+  background: transparent;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
   border-radius: 4px;
   transition: color var(--dur), background var(--dur);
 }
-.todo-cat-del-btn:hover { color: var(--danger); background: var(--danger-bg); }
-
-.todo-cat-items {
-  padding: 4px 0;
-}
-.todo-cat-empty {
-  padding: 10px 12px;
-  font-size: .82rem;
+.todo-cats-row-del:hover { color: var(--danger); background: var(--danger-bg); }
+.todo-cats-empty {
+  text-align: center;
   color: var(--text-3);
-  font-style: italic;
+  font-size: .85rem;
+  padding: 16px 0;
 }
-
-/* Priorité ultime */
-.todo-priority-section {
-  border: 2px solid #EAB308;
-  background: #FEFCE8;
-  border-radius: var(--radius);
-  margin-bottom: 6px;
-}
-.todo-priority-section .todo-cat-header {
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-}
-.todo-item-priority {
-  background: #FEFCE822;
-}
-
-/* Bouton étoile priorité */
-.todo-prio-btn {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-3);
-  opacity: 0;
-  transition: opacity var(--dur), color var(--dur);
-  padding: 2px;
-}
-.todo-item:hover .todo-prio-btn { opacity: 1; }
-.todo-prio-btn.active { opacity: 1; }
 
 
 /* ================================================================
