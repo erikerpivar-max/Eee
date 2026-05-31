@@ -27,12 +27,14 @@ window.Agenda = {
 
   /* Catégories de publication (synchronisées avec pubcal.js) */
   PUB_CATEGORIES: {
-    programmation: { label: 'Programmation', color: '#22C55E' },
-    tournage:      { label: 'Tournage',      color: '#8B5CF6' },
-    script:        { label: 'Script',        color: '#3B82F6' },
-    montage:       { label: 'Montage',       color: '#F59E0B' },
-    autre:         { label: 'Autre',         color: '#6B7280' },
+    programmation: { label: 'Programmation', short: 'PG', color: '#22C55E' },
+    tournage:      { label: 'Tournage',      short: 'TO', color: '#8B5CF6' },
+    script:        { label: 'Script',        short: 'SC', color: '#3B82F6' },
+    montage:       { label: 'Montage',       short: 'MT', color: '#F59E0B' },
+    autre:         { label: 'Autre',         short: '·',  color: '#6B7280' },
   },
+
+  KEY_PUB_FILTER: 'th_agenda_pub_clients',  /* clients visibles dans Publications */
 
   /* ── État ────────────────────────────────────────────────────── */
   _view:     'month',           // day | week | month
@@ -145,33 +147,69 @@ window.Agenda = {
       });
   },
 
+  /* Filtres clients pour Publications (par défaut tous visibles) */
+  loadPubClientFilters() {
+    try {
+      const v = localStorage.getItem(this.KEY_PUB_FILTER);
+      if (v === null) return {}; /* {} = tous visibles */
+      return JSON.parse(v);
+    } catch { return {}; }
+  },
+  savePubClientFilters(f) {
+    try { localStorage.setItem(this.KEY_PUB_FILTER, JSON.stringify(f)); } catch(e) {}
+  },
+  isPubClientVisible(clientId) {
+    const f = this.loadPubClientFilters();
+    /* défaut = true sauf si explicitement false */
+    return f[clientId] !== false;
+  },
+  togglePubClient(clientId) {
+    const f = this.loadPubClientFilters();
+    f[clientId] = !this.isPubClientVisible(clientId);
+    this.savePubClientFilters(f);
+    this.render();
+  },
+  setAllPubClients(visible) {
+    if (!window.App || !App.CLIENTS) return;
+    const f = {};
+    App.CLIENTS.forEach(c => { f[c.id] = visible; });
+    this.savePubClientFilters(f);
+    this.render();
+  },
+
   /* ── Source PubCal : convertit les entries publications ───────── */
   _eventsFromPubCal() {
     try {
       const entries = (window.App && App.load) ? App.load('th_pubcal_entries', []) : [];
-      return entries.map(e => {
-        const cat = this.PUB_CATEGORIES[e.category] || { label: e.category, color: '#6B7280' };
-        const label = e.category === 'autre' ? (e.customLabel || 'Autre') : cat.label;
-        const client = (e.clientId && window.App && App.CLIENTS)
-          ? App.CLIENTS.find(c => c.id === e.clientId) : null;
-        const title = client ? `${label} — ${client.name}` : label;
-        /* Date pleine journée → start 00:00 / end 23:59 */
-        const start = new Date(e.date + 'T00:00:00');
-        const end   = new Date(e.date + 'T23:59:59');
-        return {
-          id:         'p_' + e.id,
-          calendarId: 'pub',
-          title,
-          start:      start.toISOString(),
-          end:        end.toISOString(),
-          allDay:     true,
-          color:      cat.color,
-          clientId:   e.clientId,
-          readonly:   true,
-          source:     'pubcal',
-          description: e.status === 'termine' ? '✓ Terminée' : 'À publier',
-        };
-      });
+      return entries
+        .filter(e => !e.clientId || this.isPubClientVisible(e.clientId))
+        .map(e => {
+          const cat = this.PUB_CATEGORIES[e.category] || { label: e.category, short: '·', color: '#6B7280' };
+          const label = e.category === 'autre' ? (e.customLabel || 'Autre') : cat.label;
+          const client = (e.clientId && window.App && App.CLIENTS)
+            ? App.CLIENTS.find(c => c.id === e.clientId) : null;
+          const title = client ? `${label} — ${client.name}` : label;
+          const start = new Date(e.date + 'T00:00:00');
+          const end   = new Date(e.date + 'T23:59:59');
+          /* Couleur = couleur du client (sinon couleur catégorie) */
+          const color = client ? client.color : cat.color;
+          return {
+            id:         'p_' + e.id,
+            calendarId: 'pub',
+            title,
+            start:      start.toISOString(),
+            end:        end.toISOString(),
+            allDay:     true,
+            color,
+            clientId:   e.clientId,
+            readonly:   true,
+            source:     'pubcal',
+            pubCategory: cat,
+            pubLabel:    label,
+            clientName:  client ? client.name : '',
+            description: e.status === 'termine' ? '✓ Terminée' : 'À publier',
+          };
+        });
     } catch { return []; }
   },
 
@@ -217,13 +255,36 @@ window.Agenda = {
     const wrap = document.getElementById('agendaCalList');
     if (!wrap) return;
     const cals = this.loadCals();
-    wrap.innerHTML = cals.map(c => `
-      <label class="agenda-cal-item" style="--c:${c.color}">
+    const clients = (window.App && App.CLIENTS) ? App.CLIENTS : [];
+
+    wrap.innerHTML = cals.map(c => {
+      let html = `<label class="agenda-cal-item" style="--c:${c.color}">
         <input type="checkbox" data-id="${c.id}" ${c.visible ? 'checked' : ''} />
         <span class="agenda-cal-tick"></span>
         <span class="agenda-cal-name">${this._esc(c.name)}</span>
-        ${c.readonly ? '<span class="agenda-cal-tag">auto</span>' : ''}
-      </label>`).join('');
+        ${c.id === 'pub' && c.visible ? `<span class="agenda-cal-count" title="Magasins visibles">${clients.filter(cl => this.isPubClientVisible(cl.id)).length}/${clients.length}</span>` : ''}
+        ${c.readonly && c.id !== 'pub' ? '<span class="agenda-cal-tag">auto</span>' : ''}
+      </label>`;
+
+      /* Sub-list des clients/magasins pour le calendrier Publications */
+      if (c.id === 'pub' && c.visible && clients.length > 0) {
+        const allOn = clients.every(cl => this.isPubClientVisible(cl.id));
+        html += `<div class="agenda-cal-sublist">
+          <div class="agenda-cal-sub-actions">
+            <button class="agenda-cal-sub-action" data-pub-action="${allOn ? 'none' : 'all'}">
+              ${allOn ? 'Tout décocher' : 'Tout cocher'}
+            </button>
+          </div>` +
+          clients.map(cl => `
+            <label class="agenda-cal-sub-item" style="--c:${cl.color}">
+              <input type="checkbox" data-pub-client="${cl.id}" ${this.isPubClientVisible(cl.id) ? 'checked' : ''} />
+              <span class="agenda-cal-tick"></span>
+              <span class="agenda-cal-sub-name">${this._esc(cl.name)}</span>
+            </label>`).join('')
+          + '</div>';
+      }
+      return html;
+    }).join('');
   },
 
   _renderToolbar() {
@@ -327,12 +388,17 @@ window.Agenda = {
       if (isToday)  cls.push('today');
 
       const MAX = 3;
-      let evHtml = items.slice(0, MAX).map(e => `
-        <div class="agenda-month-evt" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}">
-          <span class="agenda-month-evt-dot"></span>
-          ${e.allDay ? '' : `<span class="agenda-month-evt-time">${this._fmtTime(new Date(e.start))}</span>`}
-          <span class="agenda-month-evt-title">${this._esc(e.title)}</span>
-        </div>`).join('');
+      let evHtml = items.slice(0, MAX).map(e => {
+        const isPub = e.source === 'pubcal';
+        const pubBadge = isPub && e.pubCategory
+          ? `<span class="agenda-pub-tag" style="background:${e.pubCategory.color}" title="${this._esc(e.pubCategory.label)}">${e.pubCategory.short}</span>`
+          : '<span class="agenda-month-evt-dot"></span>';
+        return `<div class="agenda-month-evt${isPub ? ' is-pub' : ''}" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}">
+          ${pubBadge}
+          ${e.allDay || isPub ? '' : `<span class="agenda-month-evt-time">${this._fmtTime(new Date(e.start))}</span>`}
+          <span class="agenda-month-evt-title">${this._esc(isPub ? (e.clientName || e.title) : e.title)}</span>
+        </div>`;
+      }).join('');
       if (items.length > MAX) {
         evHtml += `<div class="agenda-month-more" data-more="${k}">+ ${items.length - MAX} de plus</div>`;
       }
@@ -396,7 +462,14 @@ window.Agenda = {
             && ee >= new Date(d.getFullYear(), d.getMonth(), d.getDate());
       });
       allDayHtml += `<div class="agenda-tg-allday-col" data-date="${k}">
-        ${items.map(e => `<div class="agenda-tg-allday-evt" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}">${this._esc(e.title)}</div>`).join('')}
+        ${items.map(e => {
+          const isPub = e.source === 'pubcal';
+          const pubBadge = isPub && e.pubCategory
+            ? `<span class="agenda-pub-tag agenda-pub-tag--solid" style="background:${e.pubCategory.color}" title="${this._esc(e.pubCategory.label)}">${e.pubCategory.short}</span>`
+            : '';
+          const label = isPub ? (e.clientName || e.title) : e.title;
+          return `<div class="agenda-tg-allday-evt${isPub ? ' is-pub' : ''}" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}">${pubBadge}<span class="agenda-tg-allday-evt-text">${this._esc(label)}</span></div>`;
+        }).join('')}
       </div>`;
     });
     allDayHtml += '</div>';
@@ -834,10 +907,19 @@ window.Agenda = {
       b.addEventListener('click', () => this.setView(b.dataset.view));
     });
 
-    /* Cases à cocher des calendriers */
-    document.getElementById('agendaCalList')?.addEventListener('change', e => {
+    /* Cases à cocher des calendriers et sous-filtres clients */
+    const calListEl = document.getElementById('agendaCalList');
+    calListEl?.addEventListener('change', e => {
       const cb = e.target.closest('input[type="checkbox"]');
-      if (cb) this.toggleCalendar(cb.dataset.id);
+      if (!cb) return;
+      if (cb.dataset.pubClient) this.togglePubClient(cb.dataset.pubClient);
+      else if (cb.dataset.id)   this.toggleCalendar(cb.dataset.id);
+    });
+    calListEl?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-pub-action]');
+      if (!btn) return;
+      e.preventDefault();
+      this.setAllPubClients(btn.dataset.pubAction === 'all');
     });
 
     /* Mini-calendrier */

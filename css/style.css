@@ -4380,6 +4380,107 @@ code {
   border-radius: 999px;
   border: 1px solid var(--border);
 }
+.agenda-cal-count {
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--text-2);
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  letter-spacing: 0;
+}
+
+/* Sous-liste des magasins pour Publications */
+.agenda-cal-sublist {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0 8px 18px;
+  margin-left: 8px;
+  border-left: 2px dashed color-mix(in srgb, #F59E0B 45%, var(--border));
+  animation: agenda-sublist-in .18s var(--ease);
+}
+@keyframes agenda-sublist-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.agenda-cal-sub-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px 4px;
+}
+.agenda-cal-sub-action {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: .7rem;
+  color: var(--primary);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background var(--dur);
+}
+.agenda-cal-sub-action:hover { background: var(--primary-bg); }
+
+.agenda-cal-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: .8rem;
+  color: var(--text);
+  transition: background var(--dur);
+}
+.agenda-cal-sub-item:hover { background: var(--bg); }
+.agenda-cal-sub-item input { display: none; }
+.agenda-cal-sub-item .agenda-cal-tick {
+  width: 13px; height: 13px;
+  border-radius: 3px;
+  border: 1.5px solid var(--c);
+}
+.agenda-cal-sub-item .agenda-cal-tick::after {
+  width: 6px; height: 4px;
+  border-left-width: 1.5px;
+  border-bottom-width: 1.5px;
+}
+.agenda-cal-sub-name { flex: 1; }
+
+/* Petit badge catégorie pour les publications */
+.agenda-pub-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px; height: 14px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: .6rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  color: #fff;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.agenda-pub-tag--solid {
+  border: 1px solid rgba(255,255,255,.4);
+}
+.agenda-month-evt.is-pub {
+  background: color-mix(in srgb, var(--c) 22%, transparent);
+  border-left-color: var(--c);
+}
+.agenda-tg-allday-evt.is-pub {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 4px;
+}
+.agenda-tg-allday-evt-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ── Zone principale ──────────────────────────────────────────── */
 .agenda-main {
