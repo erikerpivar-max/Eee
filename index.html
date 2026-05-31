@@ -56,6 +56,20 @@
     .tt-preset-chip { padding:4px 11px; border-radius:20px; font-size:.7rem; font-weight:500; cursor:pointer; border:1.5px solid; background:transparent; transition:background .12s, color .12s; line-height:1.4; }
     .tt-preset-chip:hover { filter:brightness(.92); }
     .tt-preset-chip.selected { color:#fff !important; }
+
+    /* ── Bouton Google Calendar dans la sidebar Agenda ── */
+    .agenda-gcal-btn {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 7px; border-radius:10px; font-size:.65rem; font-weight:600;
+      border:1px solid var(--border,#e5e7eb); background:transparent;
+      color:var(--text-3,#6b7280); cursor:pointer; line-height:1.6;
+      transition:background .12s, color .12s, border-color .12s;
+      margin-left:auto; flex-shrink:0;
+    }
+    .agenda-gcal-btn:hover { background:var(--surface-2,#f3f4f6); color:var(--text-1,#111827); }
+    .agenda-gcal-btn.is-connected { border-color:#10B981; color:#10B981; background:rgba(16,185,129,.08); }
+    .agenda-gcal-btn.is-connected:hover { background:rgba(16,185,129,.15); }
+    .agenda-cal-item { display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
   </style>
 </head>
 <body>
@@ -754,7 +768,8 @@
   <script src="js/ixina-import.js?v=1"></script>
   <script src="js/garden.js?v=1"></script>
   <script src="js/process.js?v=1"></script>
-  <script src="js/agenda.js?v=5"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="js/agenda.js?v=6"></script>
 
 </body>
 </html>

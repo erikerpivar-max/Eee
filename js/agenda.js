@@ -36,11 +36,21 @@ window.Agenda = {
 
   KEY_PUB_FILTER: 'th_agenda_pub_clients',  /* clients visibles dans Publications */
 
+  /* ── Google Calendar ────────────────────────────────────────── */
+  GCAL_CLIENT_ID: '364823774562-2sqll9upvm2gsmjlg954b1jar51btsmo.apps.googleusercontent.com',
+  GCAL_SCOPE:     'https://www.googleapis.com/auth/calendar.events',
+  GCAL_API:       'https://www.googleapis.com/calendar/v3',
+
   /* ── État ────────────────────────────────────────────────────── */
-  _view:        'month',
-  _date:        null,
-  _editId:      null,
-  _sidebarOpen: true,
+  _view:          'month',
+  _date:          null,
+  _editId:        null,
+  _sidebarOpen:   true,
+  _gToken:        null,
+  _gTokenExp:     null,
+  _gcalCache:     [],
+  _gcalFetching:  false,
+  _gcalRefreshTimer: null,
 
   /* ── Storage ─────────────────────────────────────────────────── */
   loadCals() {
@@ -244,6 +254,121 @@ window.Agenda = {
     this.render();
   },
 
+  /* ── Google Calendar : authentification et sync ─────────────── */
+  _gcalIsConnected() {
+    return this._gToken !== null && Date.now() < this._gTokenExp;
+  },
+
+  _gcalConnect() {
+    if (!window.google || !google.accounts || !google.accounts.oauth2) {
+      alert('Le script Google n\'est pas encore chargé. Patientez quelques secondes et réessayez.');
+      return;
+    }
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: this.GCAL_CLIENT_ID,
+      scope: this.GCAL_SCOPE,
+      callback: async (resp) => {
+        if (resp.error) { console.error('GCal auth error', resp); return; }
+        this._gToken    = resp.access_token;
+        this._gTokenExp = Date.now() + (resp.expires_in - 60) * 1000;
+        await this._gcalFetch();
+        this.render();
+      },
+    });
+    client.requestAccessToken({ prompt: '' });
+  },
+
+  _gcalDisconnect() {
+    if (this._gToken && window.google && google.accounts) {
+      google.accounts.oauth2.revoke(this._gToken);
+    }
+    this._gToken      = null;
+    this._gTokenExp   = null;
+    this._gcalCache   = [];
+    this.render();
+  },
+
+  async _gcalFetch() {
+    if (!this._gcalIsConnected() || this._gcalFetching) return;
+    this._gcalFetching = true;
+    try {
+      const tMin = new Date(); tMin.setDate(tMin.getDate() - 30);
+      const tMax = new Date(); tMax.setDate(tMax.getDate() + 90);
+      const url = `${this.GCAL_API}/calendars/primary/events`
+        + `?timeMin=${encodeURIComponent(tMin.toISOString())}`
+        + `&timeMax=${encodeURIComponent(tMax.toISOString())}`
+        + `&singleEvents=true&orderBy=startTime&maxResults=500`;
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${this._gToken}` } });
+      if (!r.ok) { this._gToken = null; this._gcalCache = []; return; }
+      const data = await r.json();
+      /* Exclure les évènements déjà liés à un event local (pour éviter doublons) */
+      const linked = new Set(this.loadEvents().map(e => e.googleEventId).filter(Boolean));
+      this._gcalCache = (data.items || [])
+        .filter(g => g.status !== 'cancelled' && !linked.has(g.id))
+        .map(g => {
+          const allDay = !g.start.dateTime;
+          return {
+            id:           'gcal_' + g.id,
+            calendarId:   'plan',
+            title:        g.summary || '(sans titre)',
+            start:        allDay ? (g.start.date + 'T00:00:00') : g.start.dateTime,
+            end:          allDay ? (g.end.date   + 'T23:59:00') : g.end.dateTime,
+            allDay,
+            color:        null,
+            description:  g.description || '',
+            readonly:     true,
+            source:       'gcal',
+            googleEventId: g.id,
+          };
+        });
+    } catch (err) {
+      console.error('GCal fetch error', err);
+    } finally {
+      this._gcalFetching = false;
+    }
+  },
+
+  async _gcalPush(event) {
+    if (!this._gcalIsConnected() || event.calendarId !== 'plan') return null;
+    const body = { summary: event.title, description: event.description || '' };
+    if (event.allDay) {
+      body.start = { date: event.start.slice(0, 10) };
+      body.end   = { date: event.end.slice(0, 10) };
+    } else {
+      body.start = { dateTime: event.start, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+      body.end   = { dateTime: event.end,   timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
+    }
+    try {
+      const isUpdate = !!event.googleEventId;
+      const url    = isUpdate
+        ? `${this.GCAL_API}/calendars/primary/events/${event.googleEventId}`
+        : `${this.GCAL_API}/calendars/primary/events`;
+      const r = await fetch(url, {
+        method: isUpdate ? 'PUT' : 'POST',
+        headers: { Authorization: `Bearer ${this._gToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) return null;
+      const g = await r.json();
+      return g.id;
+    } catch (err) {
+      console.error('GCal push error', err);
+      return null;
+    }
+  },
+
+  async _gcalDelete(googleEventId) {
+    if (!this._gcalIsConnected() || !googleEventId) return;
+    try {
+      await fetch(`${this.GCAL_API}/calendars/primary/events/${googleEventId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${this._gToken}` },
+      });
+    } catch (err) {
+      console.error('GCal delete error', err);
+    }
+  },
+
   /* Builder HTML d'une rangée de cases pour un jour donné */
   _renderPubRow(dateStr, opts) {
     if (!this._isPubVisible()) return '';
@@ -274,6 +399,7 @@ window.Agenda = {
     const all = [
       ...this._eventsFromTT(),
       ...this.loadEvents(),
+      ...this._gcalCache,   /* évènements importés depuis Google Agenda */
     ];
     return all
       .filter(e => visibleIds.has(e.calendarId))
@@ -310,17 +436,39 @@ window.Agenda = {
     const wrap = document.getElementById('agendaCalList');
     if (!wrap) return;
     const cals = this.loadCals();
+    const connected = this._gcalIsConnected();
     wrap.innerHTML = cals.map(c => {
       const tag = c.id === 'pub'
         ? '<span class="agenda-cal-tag" style="background:#FEF3C7;color:#B45309;border-color:#FDE68A">tracker</span>'
         : (c.readonly ? '<span class="agenda-cal-tag">auto</span>' : '');
+      let gcalBtn = '';
+      if (c.id === 'plan') {
+        gcalBtn = connected
+          ? `<button class="agenda-gcal-btn is-connected" id="agendaGcalDisconnect" title="Google Agenda connecté — cliquer pour déconnecter">
+               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Google
+             </button>`
+          : `<button class="agenda-gcal-btn" id="agendaGcalConnect" title="Connecter mon Google Agenda">
+               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Google
+             </button>`;
+      }
       return `<label class="agenda-cal-item" style="--c:${c.color}">
         <input type="checkbox" data-id="${c.id}" ${c.visible ? 'checked' : ''} />
         <span class="agenda-cal-tick"></span>
         <span class="agenda-cal-name">${this._esc(c.name)}</span>
-        ${tag}
+        ${tag}${gcalBtn}
       </label>`;
     }).join('');
+
+    document.getElementById('agendaGcalConnect')?.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      this._gcalConnect();
+    });
+    document.getElementById('agendaGcalDisconnect')?.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      if (confirm('Déconnecter Google Agenda ? Les évènements importés disparaîtront de la vue.')) {
+        this._gcalDisconnect();
+      }
+    });
   },
 
   _renderToolbar() {
@@ -823,7 +971,7 @@ window.Agenda = {
       projects.map(p => `<option value="${p.id}" ${p.id === selected ? 'selected' : ''}>${this._esc(p.name || '(sans nom)')}</option>`).join('');
   },
 
-  _saveFromEditor() {
+  async _saveFromEditor() {
     const $ = id => document.getElementById(id);
     const title = $('agendaEvtTitle').value.trim();
     if (!title) { alert('Le titre est requis.'); return; }
@@ -839,27 +987,43 @@ window.Agenda = {
       title,
       calendarId: $('agendaEvtCal').value,
       start, end, allDay,
-      clientId:   $('agendaEvtClient').value || '',
-      projectRef: $('agendaEvtProject').value || '',
-      color:      $('agendaEvtColor').value || null,
-      description:$('agendaEvtNotes').value || '',
+      clientId:    $('agendaEvtClient').value || '',
+      projectRef:  $('agendaEvtProject').value || '',
+      color:       $('agendaEvtColor').value || null,
+      description: $('agendaEvtNotes').value || '',
     };
     const all = this.loadEvents();
     if (this._editId) {
       const item = all.find(e => e.id === this._editId);
-      if (item) Object.assign(item, data);
+      if (item) {
+        Object.assign(item, data);
+        /* Sync Google si connecté et calendrier = Planification */
+        if (this._gcalIsConnected() && item.calendarId === 'plan') {
+          const gId = await this._gcalPush(item);
+          if (gId && !item.googleEventId) item.googleEventId = gId;
+        }
+      }
     } else {
-      all.push({ id: this._uid(), ...data, createdAt: new Date().toISOString() });
+      const newEvt = { id: this._uid(), ...data, createdAt: new Date().toISOString() };
+      if (this._gcalIsConnected() && newEvt.calendarId === 'plan') {
+        const gId = await this._gcalPush(newEvt);
+        if (gId) newEvt.googleEventId = gId;
+      }
+      all.push(newEvt);
     }
     this.saveEvents(all);
     this.closeEditor();
     this.render();
   },
 
-  _deleteEditing() {
+  async _deleteEditing() {
     if (!this._editId) return;
-    const all = this.loadEvents().filter(e => e.id !== this._editId);
-    this.saveEvents(all);
+    const all = this.loadEvents();
+    const item = all.find(e => e.id === this._editId);
+    if (item && item.googleEventId && this._gcalIsConnected()) {
+      await this._gcalDelete(item.googleEventId);
+    }
+    this.saveEvents(all.filter(e => e.id !== this._editId));
     this.closeEditor();
     this.render();
   },
@@ -909,6 +1073,16 @@ window.Agenda = {
       else if (k === 't' || k === 'a') { this.goToday();        e.preventDefault(); }
       else if (k === 'n')              { this.openEditor(null, { date: this._fmtDateInput(this._date), hour: 9 }); e.preventDefault(); }
     });
+
+    /* Rafraîchissement Google Calendar toutes les 5 min */
+    if (!this._gcalRefreshTimer) {
+      this._gcalRefreshTimer = setInterval(async () => {
+        if (this._gcalIsConnected() && window.App && App.currentView === 'agenda') {
+          await this._gcalFetch();
+          this.render();
+        }
+      }, 5 * 60 * 1000);
+    }
 
     /* Délégation sur la grille (slots, cellules mois, évènements, pub) */
     document.getElementById('agendaGrid')?.addEventListener('click', e => {
