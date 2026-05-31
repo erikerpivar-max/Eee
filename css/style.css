@@ -3757,12 +3757,25 @@ code {
 .todo-item.dragging   { opacity: .4; }
 .todo-item.drag-over  { outline: 2px dashed var(--c); outline-offset: -2px; }
 .todo-item.is-done    { opacity: .65; }
+@keyframes todo-alarm-pulse {
+  0%, 100% {
+    border-color: #DC2626;
+    background: color-mix(in srgb, #DC2626 6%, var(--surface));
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.5), 0 0 8px rgba(220, 38, 38, 0.25);
+  }
+  50% {
+    border-color: #991B1B;
+    background: color-mix(in srgb, #DC2626 14%, var(--surface));
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0), 0 0 14px rgba(220, 38, 38, 0.45);
+  }
+}
 .todo-item.is-priority {
   --c: #DC2626;
   background: color-mix(in srgb, #DC2626 6%, var(--surface));
   border-width: 1.5px;
   border-left-width: 5px;
   box-shadow: 0 2px 10px rgba(220, 38, 38, .14);
+  animation: todo-alarm-pulse 0.9s ease-in-out infinite;
 }
 
 /* Ligne principale */
@@ -5054,9 +5067,22 @@ html.theme-transitioning *::after {
 }
 [data-theme="dark"] .todo-panel-sub,
 [data-theme="dark"] .todo-cats-row { background: rgba(255,255,255,.03); }
+@keyframes todo-alarm-pulse-dark {
+  0%, 100% {
+    border-color: #EF4444;
+    background: color-mix(in srgb, #EF4444 10%, #1A1610);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55), 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    border-color: #F87171;
+    background: color-mix(in srgb, #EF4444 18%, #1A1610);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0), 0 0 18px rgba(239, 68, 68, 0.5);
+  }
+}
 [data-theme="dark"] .todo-item.is-priority {
   background: color-mix(in srgb, #EF4444 10%, #1A1610);
   box-shadow: 0 2px 12px rgba(239, 68, 68, .22);
+  animation: todo-alarm-pulse-dark 0.9s ease-in-out infinite;
 }
 
 /* ── Script editor textarea ──────────────────────────────────────── */
