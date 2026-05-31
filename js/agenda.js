@@ -259,33 +259,61 @@ window.Agenda = {
     return this._gToken !== null && Date.now() < this._gTokenExp;
   },
 
-  _gcalConnect() {
+  _gcalConnect(silent) {
     if (!window.google || !google.accounts || !google.accounts.oauth2) {
-      alert('Le script Google n\'est pas encore chargé. Patientez quelques secondes et réessayez.');
+      if (!silent) alert('Le script Google n\'est pas encore chargé. Patientez quelques secondes et réessayez.');
       return;
     }
     const client = google.accounts.oauth2.initTokenClient({
       client_id: this.GCAL_CLIENT_ID,
       scope: this.GCAL_SCOPE,
       callback: async (resp) => {
-        if (resp.error) { console.error('GCal auth error', resp); return; }
+        if (resp.error) {
+          if (!silent) console.error('GCal auth error', resp);
+          localStorage.removeItem('th_gcal_auto');
+          this.render();
+          return;
+        }
         this._gToken    = resp.access_token;
         this._gTokenExp = Date.now() + (resp.expires_in - 60) * 1000;
+        localStorage.setItem('th_gcal_auto', '1');
         await this._gcalFetch();
         this.render();
       },
+      error_callback: () => { localStorage.removeItem('th_gcal_auto'); },
     });
-    client.requestAccessToken({ prompt: '' });
+    client.requestAccessToken({ prompt: silent ? 'none' : '' });
   },
 
   _gcalDisconnect() {
     if (this._gToken && window.google && google.accounts) {
       google.accounts.oauth2.revoke(this._gToken);
     }
-    this._gToken      = null;
-    this._gTokenExp   = null;
-    this._gcalCache   = [];
+    this._gToken    = null;
+    this._gTokenExp = null;
+    this._gcalCache = [];
+    localStorage.removeItem('th_gcal_auto');
     this.render();
+  },
+
+  /* Tente une reconnexion silencieuse si l'utilisateur était connecté lors de la dernière session */
+  _gcalAutoReconnect() {
+    if (!localStorage.getItem('th_gcal_auto')) return;
+    const attempt = (tries) => {
+      if (window.google && google.accounts && google.accounts.oauth2) {
+        this._gcalConnect(true);
+      } else if (tries > 0) {
+        setTimeout(() => attempt(tries - 1), 800);
+      }
+    };
+    setTimeout(() => attempt(10), 600);
+  },
+
+  /* Cherche un client dont le nom apparaît dans le titre ou la description */
+  _gcalGuessClient(title, description) {
+    if (!window.App || !App.CLIENTS) return null;
+    const text = ((title || '') + ' ' + (description || '')).toLowerCase();
+    return App.CLIENTS.find(c => c.name && text.includes(c.name.toLowerCase())) || null;
   },
 
   async _gcalFetch() {
@@ -307,17 +335,29 @@ window.Agenda = {
         .filter(g => g.status !== 'cancelled' && !linked.has(g.id))
         .map(g => {
           const allDay = !g.start.dateTime;
+          /* Google Calendar : end.date est exclusive pour les all-day (ex: lundi → end = mardi).
+             On soustrait 1 jour pour obtenir la vraie date de fin. */
+          let endStr;
+          if (allDay) {
+            const d = new Date(g.end.date + 'T00:00:00');
+            d.setDate(d.getDate() - 1);
+            endStr = this._fmtDateInput(d) + 'T23:59:00';
+          } else {
+            endStr = g.end.dateTime;
+          }
+          const client = this._gcalGuessClient(g.summary, g.description);
           return {
-            id:           'gcal_' + g.id,
-            calendarId:   'plan',
-            title:        g.summary || '(sans titre)',
-            start:        allDay ? (g.start.date + 'T00:00:00') : g.start.dateTime,
-            end:          allDay ? (g.end.date   + 'T23:59:00') : g.end.dateTime,
+            id:            'gcal_' + g.id,
+            calendarId:    'plan',
+            title:         g.summary || '(sans titre)',
+            start:         allDay ? (g.start.date + 'T00:00:00') : g.start.dateTime,
+            end:           endStr,
             allDay,
-            color:        null,
-            description:  g.description || '',
-            readonly:     true,
-            source:       'gcal',
+            color:         client ? client.color : null,
+            clientId:      client ? client.id : null,
+            description:   g.description || '',
+            readonly:      true,
+            source:        'gcal',
             googleEventId: g.id,
           };
         });
@@ -1073,6 +1113,9 @@ window.Agenda = {
       else if (k === 't' || k === 'a') { this.goToday();        e.preventDefault(); }
       else if (k === 'n')              { this.openEditor(null, { date: this._fmtDateInput(this._date), hour: 9 }); e.preventDefault(); }
     });
+
+    /* Reconnexion silencieuse si déjà connecté lors de la session précédente */
+    this._gcalAutoReconnect();
 
     /* Rafraîchissement Google Calendar toutes les 5 min */
     if (!this._gcalRefreshTimer) {
