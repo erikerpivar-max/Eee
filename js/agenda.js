@@ -22,7 +22,17 @@ window.Agenda = {
   DEFAULT_CALS: [
     { id: 'tt',   name: 'Time Tracking', color: '#3B82F6', visible: true, source: 'timetracker', readonly: true  },
     { id: 'plan', name: 'Planification', color: '#10B981', visible: true, source: 'plan',        readonly: false },
+    { id: 'pub',  name: 'Publications',  color: '#F59E0B', visible: true, source: 'pubcal',      readonly: true  },
   ],
+
+  /* Catégories de publication (synchronisées avec pubcal.js) */
+  PUB_CATEGORIES: {
+    programmation: { label: 'Programmation', color: '#22C55E' },
+    tournage:      { label: 'Tournage',      color: '#8B5CF6' },
+    script:        { label: 'Script',        color: '#3B82F6' },
+    montage:       { label: 'Montage',       color: '#F59E0B' },
+    autre:         { label: 'Autre',         color: '#6B7280' },
+  },
 
   /* ── État ────────────────────────────────────────────────────── */
   _view:     'month',           // day | week | month
@@ -135,12 +145,43 @@ window.Agenda = {
       });
   },
 
+  /* ── Source PubCal : convertit les entries publications ───────── */
+  _eventsFromPubCal() {
+    try {
+      const entries = (window.App && App.load) ? App.load('th_pubcal_entries', []) : [];
+      return entries.map(e => {
+        const cat = this.PUB_CATEGORIES[e.category] || { label: e.category, color: '#6B7280' };
+        const label = e.category === 'autre' ? (e.customLabel || 'Autre') : cat.label;
+        const client = (e.clientId && window.App && App.CLIENTS)
+          ? App.CLIENTS.find(c => c.id === e.clientId) : null;
+        const title = client ? `${label} — ${client.name}` : label;
+        /* Date pleine journée → start 00:00 / end 23:59 */
+        const start = new Date(e.date + 'T00:00:00');
+        const end   = new Date(e.date + 'T23:59:59');
+        return {
+          id:         'p_' + e.id,
+          calendarId: 'pub',
+          title,
+          start:      start.toISOString(),
+          end:        end.toISOString(),
+          allDay:     true,
+          color:      cat.color,
+          clientId:   e.clientId,
+          readonly:   true,
+          source:     'pubcal',
+          description: e.status === 'termine' ? '✓ Terminée' : 'À publier',
+        };
+      });
+    } catch { return []; }
+  },
+
   /* ── Tous les évènements visibles dans une fenêtre ────────────── */
   _eventsBetween(start, end) {
     const cals = this.loadCals();
     const visibleIds = new Set(cals.filter(c => c.visible).map(c => c.id));
     const all = [
       ...this._eventsFromTT(),
+      ...this._eventsFromPubCal(),
       ...this.loadEvents(),
     ];
     return all
@@ -522,27 +563,39 @@ window.Agenda = {
     this._editId = eventId;
     this._ensureModal();
     this._fillEditor(event, prefill);
-    const m = document.getElementById('agendaModal');
-    m.style.display = 'flex';
-    setTimeout(() => { const t = document.getElementById('agendaEvtTitle'); if (t) t.focus(); }, 50);
+    if (window.App && App.openModal) App.openModal('agendaModal');
+    else {
+      const m = document.getElementById('agendaModal');
+      m.style.display = 'flex';
+      requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add('visible')));
+    }
+    setTimeout(() => { const t = document.getElementById('agendaEvtTitle'); if (t && !t.disabled) t.focus(); }, 120);
   },
 
   closeEditor() {
     this._editId = null;
     const m = document.getElementById('agendaModal');
-    if (m) m.style.display = 'none';
+    if (!m) return;
+    if (window.App && App.closeModal) App.closeModal('agendaModal');
+    else {
+      m.classList.remove('visible');
+      setTimeout(() => { m.style.display = 'none'; }, 200);
+    }
   },
 
   _ensureModal() {
     if (document.getElementById('agendaModal')) return;
     const m = document.createElement('div');
     m.id = 'agendaModal';
-    m.className = 'modal-overlay';
+    m.className = 'modal-backdrop';
+    m.style.display = 'none';
     m.innerHTML = `
-      <div class="modal-content agenda-modal" style="max-width:520px">
-        <div class="modal-header">
+      <div class="modal agenda-modal" style="max-width:540px">
+        <div class="modal-head">
           <h3 id="agendaModalTitle">Nouvel évènement</h3>
-          <button class="modal-close" id="agendaModalClose">&times;</button>
+          <button class="modal-close-btn" id="agendaModalClose" aria-label="Fermer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
         <div class="modal-body agenda-modal-body">
           <div class="agenda-form-group">
@@ -590,14 +643,15 @@ window.Agenda = {
             <textarea id="agendaEvtNotes" class="form-input" rows="3"></textarea>
           </div>
           <div class="agenda-readonly-banner" id="agendaReadonlyBanner" style="display:none">
-            Cet évènement provient du Time Tracking et ne peut pas être modifié ici.
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="agendaReadonlyMsg">Cet évènement est synchronisé automatiquement et ne peut pas être modifié ici.</span>
           </div>
         </div>
-        <div class="modal-footer agenda-modal-foot">
-          <button class="btn btn-ghost btn-sm" id="agendaEvtDel" style="display:none">Supprimer</button>
+        <div class="modal-foot agenda-modal-foot">
+          <button class="btn btn-ghost" id="agendaEvtDel" style="display:none">Supprimer</button>
           <div style="flex:1"></div>
-          <button class="btn btn-outline btn-sm" id="agendaEvtCancel">Annuler</button>
-          <button class="btn btn-primary btn-sm" id="agendaEvtSave">Enregistrer</button>
+          <button class="btn btn-ghost" id="agendaEvtCancel">Annuler</button>
+          <button class="btn btn-primary" id="agendaEvtSave">Enregistrer</button>
         </div>
       </div>`;
     document.body.appendChild(m);
@@ -612,7 +666,6 @@ window.Agenda = {
     m.querySelector('#agendaEvtAllDay').addEventListener('change', e => {
       m.querySelectorAll('.agenda-time-input').forEach(el => el.disabled = e.target.checked);
     });
-    /* Auto-ajuster fin si début change après */
     m.querySelector('#agendaEvtStartDate').addEventListener('change', () => this._ensureEndAfterStart());
     m.querySelector('#agendaEvtStartTime').addEventListener('change', () => this._ensureEndAfterStart());
   },
@@ -651,6 +704,12 @@ window.Agenda = {
       const start = new Date(event.start);
       const end   = new Date(event.end);
       $('agendaModalTitle').textContent = event.readonly ? 'Évènement (lecture seule)' : 'Modifier l\'évènement';
+      const msg = $('agendaReadonlyMsg');
+      if (msg) {
+        if (event.source === 'pubcal')      msg.textContent = 'Cette publication provient de la vue Publication et n\'est pas modifiable ici.';
+        else if (event.source === 'tt')     msg.textContent = 'Cette tâche provient du Time Tracking et n\'est pas modifiable ici.';
+        else                                msg.textContent = 'Cet évènement est synchronisé automatiquement et ne peut pas être modifié ici.';
+      }
       $('agendaEvtTitle').value = event.title || '';
       $('agendaEvtCal').value = event.calendarId;
       $('agendaEvtAllDay').checked = !!event.allDay;
@@ -791,6 +850,19 @@ window.Agenda = {
         if (this._view === 'month') this.setView('day');
         else this.render();
       }
+    });
+
+    /* Raccourcis clavier (style Google Agenda) — uniquement si la vue est active */
+    document.addEventListener('keydown', e => {
+      if (App.currentView !== 'agenda') return;
+      if (e.target.matches('input, textarea, select')) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === 'm') { this.setView('month'); e.preventDefault(); }
+      else if (k === 'w' || k === 's') { this.setView('week'); e.preventDefault(); }
+      else if (k === 'd' || k === 'j') { this.setView('day');  e.preventDefault(); }
+      else if (k === 't' || k === 'a') { this.goToday();        e.preventDefault(); }
+      else if (k === 'n')              { this.openEditor(null, { date: this._fmtDateInput(this._date), hour: 9 }); e.preventDefault(); }
     });
 
     /* Délégation sur la grille (slots, cellules mois, évènements) */

@@ -572,12 +572,15 @@ window.TodoList = {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'todoCatsModal';
-      modal.className = 'modal-overlay';
+      modal.className = 'modal-backdrop';
+      modal.style.display = 'none';
       modal.innerHTML = `
-        <div class="modal-content" style="max-width:480px">
-          <div class="modal-header">
+        <div class="modal" style="max-width:480px">
+          <div class="modal-head">
             <h3>Étiquettes</h3>
-            <button class="modal-close" id="todoCatsModalClose">&times;</button>
+            <button class="modal-close-btn" id="todoCatsModalClose" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
           <div class="modal-body">
             <div class="todo-cats-add">
@@ -617,12 +620,21 @@ window.TodoList = {
         if (e.target.classList.contains('todo-cats-row-color')) this.recolorCategory(id, e.target.value);
       });
     }
-    modal.style.display = 'flex';
     this._renderCatsList();
+    if (window.App && App.openModal) App.openModal('todoCatsModal');
+    else {
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('visible')));
+    }
   },
   closeCatsModal() {
     const m = document.getElementById('todoCatsModal');
-    if (m) m.style.display = 'none';
+    if (!m) return;
+    if (window.App && App.closeModal) App.closeModal('todoCatsModal');
+    else {
+      m.classList.remove('visible');
+      setTimeout(() => { m.style.display = 'none'; }, 200);
+    }
   },
   _renderCatsList() {
     const wrap = document.getElementById('todoCatsList');

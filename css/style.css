@@ -4792,14 +4792,17 @@ code {
 .agenda-form-checkbox input { width: 16px; height: 16px; cursor: pointer; }
 .agenda-time-input { margin-top: 4px; }
 .agenda-readonly-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 14px;
-  background: var(--bg);
-  border: 1px dashed var(--border);
+  background: color-mix(in srgb, #EAB308 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, #EAB308 30%, var(--border));
   border-radius: var(--radius-sm);
   font-size: .82rem;
-  color: var(--text-2);
-  text-align: center;
+  color: var(--text);
 }
+.agenda-readonly-banner svg { color: #B45309; flex-shrink: 0; }
 .agenda-modal-foot {
   display: flex;
   gap: 8px;
