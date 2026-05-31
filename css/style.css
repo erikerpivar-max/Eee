@@ -3758,11 +3758,11 @@ code {
 .todo-item.drag-over  { outline: 2px dashed var(--c); outline-offset: -2px; }
 .todo-item.is-done    { opacity: .65; }
 .todo-item.is-priority {
-  --c: #EAB308;
-  background: color-mix(in srgb, #EAB308 6%, var(--surface));
+  --c: #DC2626;
+  background: color-mix(in srgb, #DC2626 6%, var(--surface));
   border-width: 1.5px;
   border-left-width: 5px;
-  box-shadow: 0 2px 10px rgba(234, 179, 8, .14);
+  box-shadow: 0 2px 10px rgba(220, 38, 38, .14);
 }
 
 /* Ligne principale */
@@ -3894,8 +3894,8 @@ code {
 }
 .todo-item:hover .todo-action { opacity: .7; }
 .todo-action:hover { opacity: 1; background: var(--bg); }
-.todo-action--prio:hover { color: #EAB308; }
-.todo-action--prio.is-active { opacity: 1; color: #EAB308; }
+.todo-action--prio:hover { color: #DC2626; }
+.todo-action--prio.is-active { opacity: 1; color: #DC2626; }
 .todo-action--sub:hover  { color: var(--primary); }
 .todo-action--del:hover  { color: var(--danger); }
 
@@ -4160,11 +4160,6 @@ code {
   text-align: center;
 }
 
-/* Priorité ultime — rouge */
-.todo-item.is-priority {
-  border: 2px solid #DC2626 !important;
-  background: #FEE2E2 !important;
-}
 
 @media (max-width: 600px) {
   .todo-panel { width: 100vw; }
@@ -5060,8 +5055,8 @@ html.theme-transitioning *::after {
 [data-theme="dark"] .todo-panel-sub,
 [data-theme="dark"] .todo-cats-row { background: rgba(255,255,255,.03); }
 [data-theme="dark"] .todo-item.is-priority {
-  border-color: #EF4444 !important;
-  background: #2A0E0E !important;
+  background: color-mix(in srgb, #EF4444 10%, #1A1610);
+  box-shadow: 0 2px 12px rgba(239, 68, 68, .22);
 }
 
 /* ── Script editor textarea ──────────────────────────────────────── */
