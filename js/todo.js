@@ -161,8 +161,11 @@ window.TodoList = {
     const $catSel = document.getElementById('todoCatSelect');
     if ($catSel) {
       const cur = $catSel.value || '';
-      $catSel.innerHTML = '<option value="">Sans étiquette</option>' +
-        cats.map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('');
+      $catSel.innerHTML =
+        '<option value="">Sans étiquette</option>' +
+        cats.map(c => `<option value="${c.id}" ${c.id === cur ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('') +
+        '<option disabled>──────────</option>' +
+        '<option value="__new__">+ Nouvelle étiquette…</option>';
     }
 
     /* Index */
@@ -513,8 +516,11 @@ window.TodoList = {
     $('todoPanelDate').value       = item.dueDate || '';
     $('todoPanelRecurrence').value = item.recurrence || 'none';
 
-    $('todoPanelCat').innerHTML = '<option value="">Sans étiquette</option>' +
-      cats.map(c => `<option value="${c.id}" ${c.id === item.catId ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('');
+    $('todoPanelCat').innerHTML =
+      '<option value="">Sans étiquette</option>' +
+      cats.map(c => `<option value="${c.id}" ${c.id === item.catId ? 'selected' : ''}>${this._esc(c.name)}</option>`).join('') +
+      '<option disabled>──────────</option>' +
+      '<option value="__new__">+ Nouvelle étiquette…</option>';
 
     $('todoPanelProject').innerHTML = '<option value="">Aucun</option>' +
       projects.map(p => `<option value="${p.id}" ${p.id === item.projectRef ? 'selected' : ''}>${this._esc(p.clientName)} · ${this._esc(p.name)}</option>`).join('');
@@ -661,6 +667,14 @@ window.TodoList = {
     addBtn && addBtn.addEventListener('click', doAdd);
     input  && input.addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); });
 
+    /* Sentinelle "+ Nouvelle étiquette…" dans le sélecteur d'ajout */
+    catSel && catSel.addEventListener('change', () => {
+      if (catSel.value === '__new__') {
+        catSel.value = '';
+        this.openCatsModal();
+      }
+    });
+
     /* Délégation : actions sur items */
     const onItemClick = e => {
       const el = e.target.closest('[data-action]');
@@ -761,6 +775,15 @@ window.TodoList = {
           el.addEventListener('blur', () => this._commitDetail());
         }
       });
+
+    /* Sentinelle "+ Nouvelle étiquette…" dans le sélecteur du panneau */
+    const panelCat = $('todoPanelCat');
+    panelCat && panelCat.addEventListener('change', () => {
+      if (panelCat.value === '__new__') {
+        panelCat.value = '';
+        this.openCatsModal();
+      }
+    });
 
     /* Ajout sous-tâche depuis panneau */
     const doAddSub = () => {
