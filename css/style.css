@@ -3751,6 +3751,437 @@ code {
   padding: 4px 10px;
 }
 
+/* ── Barre de filtres ─────────────────────────────────────────── */
+.todo-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.todo-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background var(--dur), border-color var(--dur), color var(--dur);
+}
+.todo-filter:hover {
+  background: var(--bg);
+  border-color: var(--text-3);
+}
+.todo-filter.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.todo-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  font-size: .68rem;
+  font-weight: 700;
+  border-radius: 9px;
+  background: var(--bg);
+  color: var(--text-2);
+}
+.todo-filter.active .todo-filter-count {
+  background: rgba(255,255,255,.25);
+  color: #fff;
+}
+.todo-filter-late .todo-filter-count {
+  background: var(--danger-bg, #FEE2E2);
+  color: var(--danger);
+}
+.todo-filter-late.active .todo-filter-count {
+  background: rgba(255,255,255,.3);
+  color: #fff;
+}
+
+/* ── Bouton densité ───────────────────────────────────────────── */
+.todo-density-btn {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: background var(--dur), color var(--dur);
+}
+.todo-density-btn:hover { background: var(--bg); color: var(--text); }
+
+/* ── Densité compacte ─────────────────────────────────────────── */
+.todo-hero[data-density="compact"] .todo-list { gap: 4px; }
+.todo-hero[data-density="compact"] .todo-item-main { padding: 6px 12px; gap: 8px; }
+.todo-hero[data-density="compact"] .todo-text { font-size: .88rem; }
+.todo-hero[data-density="compact"] .todo-tag  { font-size: .65rem; padding: 2px 8px; }
+
+/* ── Item layout : main row + subs row ────────────────────────── */
+.todo-item-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* La règle .todo-item plus haut applique padding 12px 14px ;
+   on transforme en wrapper et on déplace le padding vers .todo-item-main */
+.todo-hero .todo-item {
+  padding: 0;
+  display: block;
+}
+.todo-hero .todo-item-main {
+  padding: 12px 14px;
+}
+
+/* Drag handle */
+.todo-drag-handle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-3);
+  opacity: 0;
+  cursor: grab;
+  transition: opacity var(--dur);
+}
+.todo-item:hover .todo-drag-handle { opacity: .6; }
+.todo-item.dragging { opacity: .4; }
+.todo-item.drag-over { outline: 2px dashed var(--cat-color, var(--primary)); outline-offset: -2px; }
+
+/* Titre cliquable */
+.todo-text { cursor: pointer; }
+.todo-text:hover { color: var(--primary); }
+
+/* ── Badges meta (date, récurrence, sous-tâches, notes) ───────── */
+.todo-meta-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.todo-date-badge,
+.todo-recur-badge,
+.todo-sub-badge,
+.todo-notes-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-2);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.todo-recur-badge,
+.todo-notes-icon { padding: 3px 6px; }
+
+.todo-date-badge.today {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+}
+.todo-date-badge.late {
+  background: var(--danger-bg, #FEE2E2);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+/* Projet Kanban chip */
+.todo-project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+  color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+  white-space: nowrap;
+}
+
+/* Bouton + sous-tâche */
+.todo-add-sub {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: opacity var(--dur), color var(--dur);
+}
+.todo-item:hover .todo-add-sub { opacity: .7; }
+.todo-add-sub:hover { color: var(--primary); opacity: 1; }
+
+/* ── Sous-tâches affichées sous le parent ─────────────────────── */
+.todo-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 14px 10px 50px;
+  border-top: 1px dashed color-mix(in srgb, var(--cat-color) 30%, var(--border));
+}
+.todo-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: .85rem;
+  transition: background var(--dur);
+}
+.todo-sub-item:hover { background: var(--bg); }
+.todo-sub-check {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--cat-color, var(--text-3));
+  padding: 0;
+  display: flex;
+}
+.todo-sub-text { flex: 1; color: var(--text); }
+.todo-sub-item.todo-done .todo-sub-text {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+.todo-sub-del {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 2px;
+  transition: opacity var(--dur), color var(--dur);
+}
+.todo-sub-item:hover .todo-sub-del { opacity: .7; }
+.todo-sub-del:hover { color: var(--danger); opacity: 1; }
+
+/* ── Section "Terminées" repliable ────────────────────────────── */
+.todo-done-section {
+  margin-top: 16px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+.todo-done-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 4px;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-2);
+  width: 100%;
+  text-align: left;
+}
+.todo-done-toggle:hover { color: var(--text); }
+.todo-done-chevron { transition: transform var(--dur); }
+.todo-done-count {
+  font-size: .72rem;
+  background: var(--bg);
+  color: var(--text-3);
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-weight: 700;
+}
+.todo-done-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* ── Panneau détails (slide-in droite) ────────────────────────── */
+.todo-detail-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.32);
+  z-index: 998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s var(--ease);
+}
+.todo-detail-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.todo-detail-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 460px;
+  max-width: 100vw;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 32px rgba(0,0,0,.12);
+  z-index: 999;
+  transform: translateX(100%);
+  transition: transform .28s var(--ease);
+  display: flex;
+  flex-direction: column;
+}
+.todo-detail-panel.open { transform: translateX(0); }
+
+.todo-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.todo-detail-title-label {
+  flex: 1;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.todo-detail-close,
+.todo-detail-del {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur), background var(--dur);
+}
+.todo-detail-close:hover { color: var(--text); background: var(--bg); }
+.todo-detail-del:hover   { color: var(--danger); background: var(--danger-bg); }
+
+.todo-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.todo-detail-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-3);
+  margin: 12px 0 4px;
+}
+.todo-detail-label-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.todo-detail-sub-count {
+  font-size: .7rem;
+  color: var(--text-2);
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.todo-detail-input,
+.todo-detail-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font-size: .9rem;
+  font-family: inherit;
+  transition: border-color var(--dur), box-shadow var(--dur);
+}
+.todo-detail-input:focus,
+.todo-detail-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-bg);
+}
+.todo-detail-textarea { resize: vertical; min-height: 60px; }
+
+.todo-detail-row {
+  display: flex;
+  gap: 12px;
+}
+.todo-detail-col { flex: 1; min-width: 0; }
+
+.todo-detail-subs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.todo-detail-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+}
+.todo-detail-sub-row.done .todo-detail-sub-text {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+.todo-detail-sub-check,
+.todo-detail-sub-del {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 2px;
+  display: flex;
+}
+.todo-detail-sub-check { color: var(--primary); }
+.todo-detail-sub-del:hover { color: var(--danger); }
+.todo-detail-sub-text { flex: 1; font-size: .88rem; color: var(--text); }
+.todo-detail-no-subs {
+  text-align: center;
+  color: var(--text-3);
+  font-size: .82rem;
+  padding: 8px 0;
+}
+
+.todo-detail-sub-add {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.todo-detail-sub-add .todo-detail-input { flex: 1; }
+
+.todo-detail-meta {
+  margin-top: 18px;
+  font-size: .72rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+.todo-detail-footer {
+  padding: 10px 18px;
+  border-top: 1px solid var(--border);
+  font-size: .72rem;
+  color: var(--text-3);
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .todo-detail-panel { width: 100vw; }
+}
+
 /* ── Modale gestion des étiquettes ─────────────────────────────── */
 .todo-cats-add-row {
   display: flex;
