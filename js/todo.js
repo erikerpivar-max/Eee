@@ -27,6 +27,7 @@ window.TodoList = {
   _doneOpen:     false,
   _detailId:     null,
   _dragId:       null,
+  _fadingIds:    new Set(),
 
   /* ── Persistance ─────────────────────────────────────────────── */
   load() {
@@ -656,6 +657,23 @@ window.TodoList = {
 
   /* ── Init : bindings ─────────────────────────────────────────── */
   init() {
+    if (!document.getElementById('todo-fading-style')) {
+      const s = document.createElement('style');
+      s.id = 'todo-fading-style';
+      s.textContent = `
+        @keyframes todoFadeOut {
+          0%   { opacity: 1;   filter: blur(0px);  transform: scale(1); }
+          50%  { opacity: 0.5; filter: blur(2px);  transform: scale(0.99); }
+          100% { opacity: 0;   filter: blur(6px);  transform: scale(0.97); }
+        }
+        .todo-item.is-fading,
+        .todo-sub.is-fading {
+          animation: todoFadeOut 3s ease-in forwards;
+          pointer-events: none;
+        }
+      `;
+      document.head.appendChild(s);
+    }
     this.render();
 
     const $ = id => document.getElementById(id);
@@ -693,7 +711,24 @@ window.TodoList = {
       if (!el) return;
       const id = el.dataset.id;
       const a  = el.dataset.action;
-      if (a === 'toggle') this.toggle(id);
+      if (a === 'toggle') {
+        const todos = this.load();
+        const item  = todos.find(t => t.id === id);
+        /* Décochage immédiat, cochage avec animation 3s */
+        if (item && !item.done && !this._fadingIds.has(id)) {
+          const itemEl = document.querySelector(`.todo-item[data-id="${id}"], .todo-sub[data-id="${id}"]`);
+          if (itemEl) {
+            this._fadingIds.add(id);
+            itemEl.classList.add('is-fading');
+            setTimeout(() => {
+              this._fadingIds.delete(id);
+              this.toggle(id);
+            }, 3000);
+            return;
+          }
+        }
+        if (!this._fadingIds.has(id)) this.toggle(id);
+      }
       else if (a === 'prio')   this.togglePrio(id);
       else if (a === 'del')    this.remove(id);
       else if (a === 'open')   this.openDetail(id);
