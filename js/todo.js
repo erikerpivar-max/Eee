@@ -27,7 +27,7 @@ window.TodoList = {
   _doneOpen:     false,
   _detailId:     null,
   _dragId:       null,
-  _fadingIds:    new Set(),
+  _fadeTimers:   new Map(),
 
   /* ── Persistance ─────────────────────────────────────────────── */
   load() {
@@ -662,14 +662,24 @@ window.TodoList = {
       s.id = 'todo-fading-style';
       s.textContent = `
         @keyframes todoFadeOut {
-          0%   { opacity: 1;   filter: blur(0px);  transform: scale(1); }
-          50%  { opacity: 0.5; filter: blur(2px);  transform: scale(0.99); }
-          100% { opacity: 0;   filter: blur(6px);  transform: scale(0.97); }
+          0%   { opacity: 1;   filter: blur(0px); }
+          50%  { opacity: 0.5; filter: blur(2px); }
+          100% { opacity: 0;   filter: blur(6px); }
         }
-        .todo-item.is-fading,
-        .todo-sub.is-fading {
+        .todo-item.is-fading .todo-title,
+        .todo-item.is-fading .todo-meta,
+        .todo-item.is-fading .todo-tag,
+        .todo-item.is-fading .todo-project,
+        .todo-item.is-fading .todo-action,
+        .todo-item.is-fading .todo-grip,
+        .todo-item.is-fading .todo-subs {
           animation: todoFadeOut 3s ease-in forwards;
           pointer-events: none;
+        }
+        .todo-item.is-fading .todo-check {
+          cursor: pointer;
+          position: relative;
+          z-index: 5;
         }
       `;
       document.head.appendChild(s);
@@ -712,22 +722,30 @@ window.TodoList = {
       const id = el.dataset.id;
       const a  = el.dataset.action;
       if (a === 'toggle') {
+        /* Si la tâche est en cours de suppression → annuler */
+        if (this._fadeTimers.has(id)) {
+          clearTimeout(this._fadeTimers.get(id));
+          this._fadeTimers.delete(id);
+          const itemEl = document.querySelector(`.todo-item[data-id="${id}"], .todo-sub[data-id="${id}"]`);
+          if (itemEl) itemEl.classList.remove('is-fading');
+          return;
+        }
         const todos = this.load();
         const item  = todos.find(t => t.id === id);
         /* Décochage immédiat, cochage avec animation 3s */
-        if (item && !item.done && !this._fadingIds.has(id)) {
+        if (item && !item.done) {
           const itemEl = document.querySelector(`.todo-item[data-id="${id}"], .todo-sub[data-id="${id}"]`);
           if (itemEl) {
-            this._fadingIds.add(id);
             itemEl.classList.add('is-fading');
-            setTimeout(() => {
-              this._fadingIds.delete(id);
+            const timer = setTimeout(() => {
+              this._fadeTimers.delete(id);
               this.toggle(id);
             }, 3000);
+            this._fadeTimers.set(id, timer);
             return;
           }
         }
-        if (!this._fadingIds.has(id)) this.toggle(id);
+        this.toggle(id);
       }
       else if (a === 'prio')   this.togglePrio(id);
       else if (a === 'del')    this.remove(id);
