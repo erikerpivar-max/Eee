@@ -267,12 +267,18 @@ window.Dezoom = (() => {
     if (window.Dashboard) Dashboard.refresh();
   }
 
-  /* ── Init vue (appelé par app.js lors du changement de vue) ─── */
+  /* ── Bouton toggle dans le Kanban ───────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.nav-link[data-view]').forEach(link => {
-      link.addEventListener('click', () => {
-        if (link.dataset.view === 'dezoom') renderView();
-      });
+    const btn       = document.getElementById('dezoomToggleBtn');
+    const kanbanBd  = document.getElementById('kanban-board');
+    const dezoomBd  = document.getElementById('dezoom-board');
+    if (!btn || !kanbanBd || !dezoomBd) return;
+
+    btn.addEventListener('click', () => {
+      const isActive = btn.classList.toggle('active');
+      kanbanBd.style.display = isActive ? 'none' : '';
+      dezoomBd.style.display = isActive ? 'block' : 'none';
+      if (isActive) renderView();
     });
   });
 

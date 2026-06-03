@@ -208,7 +208,7 @@ window.PubCal = (() => {
         : dayEntries.map(entry => {
             const cat    = _getCategoryInfo(entry.category);
             const client = App.CLIENTS.find(c => c.id === entry.clientId);
-            const label  = entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label;
+            const label  = entry.label || (entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label);
             const statusClass = entry.status === 'termine' ? 'pcal-entry-done' : 'pcal-entry-draft';
             return `<div class="pcal-entry ${statusClass}" style="--cat-color:${cat.color}"
                          data-entry-id="${entry.id}" title="${label}${client ? ' — ' + client.name : ''}">
@@ -279,7 +279,7 @@ window.PubCal = (() => {
           const cat    = _getCategoryInfo(entry.category);
           const client = App.CLIENTS.find(c => c.id === entry.clientId);
           const clientLabel = client ? client.name : '';
-          const label  = entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label;
+          const label  = entry.label || (entry.category === 'autre' ? (entry.customLabel || 'Autre') : cat.label);
           const statusClass = entry.status === 'termine' ? 'pcal-entry-done' : 'pcal-entry-draft';
           return `<div class="pcal-entry ${statusClass}" style="--cat-color:${cat.color}"
                        data-entry-id="${entry.id}" title="${label} — ${clientLabel}">
