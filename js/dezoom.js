@@ -236,35 +236,42 @@ window.Dezoom = (() => {
 
   /* ── Enregistrement dans pubcal + vérification tout programmé ── */
   function _programVideos(projectId, clientId, videos, date) {
-    const client   = App.CLIENTS.find(c => c.id === clientId);
-    const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
-    const project  = projects.find(p => p.id === projectId);
-    if (!project || !client) return;
+    try {
+      const client   = App.CLIENTS.find(c => c.id === clientId);
+      const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
+      const project  = projects.find(p => p.id === projectId);
+      if (!project || !client) { console.warn('[Dezoom] projet ou client introuvable', projectId, clientId); return; }
 
-    const entries = App.load('th_pubcal_entries', []);
-    videos.forEach(v => {
-      entries.push({
-        id:       App.uid(),
-        date,
-        clientId,
-        category: 'programmation',
-        label:    `${v} — ${escHtml(project.name)}`,
-        projectId,
-        videoRef: v,
+      const entries = App.load('th_pubcal_entries', []);
+      videos.forEach(v => {
+        entries.push({
+          id:         App.uid(),
+          date,
+          clientId,
+          category:   'programmation',
+          label:      `${v} — ${project.name}`,
+          customLabel:`${v} — ${project.name}`,
+          projectId,
+          videoRef:   v,
+          status:     'brouillon',
+        });
       });
-    });
-    App.save('th_pubcal_entries', entries);
+      App.save('th_pubcal_entries', entries);
+      console.log('[Dezoom] entrées sauvées dans th_pubcal_entries :', videos, 'date:', date, 'total:', entries.length);
 
-    _markProgrammed(projectId, videos);
+      _markProgrammed(projectId, videos);
 
-    const subs    = _getSubs(project);
-    const nowDone = _getProgrammed(projectId);
-    if (subs.length > 0 && subs.every(v => nowDone.includes(v))) {
-      Kanban.moveProject(clientId, projectId, 'publie');
+      const subs    = _getSubs(project);
+      const nowDone = _getProgrammed(projectId);
+      if (subs.length > 0 && subs.every(v => nowDone.includes(v))) {
+        Kanban.moveProject(clientId, projectId, 'publie');
+      }
+
+      renderView();
+      if (window.Dashboard) Dashboard.refresh();
+    } catch(e) {
+      console.error('[Dezoom] erreur _programVideos:', e);
     }
-
-    renderView();
-    if (window.Dashboard) Dashboard.refresh();
   }
 
   /* ── Toggle appelé directement par onclick dans le HTML ──────── */
