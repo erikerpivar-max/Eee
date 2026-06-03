@@ -267,21 +267,19 @@ window.Dezoom = (() => {
     if (window.Dashboard) Dashboard.refresh();
   }
 
-  /* ── Bouton toggle dans le Kanban ───────────────────────────── */
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn       = document.getElementById('dezoomToggleBtn');
-    const kanbanBd  = document.getElementById('kanban-board');
-    const dezoomBd  = document.getElementById('dezoom-board');
+  /* ── Toggle appelé directement par onclick dans le HTML ──────── */
+  function toggle() {
+    const btn      = document.getElementById('dezoomToggleBtn');
+    const kanbanBd = document.getElementById('kanban-board');
+    const dezoomBd = document.getElementById('dezoom-board');
     if (!btn || !kanbanBd || !dezoomBd) return;
 
-    btn.addEventListener('click', () => {
-      const isActive = btn.classList.toggle('active');
-      kanbanBd.style.display = isActive ? 'none' : '';
-      dezoomBd.style.display = isActive ? 'block' : 'none';
-      if (isActive) renderView();
-    });
-  });
+    const isActive = btn.classList.toggle('active');
+    kanbanBd.style.display = isActive ? 'none' : '';
+    dezoomBd.style.display = isActive ? 'block' : 'none';
+    if (isActive) renderView();
+  }
 
-  return { renderView };
+  return { renderView, toggle };
 
 })();
