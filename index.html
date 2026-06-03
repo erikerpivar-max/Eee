@@ -69,6 +69,36 @@
     .agenda-gcal-btn:hover { background:var(--surface-2,#f3f4f6); color:var(--text-1,#111827); }
     .agenda-gcal-btn.is-connected { border-color:#10B981; color:#10B981; background:rgba(16,185,129,.08); }
     .agenda-gcal-btn.is-connected:hover { background:rgba(16,185,129,.15); }
+
+    /* ── Vue Dezoom ── */
+    .dz-section { margin-bottom:28px; }
+    .dz-section-head { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid var(--border,#e5e7eb); }
+    .dz-section-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .dz-section-label { font-size:1rem; font-weight:700; color:var(--text-1,#111827); }
+    .dz-section-count { font-size:.78rem; font-weight:500; color:var(--text-3,#9ca3af); background:var(--surface-2,#f9fafb); border:1px solid var(--border,#e5e7eb); border-radius:20px; padding:1px 8px; }
+    .dz-empty { font-size:.85rem; color:var(--text-3,#9ca3af); padding:12px 0; }
+    /* Process grid */
+    .dz-process-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+    .dz-process-card { position:relative; display:flex; border:1px solid var(--border,#e5e7eb); border-radius:10px; overflow:hidden; background:var(--surface,#fff); }
+    .dz-client-bar { width:4px; flex-shrink:0; }
+    .dz-card-body { padding:10px 12px; flex:1; display:flex; flex-direction:column; gap:4px; }
+    .dz-client-name { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+    .dz-project-name { font-size:.88rem; font-weight:600; color:var(--text-1,#111827); line-height:1.3; }
+    .dz-vcount { display:inline-block; font-size:.68rem; font-weight:700; padding:1px 6px; border-radius:4px; border:1.5px solid; background:transparent; margin-top:2px; }
+    .dz-stage-badge { display:inline-block; font-size:.68rem; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:4px; align-self:flex-start; }
+    /* Stock list */
+    .dz-stock-list { display:flex; flex-direction:column; gap:14px; }
+    .dz-stock-card { display:flex; border:1px solid var(--border,#e5e7eb); border-radius:12px; overflow:hidden; background:var(--surface,#fff); }
+    .dz-stock-card-body { padding:14px 16px; flex:1; }
+    .dz-stock-card-head { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    .dz-lot-badge { font-size:.7rem; font-weight:700; background:var(--surface-2,#f3f4f6); border:1px solid var(--border,#e5e7eb); border-radius:4px; padding:1px 6px; color:var(--text-2,#374151); }
+    .dz-remaining { font-size:.72rem; font-weight:600; margin-left:auto; }
+    .dz-chips-wrap { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+    .dz-chip { padding:4px 10px; border-radius:6px; font-size:.75rem; font-weight:700; border:2px solid var(--chip-color,#9ca3af); color:var(--chip-color,#9ca3af); background:transparent; cursor:pointer; transition:background .12s,color .12s,border-color .12s; }
+    .dz-chip:hover:not(.dz-chip--done) { background:var(--chip-color,#9ca3af); color:#fff; }
+    .dz-chip--selected { background:var(--chip-color,#9ca3af) !important; color:#fff !important; }
+    .dz-chip--done { border-color:#d1fae5 !important; color:#6ee7b7 !important; background:#f0fdf4 !important; cursor:default; text-decoration:line-through; opacity:.7; }
+    .dz-stock-actions { display:flex; align-items:center; gap:8px; margin-top:6px; }
   </style>
 </head>
 <body>
@@ -131,6 +161,12 @@
             <a class="nav-link" data-view="kanban" href="#">
               <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
               <span>Kanban</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" data-view="dezoom" href="#">
+              <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+              <span>Dezoom</span>
             </a>
           </li>
           <li>
@@ -560,6 +596,15 @@
         <div class="pipeline-board" id="kanban-board"></div>
       </section>
 
+      <!-- ── VUE : DEZOOM ────────────────────────────────────────── -->
+      <section class="view" id="view-dezoom">
+        <div class="view-intro">
+          <h2 class="view-title">Dezoom</h2>
+          <p class="view-subtitle">Vue globale par projet — en production et en stock prêt à programmer.</p>
+        </div>
+        <div id="dezoom-board"></div>
+      </section>
+
       <!-- ── VUE : PUBLICATION ─────────────────────────────────── -->
       <section class="view" id="view-publication">
         <div class="view-intro">
@@ -659,6 +704,7 @@
           <option value="attente-validation">En attente de validation</option>
           <option value="montage-final">Montage final</option>
           <option value="verif-final">Vérif final</option>
+          <option value="stock">En stock</option>
           <option value="publie">Programmé / Publié</option>
         </select>
       </div>
@@ -771,6 +817,7 @@
   <script src="js/ixina-import.js?v=1"></script>
   <script src="js/garden.js?v=1"></script>
   <script src="js/process.js?v=1"></script>
+  <script src="js/dezoom.js?v=1"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="js/agenda.js?v=7"></script>
 

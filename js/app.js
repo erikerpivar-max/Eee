@@ -36,6 +36,7 @@ window.App = {
     { id: 'attente-validation',  label: 'En attente de validation',  color: '#EF4444', group: 'finition'    },
     { id: 'montage-final',       label: 'Montage final',             color: '#EF4444', group: 'finition'    },
     { id: 'verif-final',         label: 'Vérif final',               color: '#22C55E', group: 'publication' },
+    { id: 'stock',               label: 'En stock',                  color: '#06B6D4', group: 'publication' },
     { id: 'publie',        label: 'Programmé / Publié',        color: '#22C55E', group: 'publication' },
   ],
 
