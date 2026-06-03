@@ -28,6 +28,162 @@ window.TodoList = {
   _detailId:     null,
   _dragId:       null,
   _fadeTimers:   new Map(),
+  _syncTimer:    null,
+
+  /* ── Bot Gist ────────────────────────────────────────────────── */
+  GIST_URL_KEY:  'th_bot_gist_url',
+  IMPORTED_KEY:  'th_bot_imported',
+
+  loadGistUrl()  { return localStorage.getItem(this.GIST_URL_KEY) || ''; },
+  saveGistUrl(u) { localStorage.setItem(this.GIST_URL_KEY, u); },
+  loadImported() {
+    try { return new Set(JSON.parse(localStorage.getItem(this.IMPORTED_KEY) || '[]')); }
+    catch { return new Set(); }
+  },
+  saveImported(s) {
+    try { localStorage.setItem(this.IMPORTED_KEY, JSON.stringify([...s])); } catch(e) {}
+  },
+
+  async syncGist() {
+    const url = this.loadGistUrl();
+    if (!url) return;
+    try {
+      const r = await fetch(url + '?t=' + Date.now());
+      if (!r.ok) return;
+      const data = await r.json();
+      const incoming = data.todos || [];
+      const imported = this.loadImported();
+      let added = 0;
+      incoming.forEach(t => {
+        if (t.id && !imported.has(t.id) && t.text) {
+          this.add(t.text);
+          imported.add(t.id);
+          added++;
+        }
+      });
+      if (added > 0) {
+        this.saveImported(imported);
+        this._showBotNotif(added);
+      }
+    } catch(e) {
+      console.warn('Bot Gist sync:', e);
+    }
+  },
+
+  _showBotNotif(count) {
+    const el = document.createElement('div');
+    el.style.cssText = [
+      'position:fixed', 'bottom:24px', 'right:24px', 'z-index:9999',
+      'background:#1e293b', 'color:#f1f5f9', 'padding:10px 16px',
+      'border-radius:8px', 'font-size:.85rem', 'font-weight:500',
+      'box-shadow:0 4px 16px rgba(0,0,0,.3)',
+      'transform:translateY(8px)', 'opacity:0',
+      'transition:transform .2s ease, opacity .2s ease',
+    ].join(';');
+    el.textContent = `🤖 ${count} t\xE2che(s) re\xE7ue(s) du bot`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transform = 'translateY(0)';
+      el.style.opacity   = '1';
+    }));
+    setTimeout(() => {
+      el.style.transform = 'translateY(8px)';
+      el.style.opacity   = '0';
+      setTimeout(() => el.remove(), 250);
+    }, 3500);
+  },
+
+  openBotModal() {
+    let modal = document.getElementById('todoBotModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'todoBotModal';
+      modal.className = 'modal-backdrop';
+      modal.style.display = 'none';
+      modal.innerHTML = `
+        <div class="modal" style="max-width:500px">
+          <div class="modal-head">
+            <h3>Bot Telegram</h3>
+            <button class="modal-close-btn" id="todoBotClose" aria-label="Fermer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+            <p style="font-size:.84rem;color:var(--text-2);margin:0">
+              Colle ici l'URL raw de ton GitHub Gist. Le dashboard synchronisera les t\xE2ches envoy\xE9es via le bot toutes les 60 secondes.
+            </p>
+            <div>
+              <label style="font-size:.8rem;font-weight:500;display:block;margin-bottom:4px">URL du Gist (raw)</label>
+              <input type="url" id="todoBotGistUrl" class="form-input"
+                     placeholder="https://gist.githubusercontent.com/TON_USER/GIST_ID/raw/ixina-todos.json" />
+            </div>
+            <p id="todoBotStatus" style="font-size:.8rem;margin:0;min-height:18px"></p>
+          </div>
+          <div class="modal-foot" style="gap:8px;display:flex;justify-content:flex-end">
+            <button class="btn btn-ghost btn-sm" id="todoBotSync">Sync maintenant</button>
+            <button class="btn btn-ghost btn-sm" id="todoBotTest">Tester</button>
+            <button class="btn btn-primary btn-sm" id="todoBotSave">Enregistrer</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+
+      const close = () => this.closeBotModal();
+      modal.addEventListener('click', e => { if (e.target === modal) close(); });
+      modal.querySelector('#todoBotClose').addEventListener('click', close);
+
+      modal.querySelector('#todoBotSave').addEventListener('click', () => {
+        const u = modal.querySelector('#todoBotGistUrl').value.trim();
+        this.saveGistUrl(u);
+        close();
+      });
+
+      modal.querySelector('#todoBotTest').addEventListener('click', async () => {
+        const u = modal.querySelector('#todoBotGistUrl').value.trim();
+        const s = modal.querySelector('#todoBotStatus');
+        if (!u) { s.textContent = '⚠ URL vide'; s.style.color = 'var(--warning,#F59E0B)'; return; }
+        s.textContent = 'Test en cours…'; s.style.color = 'var(--text-2)';
+        try {
+          const r = await fetch(u + '?t=' + Date.now());
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const d = await r.json();
+          const n = (d.todos || []).length;
+          s.textContent = `✅ Connexion OK — ${n} t\xE2che(s) dans le Gist`;
+          s.style.color = 'var(--success,#10B981)';
+        } catch(e) {
+          s.textContent = `❌ Erreur : ${e.message}`;
+          s.style.color = 'var(--danger,#EF4444)';
+        }
+      });
+
+      modal.querySelector('#todoBotSync').addEventListener('click', async () => {
+        const s = modal.querySelector('#todoBotStatus');
+        s.textContent = 'Sync…'; s.style.color = 'var(--text-2)';
+        const u = modal.querySelector('#todoBotGistUrl').value.trim();
+        this.saveGistUrl(u);
+        await this.syncGist();
+        s.textContent = 'Sync termin\xE9e';
+        s.style.color = 'var(--success,#10B981)';
+      });
+    }
+
+    const status = modal.querySelector('#todoBotStatus');
+    modal.querySelector('#todoBotGistUrl').value = this.loadGistUrl();
+    status.textContent = this.loadGistUrl() ? 'Bot configur\xE9' : 'Non configur\xE9';
+    status.style.color = this.loadGistUrl() ? 'var(--success,#10B981)' : 'var(--text-3)';
+
+    if (window.App && App.openModal) App.openModal('todoBotModal');
+    else {
+      modal.style.display = 'flex';
+      requestAnimationFrame(() => requestAnimationFrame(() => modal.classList.add('visible')));
+    }
+  },
+
+  closeBotModal() {
+    const m = document.getElementById('todoBotModal');
+    if (!m) return;
+    if (window.App && App.closeModal) App.closeModal('todoBotModal');
+    else { m.classList.remove('visible'); setTimeout(() => { m.style.display = 'none'; }, 200); }
+  },
 
   /* ── Persistance ─────────────────────────────────────────────── */
   load() {
@@ -807,8 +963,17 @@ window.TodoList = {
       if (confirm('Supprimer toutes les tâches terminées ?')) this.clearDone();
     });
 
-    /* Étiquettes / densité */
+    /* Étiquettes / densité / bot */
     catsBtn && catsBtn.addEventListener('click', () => this.openCatsModal());
+    const botBtn = $('todoBotBtn');
+    botBtn && botBtn.addEventListener('click', () => this.openBotModal());
+
+    /* Sync Gist au démarrage + toutes les 60s */
+    this.syncGist();
+    if (!this._syncTimer) {
+      this._syncTimer = setInterval(() => this.syncGist(), 60 * 1000);
+    }
+
     densBtn && densBtn.addEventListener('click', () => {
       const p = this.loadPrefs();
       p.density = p.density === 'compact' ? 'comfort' : 'compact';

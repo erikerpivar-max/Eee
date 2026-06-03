@@ -427,10 +427,14 @@ window.Dashboard = {
 
       const pubData = App.load(App.KEYS.PUBCAL, {}) || {};
       const todayISO = App.today();
-      let planned = 0;
+      const _plannedDates = new Set();
       Object.entries(pubData).forEach(([dateStr, clients]) => {
-        if (clients && clients[client.id] && dateStr >= todayISO) planned++;
+        if (clients && clients[client.id] && dateStr >= todayISO) _plannedDates.add(dateStr);
       });
+      App.load('th_pubcal_entries', []).forEach(e => {
+        if (e.clientId === client.id && e.date >= todayISO) _plannedDates.add(e.date);
+      });
+      const planned = _plannedDates.size;
 
       let color, label, status;
       if (days === null) {

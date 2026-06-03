@@ -579,14 +579,26 @@ window.PubCal = (() => {
 
   /* ── Calcul de l'avance de contenu (pour le dashboard) ──────── */
   function getDaysAdvance(clientId) {
-    const data = App.load(KEY, {});
-    const today = new Date();
+    const data    = App.load(KEY, {});
+    const entries = App.load(KEY_ENTRIES, []);
+    const today   = new Date();
     today.setHours(0, 0, 0, 0);
 
     let lastChecked = null;
+
+    /* Cases cochées (vue Publication) */
     Object.entries(data).forEach(([dateStr, clients]) => {
       if (clients[clientId]) {
         const d = new Date(dateStr + 'T12:00:00');
+        d.setHours(0, 0, 0, 0);
+        if (!lastChecked || d > lastChecked) lastChecked = d;
+      }
+    });
+
+    /* Entrées créées (vue Publication + Agenda) */
+    entries.forEach(e => {
+      if (e.clientId === clientId) {
+        const d = new Date(e.date + 'T12:00:00');
         d.setHours(0, 0, 0, 0);
         if (!lastChecked || d > lastChecked) lastChecked = d;
       }
