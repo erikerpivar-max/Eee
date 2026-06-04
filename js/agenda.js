@@ -761,10 +761,14 @@ window.Agenda = {
   /* ── Navigation ──────────────────────────────────────────────── */
   nav(dir) {
     const d = new Date(this._date);
-    if (this._view === 'day')  d.setDate(d.getDate() + dir);
-    if (this._view === 'week') d.setDate(d.getDate() + 7 * dir);
-    if (this._view === 'month') d.setMonth(d.getMonth() + dir);
-    this._date = d;
+    if (this._view === 'day')   { d.setDate(d.getDate() + dir); this._date = d; }
+    if (this._view === 'month') { d.setMonth(d.getMonth() + dir); this._date = d; }
+    if (this._view === 'week')  {
+      /* Ancrage au lundi : évite les sauts quand _date est un dimanche ou un autre jour */
+      const monday = this._startOfWeek(d);
+      monday.setDate(monday.getDate() + 7 * dir);
+      this._date = monday;
+    }
     this.render();
   },
   goToday() {

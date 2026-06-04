@@ -4694,6 +4694,8 @@ code {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
+  overflow: hidden;
 }
 .agenda-tg-allday-col:last-child { border-right: none; }
 .agenda-tg-allday-evt {
@@ -4707,6 +4709,8 @@ code {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* Corps avec scroll */
