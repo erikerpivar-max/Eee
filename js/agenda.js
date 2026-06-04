@@ -414,7 +414,8 @@ window.Agenda = {
     if (!this._isPubVisible()) return '';
     const clients = (window.App && App.CLIENTS) ? App.CLIENTS : [];
     if (clients.length === 0) return '';
-    const compact = opts && opts.compact;
+    const compact  = opts && opts.compact;
+    const readonly = opts && opts.readonly;
     const cells = clients.map(cl => {
       const entries = this._pubsForCell(cl.id, dateStr);
       const has = entries.length > 0;
@@ -422,6 +423,13 @@ window.Agenda = {
       const title = has
         ? `${cl.name} — ${entries.length} publication(s)${important ? ' (importante)' : ''}`
         : `${cl.name} — non programmé`;
+      if (readonly) {
+        return `<span class="agenda-pub-cell${has ? ' is-on' : ''}${important ? ' is-important' : ''}"
+                  style="--c:${cl.color};pointer-events:none;cursor:default"
+                  title="${this._esc(title)}">
+          <span class="agenda-pub-cell-mark"></span>
+        </span>`;
+      }
       return `<button class="agenda-pub-cell${has ? ' is-on' : ''}${important ? ' is-important' : ''}"
                 style="--c:${cl.color}"
                 data-pub-toggle data-client="${cl.id}" data-date="${dateStr}"
@@ -585,6 +593,7 @@ window.Agenda = {
       html += `<div class="${cls.join(' ')}" data-date="${k}">
         <div class="agenda-month-num">${cur.getDate()}</div>
         <div class="agenda-month-evts">${evHtml}</div>
+        ${this._renderPubRow(k, { compact: true, readonly: true })}
       </div>`;
       cur.setDate(cur.getDate() + 1);
     }
@@ -641,6 +650,7 @@ window.Agenda = {
             && ee >= new Date(d.getFullYear(), d.getMonth(), d.getDate());
       });
       allDayHtml += `<div class="agenda-tg-allday-col" data-date="${k}">
+        ${this._renderPubRow(k, { readonly: true })}
         ${items.map(e => `<div class="agenda-tg-allday-evt" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}"><span class="agenda-tg-allday-evt-text">${this._esc(e.title)}</span></div>`).join('')}
       </div>`;
     });
