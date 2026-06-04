@@ -479,6 +479,9 @@ window.TodoList = {
           <button class="todo-action todo-action--sub" data-action="addsub" data-id="${t.id}" title="Ajouter une sous-tâche">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><line x1="16" y1="3" x2="22" y2="3" stroke-width="2.5"/><line x1="19" y1="0" x2="19" y2="6" stroke-width="2.5"/></svg>
           </button>
+          <button class="todo-action todo-action--claude" data-action="claude" data-id="${t.id}" title="Demander à Claude">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </button>
           <button class="todo-action todo-action--del" data-action="del" data-id="${t.id}" aria-label="Supprimer">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -811,12 +814,85 @@ window.TodoList = {
       </div>`).join('');
   },
 
+  /* ── Claude ──────────────────────────────────────────────────── */
+  _askClaude(id) {
+    const todos = this.load();
+    const item  = todos.find(t => t.id === id);
+    if (!item) return;
+
+    const cats    = this.loadCats();
+    const cat     = item.catId ? cats.find(c => c.id === item.catId) : null;
+    const project = item.projectRef ? this._projectById(item.projectRef) : null;
+    const subs    = todos.filter(t => t.parentId === id);
+
+    const lines = [
+      'Tu es l\'assistant d\'Erik, créateur vidéo freelance pour IXINA (clients : IXINA Ath / Jessica, IXINA Ixelles / Patrick, Tours & Taxis / Frédéric).',
+      'Réponds de manière directe et concrète.',
+      'Si c\'est un mail ou un message WhatsApp → rédige-le directement, prêt à copier-coller.',
+      'Si c\'est une tâche technique → donne les étapes précises.',
+      'Si c\'est flou → décompose en sous-tâches concrètes.',
+      '',
+      '── TÂCHE ──────────────────────────────────────────────',
+      `Titre : ${item.text}`,
+    ];
+    if (item.notes)                         lines.push(`Notes : ${item.notes}`);
+    if (cat)                                lines.push(`Étiquette : ${cat.name}`);
+    if (project)                            lines.push(`Projet lié : ${project.name} (${project.clientName})`);
+    if (item.dueDate)                       lines.push(`Échéance : ${item.dueDate}`);
+    if (subs.length > 0)                    lines.push(`Sous-tâches : ${subs.map(s => s.text).join(' / ')}`);
+    lines.push('────────────────────────────────────────────────────');
+    lines.push('');
+    lines.push('Propose une solution.');
+
+    const prompt = lines.join('\n');
+    const encoded = encodeURIComponent(prompt);
+
+    navigator.clipboard.writeText(prompt).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = prompt;
+      ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    });
+
+    window.location.href = `askclaude://${encoded}`;
+    this._showClaudeNotif();
+  },
+
+  _showClaudeNotif() {
+    const el = document.createElement('div');
+    el.style.cssText = [
+      'position:fixed', 'bottom:24px', 'right:24px', 'z-index:9999',
+      'background:#1e1b4b', 'color:#e0d9ff', 'padding:10px 16px',
+      'border-radius:8px', 'font-size:.85rem', 'font-weight:500',
+      'box-shadow:0 4px 16px rgba(139,92,246,.35)',
+      'transform:translateY(8px)', 'opacity:0',
+      'transition:transform .2s ease, opacity .2s ease',
+      'display:flex', 'align-items:center', 'gap:8px',
+    ].join(';');
+    el.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2.2"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Claude Code s\'ouvre — Ctrl+V pour coller';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.transform = 'translateY(0)';
+      el.style.opacity   = '1';
+    }));
+    setTimeout(() => {
+      el.style.transform = 'translateY(8px)';
+      el.style.opacity   = '0';
+      setTimeout(() => el.remove(), 250);
+    }, 3500);
+  },
+
   /* ── Init : bindings ─────────────────────────────────────────── */
   init() {
     if (!document.getElementById('todo-fading-style')) {
       const s = document.createElement('style');
       s.id = 'todo-fading-style';
       s.textContent = `
+        .todo-action--claude { color: #8B5CF6; }
+        .todo-action--claude:hover { color: #7C3AED; background: rgba(139,92,246,.12); }
         @keyframes todoFadeOut {
           0%   { opacity: 1;   filter: blur(0px); }
           50%  { opacity: 0.5; filter: blur(2px); }
@@ -906,6 +982,7 @@ window.TodoList = {
       else if (a === 'prio')   this.togglePrio(id);
       else if (a === 'del')    this.remove(id);
       else if (a === 'open')   this.openDetail(id);
+      else if (a === 'claude') this._askClaude(id);
       else if (a === 'addsub') {
         const txt = prompt('Sous-tâche :');
         if (txt) this.add(txt, '', id);
