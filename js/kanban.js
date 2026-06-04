@@ -138,6 +138,7 @@ window.Kanban = (() => {
           <div class="project-card-actions">
             ${prevStage ? `<button class="project-move-btn" title="← ${prevStage.label}" onclick="Kanban.moveProject('${client.id}','${project.id}','${prevStage.id}')">← ${prevStage.label.slice(0,4)}.</button>` : ''}
             ${nextStage ? `<button class="project-move-btn" title="${nextStage.label} →" onclick="Kanban.requestMove('${client.id}','${project.id}','${project.stage}','${nextStage.id}')">${nextStage.label.slice(0,4)}. →</button>` : ''}
+            ${project.stage === 'publie' ? `<button class="project-move-btn" title="Reprogrammer" onclick="Kanban.reprogramProject('${client.id}','${project.id}')">📅 Reprog.</button>` : ''}
             <button class="btn btn-icon" style="margin-left:auto" title="Modifier" onclick="Kanban.editProject('${client.id}','${project.id}')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
@@ -371,6 +372,25 @@ window.Kanban = (() => {
     setTimeout(() => inputEl.focus(), 120);
   }
 
+  /* ── Nettoie les dates programmées (PubCal + projet) ─────────── */
+  function _clearScheduledDates(project, clientId) {
+    if (project.scheduledDates && project.scheduledDates.length > 0) {
+      if (window.PubCal && typeof PubCal.setCheck === 'function') {
+        project.scheduledDates.forEach(date => PubCal.setCheck(date, clientId, false));
+      }
+    }
+    delete project.scheduledDates;
+  }
+
+  /* ── Reprogrammer un projet déjà dans publie ─────────────────── */
+  function reprogramProject(clientId, projectId) {
+    if (!window.Programmation) return;
+    Programmation.openForProject(clientId, projectId, () => {
+      renderView();
+      Dashboard.refresh();
+    });
+  }
+
   /* ── Déplacer un projet ──────────────────────────────────────── */
   function moveProject(clientId, projectId, newStage) {
     const projects = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
@@ -387,6 +407,11 @@ window.Kanban = (() => {
         Dashboard.refresh();
       });
       return;
+    }
+
+    /* Sortie de "publie" → nettoie les dates programmées */
+    if (project.stage === 'publie' && newStage !== 'publie') {
+      _clearScheduledDates(project, clientId);
     }
 
     project.stage = newStage;
@@ -530,6 +555,6 @@ window.Kanban = (() => {
   });
 
   /* ── API publique ───────────────────────────────────────────── */
-  return { renderView, moveProject, requestMove, editProject, deleteProject, dragStart, dragEnd, drop };
+  return { renderView, moveProject, requestMove, reprogramProject, editProject, deleteProject, dragStart, dragEnd, drop };
 
 })();

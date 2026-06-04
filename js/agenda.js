@@ -585,7 +585,6 @@ window.Agenda = {
       html += `<div class="${cls.join(' ')}" data-date="${k}">
         <div class="agenda-month-num">${cur.getDate()}</div>
         <div class="agenda-month-evts">${evHtml}</div>
-        ${this._renderPubRow(k, { compact: true })}
       </div>`;
       cur.setDate(cur.getDate() + 1);
     }
@@ -642,7 +641,6 @@ window.Agenda = {
             && ee >= new Date(d.getFullYear(), d.getMonth(), d.getDate());
       });
       allDayHtml += `<div class="agenda-tg-allday-col" data-date="${k}">
-        ${this._renderPubRow(k)}
         ${items.map(e => `<div class="agenda-tg-allday-evt" style="--c:${this._eventColor(e, cals)}" data-evt="${e.id}" title="${this._esc(e.title)}"><span class="agenda-tg-allday-evt-text">${this._esc(e.title)}</span></div>`).join('')}
       </div>`;
     });
@@ -1132,13 +1130,6 @@ window.Agenda = {
 
     /* Délégation sur la grille (slots, cellules mois, évènements, pub) */
     document.getElementById('agendaGrid')?.addEventListener('click', e => {
-      /* Case Publication */
-      const pubCell = e.target.closest('[data-pub-toggle]');
-      if (pubCell) {
-        e.stopPropagation();
-        this.togglePubCell(pubCell.dataset.client, pubCell.dataset.date);
-        return;
-      }
       const evt = e.target.closest('[data-evt]');
       if (evt) { this.openEditor(evt.dataset.evt); return; }
       const more = e.target.closest('[data-more]');
