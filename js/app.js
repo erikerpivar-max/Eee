@@ -176,6 +176,9 @@ window.App = {
     const titleEl = document.getElementById('topbarTitle');
     if (titleEl) titleEl.textContent = this.PAGE_TITLES[viewId] || viewId;
 
+    const dzBtn = document.getElementById('dezoomToggleBtn');
+    if (dzBtn) dzBtn.style.display = viewId === 'kanban' ? '' : 'none';
+
     this.currentView = viewId;
 
     if (viewId === 'dashboard')   Dashboard.refresh();
