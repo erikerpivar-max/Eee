@@ -243,6 +243,10 @@ window.Programmation = (() => {
       const ps = App.load(`${App.KEYS.PROJECTS}_${clientId}`, []);
       const p  = ps.find(x => x.id === projectId);
       if (p) {
+        /* Efface les anciennes entrées PubCal en cas de reprogrammation */
+        if (p.scheduledDates && p.scheduledDates.length > 0 && window.PubCal) {
+          p.scheduledDates.forEach(d => PubCal.setCheck(d, clientId, false));
+        }
         p.scheduledDates = dates;
         App.save(`${App.KEYS.PROJECTS}_${clientId}`, ps);
       }
