@@ -111,6 +111,29 @@ window.Kanban = (() => {
       </div>`;
   }
 
+  const _PROCESS_STAGES = new Set([
+    'rushs','brouillon','verif-draft','corrections',
+    'attente-validation','montage-final','verif-final',
+  ]);
+
+  function _cardBg(project, client) {
+    if (_PROCESS_STAGES.has(project.stage)) return 'rgba(249,115,22,0.07)';
+    if (project.stage === 'stock') {
+      try {
+        const prog = JSON.parse(localStorage.getItem('th_dezoom_prog') || '{}');
+        const done = prog[project.id] || [];
+        const letter = (project.letter || '').trim().toUpperCase();
+        const count  = parseInt(project.videoCount, 10) || 0;
+        if (letter && count > 0) {
+          const subs = Array.from({ length: count }, (_, i) => `${letter}${i + 1}`);
+          const hasRemaining = subs.some(v => !done.includes(v));
+          if (hasRemaining) return client.color + '18';
+        }
+      } catch(e) {}
+    }
+    return '';
+  }
+
   /* ── Construction d'une carte ────────────────────────────────── */
   function _buildCard(project, client) {
     const stageIdx = App.STAGES.findIndex(s => s.id === project.stage);
@@ -125,12 +148,15 @@ window.Kanban = (() => {
       ? `<span class="kanban-count-badge" title="${project.videoCount} vidéo(s) — lettre ${escHtml(project.letter || '?')}" style="display:inline-block;font-size:.72rem;font-weight:700;padding:2px 7px;border-radius:5px;border:1.5px solid ${client.color};color:${client.color};background:${client.color}15;margin-top:4px">${project.videoCount}V</span>`
       : '';
 
+    const bg = _cardBg(project, client);
+
     return `
       <div class="project-card kanban-card"
            id="card-${project.id}"
            draggable="true"
            ondragstart="Kanban.dragStart('${client.id}','${project.id}')"
-           ondragend="Kanban.dragEnd()">
+           ondragend="Kanban.dragEnd()"
+           ${bg ? `style="background:${bg}"` : ''}>
         <div class="kanban-client-bar" style="background:${client.color}"></div>
         <div class="kanban-card-body">
           <div class="kanban-client-label" style="color:${client.color}">${escHtml(client.name)}</div>
