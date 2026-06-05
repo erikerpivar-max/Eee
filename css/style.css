@@ -825,10 +825,11 @@ input, select, textarea { font-family: var(--font); outline: none; transition: b
 }
 
 .stage-group-cols {
-  display: grid;
+  display: flex;
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 6px;
+  align-items: flex-start;
 }
 .pipeline-col {
   background: var(--bg);
@@ -836,7 +837,8 @@ input, select, textarea { font-family: var(--font); outline: none; transition: b
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  min-width: 240px;
+  min-width: 260px;
+  flex: 1;
   min-height: 220px;
 }
 .pipeline-col-head {
@@ -907,6 +909,8 @@ input, select, textarea { font-family: var(--font); outline: none; transition: b
   display: flex;
   gap: 4px;
   align-items: center;
+  flex-wrap: wrap;
+  margin-top: 6px;
 }
 .project-card-actions .btn-icon {
   padding: 4px;

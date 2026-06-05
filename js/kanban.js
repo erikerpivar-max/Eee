@@ -51,7 +51,7 @@ window.Kanban = (() => {
             <span class="stage-group-label">${group.label}</span>
             <span class="stage-group-count">${_countGroupProjects(stages)} projet(s)</span>
           </div>
-          <div class="stage-group-cols" style="grid-template-columns:repeat(${stages.length},minmax(240px,1fr))">
+          <div class="stage-group-cols">
             ${stages.map(stage => _buildColumn(stage)).join('')}
           </div>
         </div>`;
