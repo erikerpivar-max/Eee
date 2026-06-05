@@ -15,6 +15,10 @@ window.Dezoom = (() => {
     'attente-validation','montage-final','verif-final',
   ]);
 
+  /* ── Filtre par magasin ──────────────────────────────────────── */
+  let _activeFilters = new Set(); /* Set de client.id — vide = tout afficher */
+  let _filterOpen    = false;
+
   /* ── Persistance ─────────────────────────────────────────────── */
   function _loadProg()    { return App.load(KEY_PROG, {}); }
   function _saveProg(d)   { App.save(KEY_PROG, d); }
@@ -45,6 +49,7 @@ window.Dezoom = (() => {
     const stockItems   = [];
 
     App.CLIENTS.forEach(client => {
+      if (_activeFilters.size > 0 && !_activeFilters.has(client.id)) return;
       const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
       projects.forEach(p => {
         if (PROCESS_STAGES.has(p.stage))  processItems.push({ project: p, client });
@@ -52,7 +57,12 @@ window.Dezoom = (() => {
       });
     });
 
+    const filterNote = _activeFilters.size > 0
+      ? `<p style="font-size:.78rem;color:#D97706;margin-bottom:16px">Filtre actif : ${[...App.CLIENTS].filter(c => _activeFilters.has(c.id)).map(c => escHtml(c.name)).join(', ')}</p>`
+      : '';
+
     wrap.innerHTML = `
+      ${filterNote}
       <div class="dz-section">
         <div class="dz-section-head">
           <span class="dz-section-dot" style="background:#8B5CF6"></span>
@@ -178,6 +188,88 @@ window.Dezoom = (() => {
     });
   }
 
+  /* ── Dropdown filtre magasin ─────────────────────────────────── */
+  function toggleFilter(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('dzFilterDropdown');
+    if (!dropdown) return;
+
+    _filterOpen = !_filterOpen;
+    if (_filterOpen) {
+      _renderFilterDropdown(dropdown);
+      dropdown.style.display = 'block';
+      /* Fermer si clic en dehors */
+      setTimeout(() => {
+        document.addEventListener('click', _closeFilterOnOutside, { once: true });
+      }, 0);
+    } else {
+      dropdown.style.display = 'none';
+    }
+  }
+
+  function _closeFilterOnOutside(e) {
+    const wrap = document.getElementById('dzFilterWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      const dropdown = document.getElementById('dzFilterDropdown');
+      if (dropdown) dropdown.style.display = 'none';
+      _filterOpen = false;
+    } else if (!wrap || !wrap.contains(e.target)) {
+      _filterOpen = false;
+    } else {
+      /* Le clic était dans le dropdown : réinstaller l'écouteur */
+      document.addEventListener('click', _closeFilterOnOutside, { once: true });
+    }
+  }
+
+  function _renderFilterDropdown(dropdown) {
+    const clients = App.CLIENTS || [];
+    dropdown.innerHTML = `
+      ${clients.map(c => `
+        <label class="dz-filter-item">
+          <input type="checkbox" value="${c.id}" ${_activeFilters.has(c.id) ? 'checked' : ''} onchange="Dezoom._onFilterChange(this)">
+          <span class="dz-filter-dot" style="background:${c.color}"></span>
+          ${escHtml(c.name)}
+        </label>`).join('')}
+      ${_activeFilters.size > 0 ? `
+        <div class="dz-filter-sep"></div>
+        <button class="dz-filter-reset" onclick="Dezoom._resetFilters()">Tout afficher</button>` : ''}`;
+  }
+
+  function _onFilterChange(checkbox) {
+    if (checkbox.checked) {
+      _activeFilters.add(checkbox.value);
+    } else {
+      _activeFilters.delete(checkbox.value);
+    }
+    _updateFilterBtn();
+    const dzBtn = document.getElementById('dezoomToggleBtn');
+    if (dzBtn && dzBtn.classList.contains('active')) renderView();
+    /* Reconstruire le dropdown pour afficher/cacher "Tout afficher" */
+    const dropdown = document.getElementById('dzFilterDropdown');
+    if (dropdown) _renderFilterDropdown(dropdown);
+  }
+
+  function _resetFilters() {
+    _activeFilters.clear();
+    _updateFilterBtn();
+    const dzBtn = document.getElementById('dezoomToggleBtn');
+    if (dzBtn && dzBtn.classList.contains('active')) renderView();
+    const dropdown = document.getElementById('dzFilterDropdown');
+    if (dropdown) _renderFilterDropdown(dropdown);
+  }
+
+  function _updateFilterBtn() {
+    const btn = document.getElementById('dzFilterBtn');
+    if (!btn) return;
+    if (_activeFilters.size > 0) {
+      btn.classList.add('has-filter');
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Filtre (${_activeFilters.size})`;
+    } else {
+      btn.classList.remove('has-filter');
+      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg> Filtre`;
+    }
+  }
+
   /* ── Popup : choisir la date ─────────────────────────────────── */
   function _openProgramPopup(projectId, clientId) {
     const selected = [...document.querySelectorAll(`.dz-chip[data-project="${projectId}"].dz-chip--selected`)]
@@ -287,6 +379,6 @@ window.Dezoom = (() => {
     if (isActive) renderView();
   }
 
-  return { renderView, toggle };
+  return { renderView, toggle, toggleFilter, _onFilterChange, _resetFilters };
 
 })();

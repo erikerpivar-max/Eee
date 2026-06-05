@@ -178,6 +178,8 @@ window.App = {
 
     const dzBtn = document.getElementById('dezoomToggleBtn');
     if (dzBtn) dzBtn.style.display = viewId === 'kanban' ? '' : 'none';
+    const dzFilterWrap = document.getElementById('dzFilterWrap');
+    if (dzFilterWrap) dzFilterWrap.style.display = viewId === 'kanban' ? '' : 'none';
 
     this.currentView = viewId;
 
