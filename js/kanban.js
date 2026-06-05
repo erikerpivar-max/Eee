@@ -51,7 +51,7 @@ window.Kanban = (() => {
             <span class="stage-group-label">${group.label}</span>
             <span class="stage-group-count">${_countGroupProjects(stages)} projet(s)</span>
           </div>
-          <div class="stage-group-cols" style="grid-template-columns:repeat(${stages.length},1fr)">
+          <div class="stage-group-cols" style="grid-template-columns:repeat(${stages.length},minmax(240px,1fr))">
             ${stages.map(stage => _buildColumn(stage)).join('')}
           </div>
         </div>`;
@@ -73,7 +73,9 @@ window.Kanban = (() => {
   /* ── Construction d'une colonne ──────────────────────────────── */
   function _buildColumn(stage) {
     const cards = [];
+    const activeFilters = (window.Dezoom && Dezoom.getFilters) ? Dezoom.getFilters() : new Set();
     App.CLIENTS.forEach(client => {
+      if (activeFilters.size > 0 && !activeFilters.has(client.id)) return;
       const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
       projects
         .filter(p => p.stage === stage.id)

@@ -827,6 +827,8 @@ input, select, textarea { font-family: var(--font); outline: none; transition: b
 .stage-group-cols {
   display: grid;
   gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
 }
 .pipeline-col {
   background: var(--bg);
@@ -834,6 +836,7 @@ input, select, textarea { font-family: var(--font); outline: none; transition: b
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
+  min-width: 240px;
   min-height: 220px;
 }
 .pipeline-col-head {

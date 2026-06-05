@@ -242,9 +242,7 @@ window.Dezoom = (() => {
       _activeFilters.delete(checkbox.value);
     }
     _updateFilterBtn();
-    const dzBtn = document.getElementById('dezoomToggleBtn');
-    if (dzBtn && dzBtn.classList.contains('active')) renderView();
-    /* Reconstruire le dropdown pour afficher/cacher "Tout afficher" */
+    _applyFilter();
     const dropdown = document.getElementById('dzFilterDropdown');
     if (dropdown) _renderFilterDropdown(dropdown);
   }
@@ -252,11 +250,21 @@ window.Dezoom = (() => {
   function _resetFilters() {
     _activeFilters.clear();
     _updateFilterBtn();
-    const dzBtn = document.getElementById('dezoomToggleBtn');
-    if (dzBtn && dzBtn.classList.contains('active')) renderView();
+    _applyFilter();
     const dropdown = document.getElementById('dzFilterDropdown');
     if (dropdown) _renderFilterDropdown(dropdown);
   }
+
+  function _applyFilter() {
+    const dzBtn = document.getElementById('dezoomToggleBtn');
+    if (dzBtn && dzBtn.classList.contains('active')) {
+      renderView();
+    } else if (window.Kanban) {
+      Kanban.renderView();
+    }
+  }
+
+  function getFilters() { return _activeFilters; }
 
   function _updateFilterBtn() {
     const btn = document.getElementById('dzFilterBtn');
@@ -379,6 +387,6 @@ window.Dezoom = (() => {
     if (isActive) renderView();
   }
 
-  return { renderView, toggle, toggleFilter, _onFilterChange, _resetFilters };
+  return { renderView, toggle, toggleFilter, _onFilterChange, _resetFilters, getFilters };
 
 })();
