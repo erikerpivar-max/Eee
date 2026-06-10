@@ -329,6 +329,7 @@ window.Dashboard = {
     ClientManager.render();
     this._stats();
     this._clientHours();
+    if (window.ProgBar) ProgBar.render();
     this._contentAdvance();
     if (window.TodoList) TodoList.render();
     this._recentTasks();
