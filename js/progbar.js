@@ -82,13 +82,6 @@ window.ProgBar = (() => {
     const el = document.getElementById('progbar-grid');
     if (!el) return;
 
-    const COLORS = {
-      green:  '#22C55E',
-      orange: '#F59E0B',
-      red:    '#EF4444',
-      empty:  'var(--border,#e5e7eb)',
-    };
-
     const today = new Date(); today.setHours(0,0,0,0);
 
     const html = App.CLIENTS.map(client => {
@@ -151,10 +144,53 @@ window.ProgBar = (() => {
     el.innerHTML = legend + html;
   }
 
+  const COLORS = {
+    green:  '#22C55E',
+    orange: '#F59E0B',
+    red:    '#EF4444',
+    empty:  'var(--border,#e5e7eb)',
+  };
+
+  function renderForClient(clientId) {
+    const days = _buildDays(clientId);
+    const counts = { green:0, orange:0, red:0, empty:0 };
+    days.forEach(d => counts[d.status]++);
+
+    const segs = days.map((d, i) => {
+      const label = d.iso + ' — ' + (
+        d.status === 'green'  ? 'programmé' :
+        d.status === 'orange' ? 'stock à monter' :
+        d.status === 'red'    ? 'créneau vide' : 'libre');
+      const bg = COLORS[d.status];
+      const border = d.dow === 1 ? 'box-shadow:inset 1px 0 0 var(--text-3,#9ca3af);' : '';
+      return `<div class="pb-seg" title="${label}" data-i="${i}" style="flex:1;height:100%;background:${bg};${border}"></div>`;
+    }).join('');
+
+    const ticks = days.map((d, i) => {
+      if (d.dow !== 1 && i !== 0) return '<div style="flex:1"></div>';
+      return `<div style="flex:1;font-size:.62rem;color:var(--text-3,#9ca3af);white-space:nowrap;overflow:visible">${_fmtDayShort(d.date)}</div>`;
+    }).join('');
+
+    return `
+      <div style="padding-top:8px;border-top:1px dashed var(--border,#e5e7eb)">
+        <div style="display:flex;justify-content:flex-end;gap:10px;font-size:.7rem;margin-bottom:4px">
+          <span style="color:#22C55E;font-weight:600">● ${counts.green} prog.</span>
+          <span style="color:#F59E0B;font-weight:600">● ${counts.orange} stock</span>
+          <span style="color:#EF4444;font-weight:600">● ${counts.red} vide</span>
+        </div>
+        <div style="display:flex;gap:2px;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-2,#f3f4f6)">
+          ${segs}
+        </div>
+        <div style="display:flex;gap:2px;margin-top:2px">
+          ${ticks}
+        </div>
+      </div>`;
+  }
+
   function escHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
-  return { render };
+  return { render, renderForClient };
 
 })();
