@@ -1,34 +1,48 @@
 /* ================================================================
    THE HOUSE — progbar.js
-   Barre de programmation sur la page Dashboard.
-   Une ligne par client, fenêtre de 8 semaines à partir d'aujourd'hui.
-     - VERT   : publication programmée (PubCal coché ou entrée)
-     - ORANGE : stock en cours (projets non publiés) projeté sur les
-                créneaux libres au rythme du gap (défaut 3 jours)
-     - ROUGE  : créneau libre au-delà du seuil (aujourd'hui + 14 jours)
+   Timeline de programmation sur le Dashboard.
+   Grille 8 semaines × 7 jours, une ligne par client.
+     - VERT   : publication programmée (PubCal)
+     - ORANGE : stock disponible projeté (rythme DEFAULT_GAP jours)
+     - ROUGE  : créneau vide au-delà de RED_AFTER jours
+     - GRIS   : libre (dans la fenêtre de grâce)
    ================================================================ */
 
 'use strict';
 
 window.ProgBar = (() => {
 
-  const WINDOW_DAYS  = 56;
-  const RED_AFTER    = 14;
-  const DEFAULT_GAP  = 3;
+  const WINDOW_DAYS = 56;
+  const RED_AFTER   = 14;
+  const DEFAULT_GAP = 3;
+
+  const COLORS = {
+    green:  '#22C55E',
+    orange: '#F59E0B',
+    red:    '#EF4444',
+    empty:  'var(--border,#e5e7eb)',
+  };
+
+  const JOURS = ['D','L','M','M','J','V','S'];
 
   function _iso(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
 
-  function _fmtDayShort(d) {
+  function _fmtShort(d) {
     return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  function _fmtFull(d) {
+    const noms = ['dim','lun','mar','mer','jeu','ven','sam'];
+    return `${noms[d.getDay()]} ${_fmtShort(d)}`;
   }
 
   function _plannedDatesFor(clientId) {
     const out = new Set();
     const pubData = App.load(App.KEYS.PUBCAL, {}) || {};
-    Object.entries(pubData).forEach(([dateStr, clients]) => {
-      if (clients && clients[clientId]) out.add(dateStr);
+    Object.entries(pubData).forEach(([dateStr, cs]) => {
+      if (cs && cs[clientId]) out.add(dateStr);
     });
     (App.load('th_pubcal_entries', []) || []).forEach(e => {
       if (e.clientId === clientId && e.date) out.add(e.date);
@@ -44,29 +58,25 @@ window.ProgBar = (() => {
   }
 
   function _buildDays(clientId) {
-    const planned = _plannedDatesFor(clientId);
-    let   stock   = _stockFor(clientId);
+    const planned     = _plannedDatesFor(clientId);
+    let   stock       = _stockFor(clientId);
+    const today       = new Date(); today.setHours(0,0,0,0);
+    let   lastSlotAt  = -1;
+    const days        = [];
 
-    const today = new Date(); today.setHours(0,0,0,0);
-
-    /* Date du dernier slot vert (utile pour décider du report orange) */
-    let nextOrangeIdx = -1; // index du prochain créneau orange à poser
-    let lastOrangeAt  = -1;
-
-    const days = [];
     for (let i = 0; i < WINDOW_DAYS; i++) {
-      const d = new Date(today);
+      const d   = new Date(today);
       d.setDate(today.getDate() + i);
       const iso = _iso(d);
 
       let status;
       if (planned.has(iso)) {
-        status = 'green';
-        lastOrangeAt = i; // un vert "remplit" aussi un créneau pour rythmer l'orange
-      } else if (stock > 0 && (lastOrangeAt < 0 || (i - lastOrangeAt) >= DEFAULT_GAP)) {
-        status = 'orange';
+        status       = 'green';
+        lastSlotAt   = i;
+      } else if (stock > 0 && (lastSlotAt < 0 || (i - lastSlotAt) >= DEFAULT_GAP)) {
+        status       = 'orange';
         stock--;
-        lastOrangeAt = i;
+        lastSlotAt   = i;
       } else if (i >= RED_AFTER) {
         status = 'red';
       } else {
@@ -82,110 +92,83 @@ window.ProgBar = (() => {
     const el = document.getElementById('progbar-grid');
     if (!el) return;
 
-    const today = new Date(); today.setHours(0,0,0,0);
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const todayIso = _iso(today);
 
     const html = App.CLIENTS.map(client => {
-      const days = _buildDays(client.id);
-
+      const days   = _buildDays(client.id);
       const counts = { green:0, orange:0, red:0, empty:0 };
       days.forEach(d => counts[d.status]++);
 
-      /* Segments : tirets fins, gap 2px, un par jour */
-      const segs = days.map((d, i) => {
-        const label = d.iso + ' — ' + (
-          d.status === 'green'  ? 'programmé' :
-          d.status === 'orange' ? 'stock à monter' :
-          d.status === 'red'    ? 'créneau vide' : 'libre');
-        const bg = COLORS[d.status];
-        const isMonday = d.dow === 1;
-        const border = isMonday ? 'box-shadow:inset 1px 0 0 var(--text-3,#9ca3af);' : '';
-        return `<div class="pb-seg" title="${label}" data-i="${i}" style="flex:1;height:100%;background:${bg};${border}"></div>`;
-      }).join('');
+      /* 8 colonnes semaine */
+      const weekCols = [];
+      for (let w = 0; w < 8; w++) {
+        const weekDays   = days.slice(w * 7, w * 7 + 7);
+        const weekStart  = weekDays[0].date;
+        const weekEnd    = weekDays[weekDays.length - 1].date;
+        const hasContent = weekDays.some(d => d.status === 'green' || d.status === 'orange');
 
-      /* Graduations : un label par lundi */
-      const ticks = days.map((d, i) => {
-        if (d.dow !== 1 && i !== 0) return '<div style="flex:1"></div>';
-        return `<div style="flex:1;font-size:.65rem;color:var(--text-3,#9ca3af);text-align:left;white-space:nowrap;overflow:visible">${_fmtDayShort(d.date)}</div>`;
-      }).join('');
+        const squares = weekDays.map(d => {
+          const isToday   = d.iso === todayIso;
+          const tooltip   = `${_fmtFull(d.date)} — ${
+            d.status === 'green'  ? '✓ Programmé' :
+            d.status === 'orange' ? '⏳ Stock à placer' :
+            d.status === 'red'    ? '⚠ Créneau vide' : 'Libre'}`;
+          const bg        = COLORS[d.status];
+          const todayRing = isToday
+            ? 'outline:2px solid var(--primary,#6366f1);outline-offset:1px;'
+            : '';
+          const dowLabel  = JOURS[d.dow];
+          return `
+            <div title="${tooltip}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:default">
+              <div style="width:100%;height:26px;background:${bg};border-radius:3px;${todayRing}"></div>
+              <span style="font-size:.6rem;color:${isToday ? 'var(--primary,#6366f1)' : 'var(--text-3,#9ca3af)'};font-weight:${isToday ? '700' : '400'}">${dowLabel}</span>
+            </div>`;
+        }).join('');
+
+        weekCols.push(`
+          <div style="flex:1;min-width:0;background:${hasContent ? 'var(--bg-2,#f9fafb)' : 'transparent'};border-radius:6px;padding:6px 4px 4px">
+            <div style="text-align:center;margin-bottom:5px">
+              <span style="font-size:.72rem;font-weight:700;color:var(--text-1,#374151)">${_fmtShort(weekStart)}</span>
+              <span style="font-size:.65rem;color:var(--text-3,#9ca3af)"> – ${_fmtShort(weekEnd)}</span>
+            </div>
+            <div style="display:flex;gap:3px">${squares}</div>
+          </div>`);
+      }
 
       return `
-        <div class="pb-row" style="margin-bottom:14px">
-          <div class="pb-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${client.color}"></span>
-              <span style="font-weight:600;font-size:.85rem">${escHtml(client.name)}</span>
+        <div style="background:var(--surface);border:1px solid var(--border);border-left:4px solid ${client.color};border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-sm)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:32px;height:32px;border-radius:50%;background:${client.color}22;color:${client.color};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem">${escHtml(client.initials)}</div>
+              <span style="font-weight:700;font-size:.95rem">${escHtml(client.name)}</span>
             </div>
-            <div style="font-size:.72rem;color:var(--text-3,#9ca3af);display:flex;gap:10px">
-              <span style="color:#22C55E">● ${counts.green} prog.</span>
-              <span style="color:#F59E0B">● ${counts.orange} stock</span>
-              <span style="color:#EF4444">● ${counts.red} vide</span>
+            <div style="display:flex;gap:14px;font-size:.78rem;font-weight:600">
+              <span style="color:#22C55E">✓ ${counts.green} programmé${counts.green > 1 ? 's' : ''}</span>
+              <span style="color:#F59E0B">⏳ ${counts.orange} à placer</span>
+              <span style="color:#EF4444">⚠ ${counts.red} vide</span>
             </div>
           </div>
-          <div class="pb-track" style="display:flex;gap:2px;height:14px;border-radius:4px;overflow:hidden;background:var(--bg-2,#f3f4f6)">
-            ${segs}
-          </div>
-          <div class="pb-ticks" style="display:flex;gap:2px;margin-top:3px">
-            ${ticks}
+          <div style="display:flex;gap:4px">
+            ${weekCols.join('')}
           </div>
         </div>`;
     }).join('');
 
-    /* Légende globale */
-    const todayStr = _fmtDayShort(today);
     const redLimit = new Date(today); redLimit.setDate(today.getDate() + RED_AFTER);
-    const legend = `
-      <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:14px;font-size:.75rem;color:var(--text-2,#6b7280)">
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:8px;background:#22C55E;border-radius:2px"></span>Programmé</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:8px;background:#F59E0B;border-radius:2px"></span>Stock à monter</span>
-        <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:14px;height:8px;background:#EF4444;border-radius:2px"></span>Créneau vide (≥ J+${RED_AFTER})</span>
-        <span style="margin-left:auto">Aujourd'hui ${todayStr} · alerte rouge dès ${_fmtDayShort(redLimit)}</span>
+    const legend   = `
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:16px;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:.76rem;color:var(--text-2,#6b7280)">
+        <strong style="color:var(--text-1)">Aujourd'hui ${_fmtShort(today)}</strong>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:10px;background:#22C55E;border-radius:2px;display:inline-block"></span>Programmé (calendrier Publication)</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:10px;background:#F59E0B;border-radius:2px;display:inline-block"></span>Stock disponible — à placer</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:16px;height:10px;background:#EF4444;border-radius:2px;display:inline-block"></span>Créneau vide (alerte dès J+${RED_AFTER} · ${_fmtShort(redLimit)})</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:14px;background:transparent;border-radius:3px;outline:2px solid var(--primary,#6366f1);display:inline-block"></span>Aujourd'hui</span>
       </div>`;
 
     el.innerHTML = legend + html;
   }
 
-  const COLORS = {
-    green:  '#22C55E',
-    orange: '#F59E0B',
-    red:    '#EF4444',
-    empty:  'var(--border,#e5e7eb)',
-  };
-
-  function renderForClient(clientId) {
-    const days = _buildDays(clientId);
-    const counts = { green:0, orange:0, red:0, empty:0 };
-    days.forEach(d => counts[d.status]++);
-
-    const segs = days.map((d, i) => {
-      const label = d.iso + ' — ' + (
-        d.status === 'green'  ? 'programmé' :
-        d.status === 'orange' ? 'stock à monter' :
-        d.status === 'red'    ? 'créneau vide' : 'libre');
-      const bg = COLORS[d.status];
-      const border = d.dow === 1 ? 'box-shadow:inset 1px 0 0 var(--text-3,#9ca3af);' : '';
-      return `<div class="pb-seg" title="${label}" data-i="${i}" style="flex:1;height:100%;background:${bg};${border}"></div>`;
-    }).join('');
-
-    const ticks = days.map((d, i) => {
-      if (d.dow !== 1 && i !== 0) return '<div style="flex:1"></div>';
-      return `<div style="flex:1;font-size:.62rem;color:var(--text-3,#9ca3af);white-space:nowrap;overflow:visible">${_fmtDayShort(d.date)}</div>`;
-    }).join('');
-
-    return `
-      <div style="padding-top:8px;border-top:1px dashed var(--border,#e5e7eb)">
-        <div style="display:flex;justify-content:flex-end;gap:10px;font-size:.7rem;margin-bottom:4px">
-          <span style="color:#22C55E;font-weight:600">● ${counts.green} prog.</span>
-          <span style="color:#F59E0B;font-weight:600">● ${counts.orange} stock</span>
-          <span style="color:#EF4444;font-weight:600">● ${counts.red} vide</span>
-        </div>
-        <div style="display:flex;gap:2px;height:10px;border-radius:3px;overflow:hidden;background:var(--bg-2,#f3f4f6)">
-          ${segs}
-        </div>
-        <div style="display:flex;gap:2px;margin-top:2px">
-          ${ticks}
-        </div>
-      </div>`;
-  }
+  function renderForClient(clientId) { return ''; }
 
   function escHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

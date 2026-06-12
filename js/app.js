@@ -488,7 +488,6 @@ window.Dashboard = {
               ${planned} planifiées
             </span>
           </div>
-          ${window.ProgBar ? ProgBar.renderForClient(client.id) : ''}
         </div>`;
     }).join('');
   },
