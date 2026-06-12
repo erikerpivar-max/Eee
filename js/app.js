@@ -424,79 +424,68 @@ window.Dashboard = {
     if (!el) return;
 
     el.innerHTML = App.CLIENTS.map(client => {
-      const days = PubCal.getDaysAdvance(client.id);
-
-      /* Compteurs : en cours (projets non publiés) + planifié (cases PubCal futures) */
+      /* Pipeline : en cours (production active) + prêtes (stock/verif-final) */
       const projects = App.load(`${App.KEYS.PROJECTS}_${client.id}`, []);
+      const IN_PROGRESS_STAGES = new Set(['rushs','brouillon','verif-draft','corrections','attente-validation','montage-final']);
+      const IN_STOCK_STAGES    = new Set(['verif-final','stock']);
+
       const inProgress = projects
-        .filter(p => p.stage !== 'publie')
+        .filter(p => IN_PROGRESS_STAGES.has(p.stage))
+        .reduce((s, p) => s + (p.videoCount || 1), 0);
+      const inStock = projects
+        .filter(p => IN_STOCK_STAGES.has(p.stage))
         .reduce((s, p) => s + (p.videoCount || 1), 0);
 
-      const pubData = App.load(App.KEYS.PUBCAL, {}) || {};
-      const todayISO = App.today();
-      const _plannedDates = new Set();
-      Object.entries(pubData).forEach(([dateStr, clients]) => {
-        if (clients && clients[client.id] && dateStr >= todayISO) _plannedDates.add(dateStr);
+      /* Barre segmentée : max 20 vidéos = 100% */
+      const MAX_V     = 20;
+      const progPct   = Math.min(100, (inProgress / MAX_V) * 100).toFixed(1);
+      const stockPct  = Math.min(100 - progPct, (inStock / MAX_V) * 100).toFixed(1);
+
+      /* Planifiées (calendrier pub futures) */
+      const pubData   = App.load(App.KEYS.PUBCAL, {}) || {};
+      const todayISO  = App.today();
+      const _planned  = new Set();
+      Object.entries(pubData).forEach(([d, cs]) => {
+        if (cs && cs[client.id] && d >= todayISO) _planned.add(d);
       });
       App.load('th_pubcal_entries', []).forEach(e => {
-        if (e.clientId === client.id && e.date >= todayISO) _plannedDates.add(e.date);
+        if (e.clientId === client.id && e.date >= todayISO) _planned.add(e.date);
       });
-      const planned = _plannedDates.size;
+      const planned = _planned.size;
 
-      let color, label, status;
-      if (days === null) {
-        color  = 'var(--text-3)';
-        label  = 'Aucune donnée';
-        status = 'none';
-      } else if (days > 30) {
-        color  = 'var(--success)';
-        label  = `${days}j d'avance`;
-        status = 'good';
-      } else if (days >= 15) {
-        color  = 'var(--success)';
-        label  = `${days}j d'avance`;
-        status = 'ok';
-      } else if (days >= 0) {
-        color  = 'var(--warning)';
-        label  = `${days}j d'avance`;
-        status = 'warning';
-      } else {
-        color  = 'var(--danger)';
-        label  = `En retard (${Math.abs(days)}j)`;
-        status = 'critical';
-      }
-
-      /* Barre : 100% = 30 jours, capped */
-      const pct = days === null ? 0 : Math.min(100, Math.max(0, (days / 30) * 100)).toFixed(1);
-
-      /* Badge statut */
-      const badgeLabel = status === 'good' ? '✓ Large' : status === 'ok' ? '✓ OK' : status === 'warning' ? '⚠ Attention' : '● Retard';
-      const badge = status === 'none' ? '' :
-        `<span class="ca-badge ca-${status}">${badgeLabel}</span>`;
+      /* Deadline badge (avance publication) */
+      const days = PubCal.getDaysAdvance(client.id);
+      let dlColor, dlLabel;
+      if (days === null)    { dlColor = 'var(--text-3)';  dlLabel = '—'; }
+      else if (days > 15)   { dlColor = 'var(--success)'; dlLabel = `${days}j`; }
+      else if (days >= 0)   { dlColor = 'var(--warning)'; dlLabel = `${days}j`; }
+      else                  { dlColor = 'var(--danger)';  dlLabel = `${Math.abs(days)}j retard`; }
 
       return `
         <div class="ca-card" style="--cc:${client.color}">
-          <div class="ca-header">
+          <div class="ca-header" style="display:flex;align-items:center;justify-content:space-between">
             <div class="ca-client">
               <div class="ca-avatar" style="background:${client.color}22;color:${client.color}">${escHtml(client.initials)}</div>
               <span class="ca-name">${escHtml(client.name)}</span>
             </div>
+            <span style="font-size:.7rem;font-weight:700;color:${dlColor};background:${dlColor}1a;padding:2px 8px;border-radius:99px;white-space:nowrap" title="Avance de publication">${dlLabel}</span>
           </div>
-          <div class="ca-bar-wrap">
-            <div class="ca-bar-fill" style="width:${pct}%;background:${color}"></div>
+          <div class="ca-bar-wrap" style="display:flex">
+            <div style="height:100%;width:${progPct}%;background:#F97316;transition:width .6s cubic-bezier(.16,1,.3,1)"></div>
+            <div style="height:100%;width:${stockPct}%;background:#06B6D4;transition:width .6s cubic-bezier(.16,1,.3,1)"></div>
           </div>
-          <div class="ca-footer">
-            <span class="ca-value" style="color:${color}">${label}</span>
-            ${badge}
-          </div>
-          <div class="ca-stats" style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px dashed var(--border,#e5e7eb);font-size:.78rem">
-            <span class="ca-stat" style="display:inline-flex;align-items:center;gap:5px;color:#F97316;font-weight:600" title="${inProgress} vidéo(s) en cours">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.78rem;margin-top:2px">
+            <span style="display:inline-flex;align-items:center;gap:4px;color:#F97316;font-weight:600" title="${inProgress} vidéo(s) en cours de production">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
               ${inProgress} en cours
             </span>
-            <span class="ca-stat" style="display:inline-flex;align-items:center;gap:5px;color:#22C55E;font-weight:600" title="${planned} vidéo(s) planifiée(s)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              ${planned} planifié(s)
+            <span style="display:inline-flex;align-items:center;gap:4px;color:#06B6D4;font-weight:600" title="${inStock} vidéo(s) prête(s)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              ${inStock} prêtes
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:4px;color:#22C55E;font-weight:600" title="${planned} date(s) planifiée(s) dans le calendrier">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              ${planned} planifiées
             </span>
           </div>
         </div>`;
